@@ -366,6 +366,7 @@ void Workbench::removeTaskWatcher(void)
     qApp->translate("Workbench", "&Zoom");
     qApp->translate("Workbench", "Visibility");
     qApp->translate("Workbench", "&View");
+    qApp->translate("Workbench", "&Workbench");
     qApp->translate("Workbench", "&Tools");
     qApp->translate("Workbench", "&Macro");
     qApp->translate("Workbench", "&Windows");
@@ -491,8 +492,13 @@ MenuItem* StdWorkbench::setupMenuBar() const
           << "Std_ToggleVisibility" << "Std_ToggleNavigation"
           << "Std_SetAppearance" << "Std_RandomColor" << "Separator" 
           << "Std_MeasureDistance" << "Separator" 
-          << "Std_Workbench" << "Std_ToolBarMenu" << "Std_DockViewMenu" << "Separator" 
+          << "Std_ToolBarMenu" << "Std_DockViewMenu" << "Separator" 
           << "Std_ViewStatusBar";
+          
+    // Workbench
+    MenuItem* wb = new MenuItem( menuBar );
+    wb->setCommand("&Workbench");
+    *wb << "Std_Workbench";
 
     // Tools
     MenuItem* tool = new MenuItem( menuBar );
@@ -541,7 +547,7 @@ ToolBarItem* StdWorkbench::setupToolBars() const
     file->setCommand("File");
     *file << "Std_New" << "Std_Open" << "Std_Save" << "Std_Print" << "Separator" << "Std_Cut"
           << "Std_Copy" << "Std_Paste" << "Separator" << "Std_Undo" << "Std_Redo" << "Separator"
-          << "Std_Refresh" << "Separator" << "Std_Workbench" << "Std_WhatsThis";
+          << "Std_Refresh" << "Separator" << "Std_WhatsThis";
 
     // Macro
     ToolBarItem* macro = new ToolBarItem( root );
@@ -675,9 +681,9 @@ MenuItem* NoneWorkbench::setupMenuBar() const
     *edit << "Std_DlgPreferences";
 
     // View
-    MenuItem* view = new MenuItem( menuBar );
-    view->setCommand("&View");
-    *view << "Std_Workbench";
+    MenuItem* wb = new MenuItem( menuBar );
+    wb->setCommand("&Workbench");
+    *wb << "Std_Workbench";
 
     // Separator
     MenuItem* sep = new MenuItem( menuBar );

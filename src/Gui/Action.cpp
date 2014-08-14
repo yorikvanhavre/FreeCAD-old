@@ -510,7 +510,7 @@ void WorkbenchGroup::addTo(QWidget *w)
     }
     else if (w->inherits("QMenu")) {
         QMenu* menu = qobject_cast<QMenu*>(w);
-        menu = menu->addMenu(_action->text());
+        // menu = menu->addMenu(_action->text());
         menu->addActions(_group->actions());
     }
 }
