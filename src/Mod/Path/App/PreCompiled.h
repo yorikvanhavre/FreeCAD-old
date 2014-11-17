@@ -29,11 +29,9 @@
 // Exporting of App classes
 #ifdef FC_OS_WIN32
 # define PathExport  __declspec(dllexport)
-# define PartExport  __declspec(dllimport)
 # define BaseExport  __declspec(dllimport)
 #else // for Linux
-# define PathExport
-# define PartExport 
+# define PathExport 
 # define BaseExport  
 #endif
 

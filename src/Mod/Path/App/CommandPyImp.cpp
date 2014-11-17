@@ -21,8 +21,12 @@
  ***************************************************************************/
 
 #include "PreCompiled.h"
-#include <Base/Exception.h>
 
+#include <boost/algorithm/string.hpp>
+
+#include <Base/Exception.h>
+#include <Base/Vector3D.h>
+#include <Base/VectorPy.h>
 #include "Mod/Path/App/Command.h"
 
 // inclusion of the generated files (generated out of CommandPy.xml)
@@ -38,13 +42,13 @@ std::string CommandPy::representation(void) const
     str.precision(5);
     str << "Command ";
     str << getCommandPtr()->Name;
-    str << " (";
+    str << " [";
     for(std::map<std::string,double>::iterator i = getCommandPtr()->Parameters.begin(); i != getCommandPtr()->Parameters.end(); ++i) {
         std::string k = i->first;
         double v = i->second;
         str << " " << k << ":" << v;
     }
-    str << " )";
+    str << " ]";
     return str.str();
 }
     
@@ -63,6 +67,7 @@ int CommandPy::PyInit(PyObject* args, PyObject* kwd)
     static char *kwlist[] = {"name", "parameters", NULL};
     if ( !PyArg_ParseTupleAndKeywords(args, kwd, "|sO!", kwlist, &name, &PyDict_Type, &parameters) )
         return -1;
+    boost::to_upper(name);
     getCommandPtr()->Name = name;
     PyObject *key, *value;
     Py_ssize_t pos = 0;
@@ -72,6 +77,7 @@ int CommandPy::PyInit(PyObject* args, PyObject* kwd)
             return -1;
         }
         std::string ckey = PyString_AsString(key);
+        boost::to_upper(ckey);
         double cvalue;
         if (PyObject_TypeCheck(value,&(PyInt_Type))) {
             cvalue = (double)PyInt_AsLong(value);
@@ -110,6 +116,7 @@ void CommandPy::setParameters(Py::Dict arg)
     while (PyDict_Next(dict_copy, &pos, &key, &value)) {
         if ( PyObject_TypeCheck(key,&(PyString_Type)) && (PyObject_TypeCheck(value,&(PyFloat_Type)) || PyObject_TypeCheck(value,&(PyInt_Type)) ) ) {
             std::string ckey = PyString_AsString(key);
+            boost::to_upper(ckey);
             double cvalue;
             if (PyObject_TypeCheck(value,&(PyInt_Type))) {
                 cvalue = (double)PyInt_AsLong(value);
@@ -135,9 +142,33 @@ PyObject* CommandPy::toGCode(PyObject *args)
             str << k << v;
         }
         return PyString_FromString(str.str().c_str());
-
     }
-    return 0;
+    throw Py::Exception("Invalid argument");
+}
+
+PyObject* CommandPy::getPoint(PyObject *args)
+{
+    if (PyArg_ParseTuple(args, "")) {
+        std::map<std::string,double> par = getCommandPtr()->Parameters;
+        std::string x = "X";
+        std::string y = "Y";
+        std::string z = "Z";
+        if (par.count(x) && par.count(y)) {
+            double zval = 0.0;
+            if (par.count(z))
+                zval = par[z];
+            Base::Vector3d vec(par[x],par[y],zval);
+            Base::VectorPy* pyvec = new Base::VectorPy(vec);
+            return pyvec;
+        }
+        return Py_None;
+    }
+    throw Py::Exception("Invalid argument");
+}
+
+PyObject* CommandPy::getPlacement(PyObject *args)
+{
+    // TODO
 }
 
 PyObject *CommandPy::getCustomAttributes(const char* /*attr*/) const
