@@ -34,10 +34,13 @@ else(MSVC)
 endif(MSVC)
 
 generate_from_xml(CommandPy)
+generate_from_xml(PathPy)
 
 SET(Python_SRCS
     CommandPy.xml
     CommandPyImp.cpp
+    PathPy.xml
+    PathPyImp.cpp
 )
 
 SET(Mod_SRCS
@@ -50,6 +53,8 @@ SET(Mod_SRCS
 SET(Path_SRCS
     Command.cpp
     Command.h
+    Path.cpp
+    Path.h
     ${Mod_SRCS}
     ${Python_SRCS}
 )

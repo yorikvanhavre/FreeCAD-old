@@ -21,42 +21,46 @@
  ***************************************************************************/
 
 
-#include "PreCompiled.h"
-#ifndef _PreComp_
-# include <Python.h>
-#endif
-
-#include <Base/Console.h>
-#include <Base/Interpreter.h>
+#ifndef PATH_Path_H
+#define PATH_Path_H
 
 #include "Command.h"
-#include "CommandPy.h"
-#include "Path.h"
-#include "PathPy.h"
 
-extern struct PyMethodDef Path_methods[];
+#include <Base/Persistence.h>
 
-PyDoc_STRVAR(module_Path_doc,
-"This module is the Path module.");
-
-
-/* Python entry */
-extern "C" {
-void PathExport initPath()
+namespace Path
 {
-    PyObject* pathModule = Py_InitModule3("Path", Path_methods, module_Path_doc);   /* mod name, table ptr */
-    Base::Console().Log("Loading Path module... done\n");
+
+    /** The representation of a CNC Toolpath */
+    
+    class PathExport Toolpath : public Base::Persistence
+    {
+        TYPESYSTEM_HEADER();
+    
+        public:
+            Toolpath();
+            Toolpath(const Toolpath&);
+            ~Toolpath();
+            
+            Toolpath &operator=(const Toolpath&);
+        
+            // from base class
+            virtual unsigned int getMemSize (void) const;
+            virtual void Save (Base::Writer &/*writer*/) const;
+            virtual void Restore(Base::XMLReader &/*reader*/);
+        
+            // interface
+            void addCommand(const Command &Cmd);
+            unsigned int getSize(void) const{return vpcCommands.size();}
+            const Command &getCommand(unsigned int pos)const {return *vpcCommands[pos];}
+            const std::vector<Command*> &getCommands(void)const{return vpcCommands;}
+            double getLength(void); // return the Length (mm) of the Path
+        
+        protected:
+            std::vector<Command*> vpcCommands;
+    };
+
+} //namespace Path
 
 
-    // Add Types to module
-    Base::Interpreter().addType(&Path::CommandPy            ::Type,pathModule,"Command");
-    Base::Interpreter().addType(&Path::PathPy               ::Type,pathModule,"Path");
-
-    // NOTE: To finish the initialization of our own type objects we must
-    // call PyType_Ready, otherwise we run into a segmentation fault, later on.
-    // This function is responsible for adding inherited slots from a type's base class.
-    Path::Command                ::init();
-    Path::Toolpath               ::init();
-}
-
-} // extern "C"
+#endif // PATH_Path_H
