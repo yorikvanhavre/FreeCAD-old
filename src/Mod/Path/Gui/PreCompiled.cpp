@@ -20,41 +20,4 @@
  *                                                                         *
  ***************************************************************************/
 
-
-#ifndef PATH_COMMAND_H
-#define PATH_COMMAND_H
-
-#include <map>
-#include <string>
-#include <Base/Persistence.h>
-#include <Base/Placement.h>
-
-namespace Path
-{
-    /** The representation of a cnc command in a path */
-    class PathExport Command : public Base::Persistence
-    {
-    TYPESYSTEM_HEADER();
-    
-    public:
-        //constructors
-        Command();
-        Command(const char* name,
-                const std::map<std::string,double>& parameters);
-        ~Command();
-        // from base class
-        virtual unsigned int getMemSize (void) const;
-        virtual void Save (Base::Writer &/*writer*/) const;
-        virtual void Restore(Base::XMLReader &/*reader*/);
-        Base::Placement getPlacement (void); // returns a placement from the x,y,z,a,b,c parameters
-        std::string toGCode (void); // returns a GCode string representation of the command
-        void setFromGCode (std::string); // sets the parameters from the contents of the given GCode string
-
-        // attributes
-        std::string Name;
-        std::map<std::string,double> Parameters;
-    };
-    
-} //namespace Path
-
-#endif // PATH_COMMAND_H
+#include "PreCompiled.h" 

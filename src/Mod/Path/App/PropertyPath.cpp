@@ -22,45 +22,97 @@
 
 
 #include "PreCompiled.h"
+
 #ifndef _PreComp_
-# include <Python.h>
+# include <sstream>
 #endif
 
+
+#include <strstream>
 #include <Base/Console.h>
-#include <Base/Interpreter.h>
+#include <Base/Writer.h>
+#include <Base/Reader.h>
+#include <Base/Exception.h>
+#include <Base/FileInfo.h>
+#include <Base/Stream.h>
 
-#include "Command.h"
-#include "CommandPy.h"
-#include "Path.h"
-#include "PathPy.h"
 #include "PropertyPath.h"
-#include "FeaturePath.h"
+#include "PathPy.h"
 
-extern struct PyMethodDef Path_methods[];
+using namespace Path;
 
-PyDoc_STRVAR(module_Path_doc,
-"This module is the Path module.");
+TYPESYSTEM_SOURCE(Path::PropertyPath, App::Property);
 
-
-/* Python entry */
-extern "C" {
-void PathExport initPath()
+PropertyPath::PropertyPath()
 {
-    PyObject* pathModule = Py_InitModule3("Path", Path_methods, module_Path_doc);   /* mod name, table ptr */
-    Base::Console().Log("Loading Path module... done\n");
-
-
-    // Add Types to module
-    Base::Interpreter().addType(&Path::CommandPy            ::Type,pathModule,"Command");
-    Base::Interpreter().addType(&Path::PathPy               ::Type,pathModule,"Path");
-
-    // NOTE: To finish the initialization of our own type objects we must
-    // call PyType_Ready, otherwise we run into a segmentation fault, later on.
-    // This function is responsible for adding inherited slots from a type's base class.
-    Path::Command                ::init();
-    Path::Toolpath               ::init();
-    Path::PropertyPath           ::init();
-    Path::Feature                ::init();
 }
 
-} // extern "C"
+PropertyPath::~PropertyPath()
+{
+}
+
+void PropertyPath::setValue(const Toolpath& pa)
+{
+    aboutToSetValue();
+    _Path = pa;
+    hasSetValue();
+}
+
+
+const Toolpath &PropertyPath::getValue(void)const 
+{
+    return _Path;
+}
+
+PyObject *PropertyPath::getPyObject(void)
+{
+    return new PathPy(new Toolpath(_Path));
+}
+
+void PropertyPath::setPyObject(PyObject *value)
+{
+    if (PyObject_TypeCheck(value, &(PathPy::Type))) {
+        PathPy *pcObject = static_cast<PathPy*>(value);
+        setValue(*pcObject->getToolpathPtr());
+    }
+    else {
+        std::string error = std::string("type must be 'Path', not ");
+        error += value->ob_type->tp_name;
+        throw Base::TypeError(error);
+    }
+}
+
+App::Property *PropertyPath::Copy(void) const
+{
+    PropertyPath *prop = new PropertyPath();
+    prop->_Path = this->_Path;
+ 
+    return prop;
+}
+
+void PropertyPath::Paste(const App::Property &from)
+{
+    aboutToSetValue();
+    _Path = dynamic_cast<const PropertyPath&>(from)._Path;
+    hasSetValue();
+}
+
+unsigned int PropertyPath::getMemSize (void) const
+{
+    return _Path.getMemSize();
+}
+
+void PropertyPath::Save (Base::Writer &writer) const
+{
+    _Path.Save(writer);
+}
+
+void PropertyPath::Restore(Base::XMLReader &reader)
+{
+    Path::Toolpath temp;
+    temp.Restore(reader);
+    setValue(temp);
+}
+
+
+

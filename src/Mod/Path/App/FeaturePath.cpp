@@ -21,40 +21,45 @@
  ***************************************************************************/
 
 
-#ifndef PATH_COMMAND_H
-#define PATH_COMMAND_H
+#include "PreCompiled.h"
 
-#include <map>
-#include <string>
-#include <Base/Persistence.h>
+#ifndef _PreComp_
+#endif
+
+#include "FeaturePath.h"
+#include <App/DocumentObjectPy.h>
 #include <Base/Placement.h>
 
-namespace Path
+using namespace Path;
+
+PROPERTY_SOURCE(Path::Feature, App::GeoFeature)
+
+
+Feature::Feature()
 {
-    /** The representation of a cnc command in a path */
-    class PathExport Command : public Base::Persistence
-    {
-    TYPESYSTEM_HEADER();
-    
-    public:
-        //constructors
-        Command();
-        Command(const char* name,
-                const std::map<std::string,double>& parameters);
-        ~Command();
-        // from base class
-        virtual unsigned int getMemSize (void) const;
-        virtual void Save (Base::Writer &/*writer*/) const;
-        virtual void Restore(Base::XMLReader &/*reader*/);
-        Base::Placement getPlacement (void); // returns a placement from the x,y,z,a,b,c parameters
-        std::string toGCode (void); // returns a GCode string representation of the command
-        void setFromGCode (std::string); // sets the parameters from the contents of the given GCode string
+    ADD_PROPERTY_TYPE(Base,(Base::Placement()),"Path",App::Prop_None,"The base placement of this feature");
+    ADD_PROPERTY_TYPE(Path,(Path::Toolpath()),"Path",App::Prop_None,"The path data of this feature");
+}
 
-        // attributes
-        std::string Name;
-        std::map<std::string,double> Parameters;
-    };
-    
-} //namespace Path
+Feature::~Feature()
+{
+}
 
-#endif // PATH_COMMAND_H
+short Feature::mustExecute(void) const
+{
+    return App::GeoFeature::mustExecute();
+}
+
+PyObject *Feature::getPyObject()
+{
+    if (PythonObject.is(Py::_None())){
+        // ref counter is set to 1
+        PythonObject = Py::Object(new App::DocumentObjectPy(this),true);
+    }
+    return Py::new_reference_to(PythonObject); 
+}
+
+void Feature::onChanged(const App::Property* prop)
+{
+    App::GeoFeature::onChanged(prop);
+}

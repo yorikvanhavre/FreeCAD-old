@@ -20,41 +20,27 @@
  *                                                                         *
  ***************************************************************************/
 
+#include "PreCompiled.h"
+#ifndef _PreComp_
+# include <Python.h>
+#endif
 
-#ifndef PATH_COMMAND_H
-#define PATH_COMMAND_H
+#include <Base/Console.h>
+#include <Base/VectorPy.h>
 
-#include <map>
-#include <string>
-#include <Base/Persistence.h>
-#include <Base/Placement.h>
+#include "ViewProviderPath.h"
 
-namespace Path
+using namespace PathGui;
+
+static PyObject * 
+test(PyObject *self, PyObject *args)
 {
-    /** The representation of a cnc command in a path */
-    class PathExport Command : public Base::Persistence
-    {
-    TYPESYSTEM_HEADER();
-    
-    public:
-        //constructors
-        Command();
-        Command(const char* name,
-                const std::map<std::string,double>& parameters);
-        ~Command();
-        // from base class
-        virtual unsigned int getMemSize (void) const;
-        virtual void Save (Base::Writer &/*writer*/) const;
-        virtual void Restore(Base::XMLReader &/*reader*/);
-        Base::Placement getPlacement (void); // returns a placement from the x,y,z,a,b,c parameters
-        std::string toGCode (void); // returns a GCode string representation of the command
-        void setFromGCode (std::string); // sets the parameters from the contents of the given GCode string
+    return Py::new_reference_to(Py::String("pathgui module loaded"));
+}
 
-        // attributes
-        std::string Name;
-        std::map<std::string,double> Parameters;
-    };
-    
-} //namespace Path
-
-#endif // PATH_COMMAND_H
+/* registration table  */
+struct PyMethodDef PathGui_methods[] = {
+   {"test"       ,test     ,METH_VARARGS,
+     "test() - runs a test."},
+    {NULL, NULL}        /* end of table marker */
+};
