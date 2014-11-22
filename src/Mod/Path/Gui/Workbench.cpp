@@ -20,41 +20,63 @@
  *                                                                         *
  ***************************************************************************/
 
+#include "PreCompiled.h"
 
-#ifndef PATH_COMMAND_H
-#define PATH_COMMAND_H
+#ifndef _PreComp_
+# include <qobject.h>
+# include <QFileInfo>
+# include <QMessageBox>
+#endif
 
-#include <map>
-#include <string>
-#include <Base/Persistence.h>
-#include <Base/Placement.h>
+#include "Workbench.h"
+#include <App/Application.h>
+#include <Gui/ToolBarManager.h>
+#include <Gui/MenuManager.h>
+#include <Gui/MainWindow.h>
 
-namespace Path
+using namespace PathGui;
+
+#if 0 // needed for Qt's lupdate utility
+    qApp->translate("Workbench", "Path");
+    qApp->translate("Workbench", "&Path");
+#endif
+
+/// @namespace PathGui @class Workbench
+TYPESYSTEM_SOURCE(PathGui::Workbench, Gui::StdWorkbench)
+
+Workbench::Workbench()
 {
-    /** The representation of a cnc command in a path */
-    class PathExport Command : public Base::Persistence
-    {
-    TYPESYSTEM_HEADER();
-    
-    public:
-        //constructors
-        Command();
-        Command(const char* name,
-                const std::map<std::string,double>& parameters);
-        ~Command();
-        // from base class
-        virtual unsigned int getMemSize (void) const;
-        virtual void Save (Base::Writer &/*writer*/) const;
-        virtual void Restore(Base::XMLReader &/*reader*/);
-        Base::Placement getPlacement (void); // returns a placement from the x,y,z,a,b,c parameters
-        std::string toGCode (void); // returns a GCode string representation of the command
-        void setFromGCode (std::string); // sets the parameters from the contents of the given GCode string
+}
 
-        // attributes
-        std::string Name;
-        std::map<std::string,double> Parameters;
-    };
-    
-} //namespace Path
+Workbench::~Workbench()
+{
+}
 
-#endif // PATH_COMMAND_H
+void Workbench::activated()
+{
+    Gui::Workbench::activated();
+}
+
+
+void Workbench::deactivated()
+{
+    Gui::Workbench::deactivated();
+}
+
+
+Gui::ToolBarItem* Workbench::setupToolBars() const
+{
+    Gui::ToolBarItem* root = StdWorkbench::setupToolBars();
+    Gui::ToolBarItem* part = new Gui::ToolBarItem(root);
+    part->setCommand("Path");
+    return root;
+}
+
+Gui::MenuItem* Workbench::setupMenuBar() const
+{
+    Gui::MenuItem* root = StdWorkbench::setupMenuBar();
+    Gui::MenuItem* item = root->findItem("&Windows");
+    Gui::MenuItem* path = new Gui::MenuItem;
+    root->insertItem( item, path );
+    return root;
+}

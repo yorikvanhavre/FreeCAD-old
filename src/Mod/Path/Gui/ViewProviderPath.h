@@ -21,40 +21,45 @@
  ***************************************************************************/
 
 
-#ifndef PATH_COMMAND_H
-#define PATH_COMMAND_H
+#ifndef PATH_ViewProviderPath_H
+#define PATH_ViewProviderPath_H
 
-#include <map>
-#include <string>
-#include <Base/Persistence.h>
-#include <Base/Placement.h>
+#include <Gui/ViewProviderGeometryObject.h>
+#include <Gui/SoFCSelection.h>
 
-namespace Path
+class SoCoordinate3;
+class SoDrawStyle;  
+class SoLineSet; 
+
+namespace PathGui
 {
-    /** The representation of a cnc command in a path */
-    class PathExport Command : public Base::Persistence
-    {
-    TYPESYSTEM_HEADER();
-    
-    public:
-        //constructors
-        Command();
-        Command(const char* name,
-                const std::map<std::string,double>& parameters);
-        ~Command();
-        // from base class
-        virtual unsigned int getMemSize (void) const;
-        virtual void Save (Base::Writer &/*writer*/) const;
-        virtual void Restore(Base::XMLReader &/*reader*/);
-        Base::Placement getPlacement (void); // returns a placement from the x,y,z,a,b,c parameters
-        std::string toGCode (void); // returns a GCode string representation of the command
-        void setFromGCode (std::string); // sets the parameters from the contents of the given GCode string
 
-        // attributes
-        std::string Name;
-        std::map<std::string,double> Parameters;
-    };
-    
-} //namespace Path
+class PathGuiExport ViewProviderPath : public Gui::ViewProviderGeometryObject
+{
+    PROPERTY_HEADER(PathGui::ViewProviderPath);
 
-#endif // PATH_COMMAND_H
+public:
+    /// constructor.
+    ViewProviderPath();
+
+    /// destructor.
+    ~ViewProviderPath();
+
+    void attach(App::DocumentObject *pcObject);
+    void setDisplayMode(const char* ModeName);
+    std::vector<std::string> getDisplayModes() const;
+    void updateData(const App::Property*);
+
+protected:
+ 
+    Gui::SoFCSelection    * pcPathRoot;
+    SoCoordinate3         * pcCoords;
+    SoDrawStyle           * pcDrawStyle;
+    SoLineSet             * pcLines;
+
+ };
+
+} //namespace PathGui
+
+
+#endif // PATH_VIEWPROVIDERPATH_H

@@ -20,41 +20,53 @@
  *                                                                         *
  ***************************************************************************/
 
+#ifndef PATHGUI_PRECOMPILED_H
+#define PATHGUI_PRECOMPILED_H
 
-#ifndef PATH_COMMAND_H
-#define PATH_COMMAND_H
+#include <FCConfig.h>
 
+// Importing of App classes
+#ifdef FC_OS_WIN32
+# define PathExport    __declspec(dllimport)
+# define PathGuiExport __declspec(dllexport)
+#else // for Linux
+# define PathExport
+# define PathGuiExport
+#endif
+
+#include <Standard_math.hxx>
+
+#ifdef _PreComp_
+
+// Python
+#include <Python.h>
+
+// standard
+#include <iostream>
+#include <assert.h>
+#include <cmath>
+
+// STL
+#include <vector>
 #include <map>
 #include <string>
-#include <Base/Persistence.h>
-#include <Base/Placement.h>
+#include <list>
+#include <set>
+#include <algorithm>
+#include <stack>
+#include <queue>
+#include <bitset>
 
-namespace Path
-{
-    /** The representation of a cnc command in a path */
-    class PathExport Command : public Base::Persistence
-    {
-    TYPESYSTEM_HEADER();
-    
-    public:
-        //constructors
-        Command();
-        Command(const char* name,
-                const std::map<std::string,double>& parameters);
-        ~Command();
-        // from base class
-        virtual unsigned int getMemSize (void) const;
-        virtual void Save (Base::Writer &/*writer*/) const;
-        virtual void Restore(Base::XMLReader &/*reader*/);
-        Base::Placement getPlacement (void); // returns a placement from the x,y,z,a,b,c parameters
-        std::string toGCode (void); // returns a GCode string representation of the command
-        void setFromGCode (std::string); // sets the parameters from the contents of the given GCode string
+#ifdef FC_OS_WIN32
+# include <windows.h>
+#endif
 
-        // attributes
-        std::string Name;
-        std::map<std::string,double> Parameters;
-    };
-    
-} //namespace Path
 
-#endif // PATH_COMMAND_H
+// Qt Toolkit
+#ifndef __Qt4All__
+# include <Gui/Qt4All.h>
+#endif
+
+#endif //_PreComp_
+
+#endif // PATHGUI_PRECOMPILED_H

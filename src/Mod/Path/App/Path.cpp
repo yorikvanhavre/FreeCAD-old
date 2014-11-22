@@ -29,7 +29,6 @@
 #include <Base/Writer.h>
 #include <Base/Reader.h>
 #include <Base/Exception.h>
-#include <Base/Vector3D.h>
 
 #include "Path.h"
 
@@ -43,7 +42,7 @@ Toolpath::Toolpath()
 }
 
 Toolpath::Toolpath(const Toolpath& otherPath)
-:vpcCommands(otherPath.vpcCommands.size())
+:vpcCommands(otherPath.vpcCommands.size()),points(otherPath.points.size())
 {
     operator=(otherPath);
 }
@@ -51,6 +50,8 @@ Toolpath::Toolpath(const Toolpath& otherPath)
 Toolpath::~Toolpath()
 {
     for(std::vector<Command*>::iterator it = vpcCommands.begin();it!=vpcCommands.end();++it)
+        delete ( *it );
+    for(std::vector<Vector3d*>::iterator it = points.begin();it!=points.end();++it)
         delete ( *it );
 }
 
@@ -60,10 +61,18 @@ Toolpath &Toolpath::operator=(const Toolpath& otherPath)
         delete ( *it );
     vpcCommands.clear();
     vpcCommands.resize(otherPath.vpcCommands.size());
-
     int i = 0;
     for (std::vector<Command*>::const_iterator it=otherPath.vpcCommands.begin();it!=otherPath.vpcCommands.end();++it,i++)
         vpcCommands[i] = new Command(**it);
+        
+    for(std::vector<Vector3d*>::iterator it = points.begin();it!=points.end();++it)
+        delete ( *it );
+    points.clear();
+    points.resize(otherPath.points.size());
+    i = 0;
+    for (std::vector<Vector3d*>::const_iterator it=otherPath.points.begin();it!=otherPath.points.end();++it,i++)
+        points[i] = new Vector3d(**it);
+        
     return *this;
 }
 
@@ -71,34 +80,23 @@ void Toolpath::addCommand(const Command &Cmd)
 {
     Command *tmp = new Command(Cmd);
     vpcCommands.push_back(tmp);
+    Vector3d *pos = new Vector3d(tmp->getPlacement().getPosition());
+    points.push_back(pos);
 }
 
 double Toolpath::getLength()
 {
-    if (!vpcCommands.empty())
-    {   
-        double l = 0.0;
+    double l = 0.0;
+    if (!vpcCommands.empty()) {
         Vector3d pos(0.,0.,0.);
         for(unsigned int i = 0;i<getSize(); i++) {
-            std::map<std::string,double> par = vpcCommands[i]->Parameters;
-            std::string x = "X";
-            std::string y = "Y";
-            std::string z = "Z";
-            if (par.count(x) && par.count(y)) {
-                double zval = 0.0;
-                if (par.count(z))
-                    zval = par[z];
-                Vector3d vec(par[x],par[y],zval);
-                l += vec.Length();
-                pos = pos + vec;
-            }
+            Vector3d vec = *points[i];
+            l += vec.Length();
+            pos = pos + vec;
         }
-        return l;
-    } else {
-        return 0.0;
     }
+    return l;
 }
-
 
 unsigned int Toolpath::getMemSize (void) const
 {

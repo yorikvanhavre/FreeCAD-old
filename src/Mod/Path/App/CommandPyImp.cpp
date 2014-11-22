@@ -27,6 +27,7 @@
 #include <Base/Exception.h>
 #include <Base/Vector3D.h>
 #include <Base/VectorPy.h>
+#include <Base/PlacementPy.h>
 #include "Mod/Path/App/Command.h"
 
 // inclusion of the generated files (generated out of CommandPy.xml)
@@ -89,6 +90,8 @@ int CommandPy::PyInit(PyObject* args, PyObject* kwd)
     return 0;
 }
 
+// Name attribute
+
 Py::String CommandPy::getName(void) const
 {
     return Py::String(getCommandPtr()->Name.c_str());
@@ -96,8 +99,12 @@ Py::String CommandPy::getName(void) const
 
 void CommandPy::setName(Py::String arg)
 {
-    getCommandPtr()->Name = arg.as_std_string();
+    std::string cmd = arg.as_std_string();
+    boost::to_upper(cmd);
+    getCommandPtr()->Name = cmd;
 }
+
+// Parameters attribute get/set
 
 Py::Dict CommandPy::getParameters(void) const
 {
@@ -130,46 +137,40 @@ void CommandPy::setParameters(Py::Dict arg)
     }
 }
 
+// GCode methods
+
 PyObject* CommandPy::toGCode(PyObject *args)
 {
     if (PyArg_ParseTuple(args, "")) {
-        std::stringstream str;
-        str.precision(5);
-        str << getCommandPtr()->Name;
-        for(std::map<std::string,double>::iterator i = getCommandPtr()->Parameters.begin(); i != getCommandPtr()->Parameters.end(); ++i) {
-            std::string k = i->first;
-            double v = i->second;
-            str << k << v;
-        }
-        return PyString_FromString(str.str().c_str());
+        return PyString_FromString(getCommandPtr()->toGCode().c_str());
     }
-    throw Py::Exception("Invalid argument");
+    throw Py::Exception("This method accepts no argument");
 }
 
-PyObject* CommandPy::getPoint(PyObject *args)
+PyObject* CommandPy::setFromGCode(PyObject *args)
 {
-    if (PyArg_ParseTuple(args, "")) {
-        std::map<std::string,double> par = getCommandPtr()->Parameters;
-        std::string x = "X";
-        std::string y = "Y";
-        std::string z = "Z";
-        if (par.count(x) && par.count(y)) {
-            double zval = 0.0;
-            if (par.count(z))
-                zval = par[z];
-            Base::Vector3d vec(par[x],par[y],zval);
-            Base::VectorPy* pyvec = new Base::VectorPy(vec);
-            return pyvec;
-        }
+    char *pstr=0;
+    if (PyArg_ParseTuple(args, "s", &pstr)) {
+        std::string gcode(pstr);
+        getCommandPtr()->setFromGCode(gcode);
         return Py_None;
     }
-    throw Py::Exception("Invalid argument");
+    throw Py::Exception("Argument must be a string");
 }
 
-PyObject* CommandPy::getPlacement(PyObject *args)
+// Placement attribute get/set
+
+Py::Object CommandPy::getPlacement(void) const
 {
-    // TODO
+    return Py::Object(new Base::PlacementPy(new Base::Placement(getCommandPtr()->getPlacement())));
 }
+
+void CommandPy::setPlacement(Py::Object arg)
+{
+    // TODO implement setPlacement
+}
+
+// custom attributes get/set
 
 PyObject *CommandPy::getCustomAttributes(const char* /*attr*/) const
 {
