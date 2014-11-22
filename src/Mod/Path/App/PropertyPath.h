@@ -21,40 +21,55 @@
  ***************************************************************************/
 
 
-#ifndef PATH_COMMAND_H
-#define PATH_COMMAND_H
+#ifndef PROPERTYPATH_H
+#define PROPERTYPATH_H
 
-#include <map>
-#include <string>
-#include <Base/Persistence.h>
-#include <Base/Placement.h>
+#include "Path.h"
+#include <App/Property.h>
 
 namespace Path
 {
-    /** The representation of a cnc command in a path */
-    class PathExport Command : public Base::Persistence
-    {
-    TYPESYSTEM_HEADER();
-    
-    public:
-        //constructors
-        Command();
-        Command(const char* name,
-                const std::map<std::string,double>& parameters);
-        ~Command();
-        // from base class
-        virtual unsigned int getMemSize (void) const;
-        virtual void Save (Base::Writer &/*writer*/) const;
-        virtual void Restore(Base::XMLReader &/*reader*/);
-        Base::Placement getPlacement (void); // returns a placement from the x,y,z,a,b,c parameters
-        std::string toGCode (void); // returns a GCode string representation of the command
-        void setFromGCode (std::string); // sets the parameters from the contents of the given GCode string
 
-        // attributes
-        std::string Name;
-        std::map<std::string,double> Parameters;
-    };
-    
+
+/** The path property class.  */
+class PathExport PropertyPath : public App::Property
+{
+    TYPESYSTEM_HEADER();
+
+public:
+    PropertyPath();
+    ~PropertyPath();
+
+    /** @name Getter/setter */
+    //@{
+    /// set the part shape
+    void setValue(const Toolpath&);
+    /// get the part shape
+    const Toolpath &getValue(void) const;
+    //@}
+
+    /** @name Python interface */
+    //@{
+    PyObject* getPyObject(void);
+    void setPyObject(PyObject *value);
+    //@}
+
+    /** @name Save/restore */
+    //@{
+    void Save (Base::Writer &writer) const;
+    void Restore(Base::XMLReader &reader);
+
+    App::Property *Copy(void) const;
+    void Paste(const App::Property &from);
+    unsigned int getMemSize (void) const;
+    //@}
+
+private:
+    Toolpath _Path;
+};
+
+
 } //namespace Path
 
-#endif // PATH_COMMAND_H
+
+#endif // PROPERTYPATH_H

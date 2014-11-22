@@ -55,6 +55,10 @@ SET(Path_SRCS
     Command.h
     Path.cpp
     Path.h
+    PropertyPath.cpp
+    PropertyPath.h
+    FeaturePath.cpp
+    FeaturePath.h
     ${Mod_SRCS}
     ${Python_SRCS}
 )

@@ -27,6 +27,7 @@
 #include "Command.h"
 
 #include <Base/Persistence.h>
+#include <Base/Vector3D.h>
 
 namespace Path
 {
@@ -52,12 +53,15 @@ namespace Path
             // interface
             void addCommand(const Command &Cmd);
             unsigned int getSize(void) const{return vpcCommands.size();}
-            const Command &getCommand(unsigned int pos)const {return *vpcCommands[pos];}
             const std::vector<Command*> &getCommands(void)const{return vpcCommands;}
+            const Command &getCommand(unsigned int pos)const {return *vpcCommands[pos];}
+            const std::vector<Base::Vector3d*> &getPoints(void)const{return points;}
+            const Base::Vector3d &getPoint(unsigned int pos)const {return *points[pos];}
             double getLength(void); // return the Length (mm) of the Path
         
         protected:
             std::vector<Command*> vpcCommands;
+            std::vector<Base::Vector3d*> points;
     };
 
 } //namespace Path

@@ -21,40 +21,49 @@
  ***************************************************************************/
 
 
-#ifndef PATH_COMMAND_H
-#define PATH_COMMAND_H
+#ifndef PATH_FeaturePath_H
+#define PATH_FeaturePath_H
 
-#include <map>
-#include <string>
-#include <Base/Persistence.h>
-#include <Base/Placement.h>
+#include <App/GeoFeature.h>
+#include <App/PropertyFile.h>
+#include <App/PropertyGeo.h>
+
+#include "Path.h"
+#include "PropertyPath.h"
 
 namespace Path
 {
-    /** The representation of a cnc command in a path */
-    class PathExport Command : public Base::Persistence
-    {
-    TYPESYSTEM_HEADER();
-    
-    public:
-        //constructors
-        Command();
-        Command(const char* name,
-                const std::map<std::string,double>& parameters);
-        ~Command();
-        // from base class
-        virtual unsigned int getMemSize (void) const;
-        virtual void Save (Base::Writer &/*writer*/) const;
-        virtual void Restore(Base::XMLReader &/*reader*/);
-        Base::Placement getPlacement (void); // returns a placement from the x,y,z,a,b,c parameters
-        std::string toGCode (void); // returns a GCode string representation of the command
-        void setFromGCode (std::string); // sets the parameters from the contents of the given GCode string
 
-        // attributes
-        std::string Name;
-        std::map<std::string,double> Parameters;
-    };
-    
+class PathExport Feature : public App::GeoFeature
+{
+    PROPERTY_HEADER(Path::Feature);
+
+public:
+    /// Constructor
+    Feature(void);
+    virtual ~Feature();
+
+    /// returns the type name of the ViewProvider
+    virtual const char* getViewProviderName(void) const {
+        return "PathGui::ViewProviderPath";
+    }
+    virtual App::DocumentObjectExecReturn *execute(void) {
+        return App::DocumentObject::StdReturn;
+    }
+    virtual short mustExecute(void) const;
+    virtual PyObject *getPyObject(void);
+
+    App::PropertyPlacement Base;
+    PropertyPath           Path;
+
+
+protected:
+    /// get called by the container when a property has changed
+    virtual void onChanged (const App::Property* prop);
+
+};
+
 } //namespace Path
 
-#endif // PATH_COMMAND_H
+
+#endif // PATH_FeaturePath_H

@@ -29,19 +29,20 @@ parameters (optional) is a dictionary containing string:number pairs</UserDocu>
             </Documentation>
             <Parameter Name="Parameters" Type="Dict"/>
         </Attribute>
+        <Attribute Name="Placement" ReadOnly="false">
+            <Documentation>
+                <UserDocu>The coordinates of the endpoint of the command</UserDocu>
+            </Documentation>
+            <Parameter Name="Placement" Type="Object"/>
+        </Attribute>
         <Methode Name="toGCode">
             <Documentation>
                 <UserDocu>toGCode(): returns a GCode representation of the command</UserDocu>
             </Documentation>
         </Methode>
-        <Methode Name="getPoint">
+        <Methode Name="setFromGCode">
             <Documentation>
-                <UserDocu>getPoint(): returns a 3D vector from the command data, if possible</UserDocu>
-            </Documentation>
-        </Methode>
-        <Methode Name="getPlacement">
-            <Documentation>
-                <UserDocu>getPlacement(): returns a placement from the command data, if possible</UserDocu>
+                <UserDocu>toGCode(): returns a GCode representation of the command</UserDocu>
             </Documentation>
         </Methode>
     </PythonExport>
