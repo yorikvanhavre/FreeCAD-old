@@ -110,7 +110,7 @@ void Command::setFromGCode (std::string str)
     std::string key;
     std::string value;
     for (unsigned int i=0; i < str.size(); i++) {
-        if (isdigit(str[i])) {
+        if ( (isdigit(str[i])) || (str[i] == '-') || (str[i] == '.') ) {
             value += str[i];
         } else if (isalpha(str[i])) {
             if (mode == "command") {

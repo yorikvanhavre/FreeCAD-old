@@ -93,14 +93,14 @@ void ViewProviderPath::attach(App::DocumentObject *pcObj)
     // Draw trajectory lines
     SoSeparator* linesep = new SoSeparator;
     SoBaseColor * basecol = new SoBaseColor;
-    basecol->rgb.setValue( 1.0f, 0.5f, 0.0f );
+    basecol->rgb.setValue( 0.0f, 1.0f, 0.0f );
     linesep->addChild(basecol);
     linesep->addChild(pcCoords);
     linesep->addChild(pcLines);
 
     // Draw markers
     SoBaseColor * markcol = new SoBaseColor;
-    markcol->rgb.setValue( 1.0f, 1.0f, 0.0f );
+    markcol->rgb.setValue( 0.0f, 0.2f, 0.0f );
     SoMarkerSet* marker = new SoMarkerSet;
     marker->markerIndex=SoMarkerSet::CROSS_5_5;
     linesep->addChild(markcol);
@@ -131,21 +131,21 @@ std::vector<std::string> ViewProviderPath::getDisplayModes(void) const
 void ViewProviderPath::updateData(const App::Property* prop)
 {
     Path::Feature* pcPathObj = static_cast<Path::Feature*>(pcObject);
-    /*
+
     if (prop == &pcPathObj->Path) {
-        const Toolpath &trak = pcPathObj->Path.getValue();
-
+        const Toolpath &tp = pcPathObj->Path.getValue();
+        Base::Vector3d pos;
         pcCoords->point.deleteValues(0);
-        pcCoords->point.setNum(trak.getSize());
+        pcCoords->point.setNum(tp.numPoints());
 
-        for(unsigned int i=0;i<trak.getSize();++i){
-            Base::Vector3d pos = trak.getCommand(i).getPoint();
+        for(unsigned int i=0;i<tp.numPoints();i++){
+            pos += tp.getPoint(i);
             pcCoords->point.set1Value(i,pos.x,pos.y,pos.z);
         }
-        pcLines->numVertices.set1Value(0, trak.getSize());
-    }else if (prop == &pcTracObj->Base) {
-        Base::Placement loc = *(&pcTracObj->Base.getValue());
+        pcLines->numVertices.set1Value(0, tp.numPoints());
+    }else if (prop == &pcPathObj->Base) {
+        Base::Placement loc = *(&pcPathObj->Base.getValue());
     }
-    */
+
 }
 

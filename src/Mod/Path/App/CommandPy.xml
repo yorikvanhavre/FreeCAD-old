@@ -36,7 +36,7 @@ pairs, or a placement, or a vector</UserDocu>
             </Documentation>
             <Parameter Name="Placement" Type="Object"/>
         </Attribute>
-        <Methode Name="toGCode">
+        <Methode Name="toGCode" Const="true">
             <Documentation>
                 <UserDocu>toGCode(): returns a GCode representation of the command</UserDocu>
             </Documentation>

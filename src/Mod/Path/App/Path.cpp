@@ -39,57 +39,79 @@ TYPESYSTEM_SOURCE(Path::Toolpath , Base::Persistence);
 
 Toolpath::Toolpath()
 {
+    recalculate();
 }
 
 Toolpath::Toolpath(const Toolpath& otherPath)
-:vpcCommands(otherPath.vpcCommands.size()),points(otherPath.points.size())
+:vpcCommands(otherPath.vpcCommands.size())
 {
     operator=(otherPath);
+    recalculate();
 }
 
 Toolpath::~Toolpath()
 {
-    for(std::vector<Command*>::iterator it = vpcCommands.begin();it!=vpcCommands.end();++it)
-        delete ( *it );
-    for(std::vector<Vector3d*>::iterator it = points.begin();it!=points.end();++it)
-        delete ( *it );
+    clear();
 }
 
 Toolpath &Toolpath::operator=(const Toolpath& otherPath)
 {
-    for(std::vector<Command*>::iterator it = vpcCommands.begin();it!=vpcCommands.end();++it)
-        delete ( *it );
-    vpcCommands.clear();
+    clear();
     vpcCommands.resize(otherPath.vpcCommands.size());
     int i = 0;
     for (std::vector<Command*>::const_iterator it=otherPath.vpcCommands.begin();it!=otherPath.vpcCommands.end();++it,i++)
         vpcCommands[i] = new Command(**it);
-        
-    for(std::vector<Vector3d*>::iterator it = points.begin();it!=points.end();++it)
-        delete ( *it );
-    points.clear();
-    points.resize(otherPath.points.size());
-    i = 0;
-    for (std::vector<Vector3d*>::const_iterator it=otherPath.points.begin();it!=otherPath.points.end();++it,i++)
-        points[i] = new Vector3d(**it);
-        
+    recalculate();
     return *this;
+}
+
+void Toolpath::clear(void) 
+{
+    for(std::vector<Command*>::iterator it = vpcCommands.begin();it!=vpcCommands.end();++it)
+        delete ( *it );
+    vpcCommands.clear();
+    recalculate();
 }
 
 void Toolpath::addCommand(const Command &Cmd)
 {
     Command *tmp = new Command(Cmd);
     vpcCommands.push_back(tmp);
-    Vector3d *pos = new Vector3d(tmp->getPlacement().getPosition());
-    points.push_back(pos);
+    recalculate();
+}
+
+void Toolpath::insertCommand(const Command &Cmd, int pos)
+{
+    if (pos == -1) {
+        addCommand(Cmd);
+    } else if (pos <= vpcCommands.size()) {
+        Command *tmp = new Command(Cmd);
+        vpcCommands.insert(vpcCommands.begin()+pos,tmp);
+    } else {
+        throw Base::Exception("Index not in range");
+    }
+    recalculate();
+}
+
+void Toolpath::deleteCommand(int pos)
+{
+    if (pos == -1) {
+        //delete(*vpcCommands.rbegin()); // causes crash
+        vpcCommands.pop_back();
+    } else if (pos <= vpcCommands.size()) {
+        vpcCommands.erase (vpcCommands.begin()+pos);
+    } else {
+        throw Base::Exception("Index not in range");
+    }
+    recalculate();
 }
 
 double Toolpath::getLength()
 {
     double l = 0.0;
-    if (!vpcCommands.empty()) {
+    if (!points.empty()) {
         Vector3d pos(0.,0.,0.);
-        for(unsigned int i = 0;i<getSize(); i++) {
+        for(unsigned int i = 0;i<points.size(); i++) {
             Vector3d vec = *points[i];
             l += vec.Length();
             pos = pos + vec;
@@ -97,6 +119,56 @@ double Toolpath::getLength()
     }
     return l;
 }
+
+void Toolpath::setFromGCode(const std::string str)
+{
+    clear();
+    // split input string by G or M commands
+    std::size_t found = str.find_first_of("gGmM");
+    int last = -1;
+    while (found!=std::string::npos)
+    {
+        if (last > -1) {
+            std::string gcodestr = str.substr(last,found);
+            Command *tmp = new Command();
+            tmp->setFromGCode(gcodestr);
+            vpcCommands.push_back(tmp);
+        }
+        last = found;
+        found=str.find_first_of("gGmM",found+1);
+    }
+    // add the last command found, if any
+    if (found != 0) {
+        std::string gcodestr = str.substr(found,std::string::npos);
+        Command *tmp = new Command();
+        tmp->setFromGCode(gcodestr);
+        vpcCommands.push_back(tmp);
+    }
+    recalculate();
+}
+
+std::string Toolpath::toGCode(void) 
+{
+    std::string result;
+    for (std::vector<Command*>::const_iterator it=vpcCommands.begin();it!=vpcCommands.end();++it) {
+        result += (*it)->toGCode();
+    }
+    return result;
+}    
+
+void Toolpath::recalculate(void) // recalculates the points
+{
+    //for(std::vector<Vector3d*>::iterator it = points.begin();it!=points.end();++it)
+    //    delete ( *it ); // causes crash
+    points.clear();
+    //points.resize(vpcCommands.size()); // TODO later there might be more points than commands (ie. arcs)
+    for (std::vector<Command*>::const_iterator it=vpcCommands.begin();it!=vpcCommands.end();++it) {
+        Vector3d *pos = new Vector3d((*it)->getPlacement().getPosition());
+        points.push_back(pos);
+    }
+}
+
+// reimplemented from base class
 
 unsigned int Toolpath::getMemSize (void) const
 {
@@ -116,18 +188,18 @@ void Toolpath::Save (Writer &writer) const
 
 void Toolpath::Restore(XMLReader &reader)
 {
-    vpcCommands.clear();
+    clear();
     // read my element
     reader.readElement("Path");
     // get the value of my Attribute
     int count = reader.getAttributeAsInteger("count");
     vpcCommands.resize(count);
-
     for (int i = 0; i < count; i++) {
         Command *tmp = new Command();
         tmp->Restore(reader);
         vpcCommands[i] = tmp;
     }
+    recalculate();
 }
 
 
