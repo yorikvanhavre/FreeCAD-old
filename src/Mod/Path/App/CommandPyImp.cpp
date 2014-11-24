@@ -30,7 +30,7 @@
 #include <Base/PlacementPy.h>
 #include "Mod/Path/App/Command.h"
 
-// inclusion of the generated files (generated out of CommandPy.xml)
+// files generated out of CommandPy.xml
 #include "CommandPy.h"
 #include "CommandPy.cpp"
 
@@ -66,28 +66,42 @@ int CommandPy::PyInit(PyObject* args, PyObject* kwd)
     PyObject *parameters = PyDict_New();
     char *name = "";
     static char *kwlist[] = {"name", "parameters", NULL};
-    if ( !PyArg_ParseTupleAndKeywords(args, kwd, "|sO!", kwlist, &name, &PyDict_Type, &parameters) )
-        return -1;
-    boost::to_upper(name);
-    getCommandPtr()->Name = name;
-    PyObject *key, *value;
-    Py_ssize_t pos = 0;
-    while (PyDict_Next(parameters, &pos, &key, &value)) {
-        if ( !PyObject_TypeCheck(key,&(PyString_Type)) || (!PyObject_TypeCheck(value,&(PyFloat_Type)) && !PyObject_TypeCheck(value,&(PyInt_Type))) ) {
-            PyErr_SetString(PyExc_TypeError, "The dictionary can only contain string:number pairs");
-            return -1;
+    if ( PyArg_ParseTupleAndKeywords(args, kwd, "|sO!", kwlist, &name, &PyDict_Type, &parameters) ) {
+        std::string sname(name);
+        boost::to_upper(sname);
+        if (!sname.empty())
+            getCommandPtr()->setFromGCode(name);
+        PyObject *key, *value;
+        Py_ssize_t pos = 0;
+        while (PyDict_Next(parameters, &pos, &key, &value)) {
+            if ( !PyObject_TypeCheck(key,&(PyString_Type)) || (!PyObject_TypeCheck(value,&(PyFloat_Type)) && !PyObject_TypeCheck(value,&(PyInt_Type))) ) {
+                PyErr_SetString(PyExc_TypeError, "The dictionary can only contain string:number pairs");
+                return -1;
+            }
+            std::string ckey = PyString_AsString(key);
+            boost::to_upper(ckey);
+            double cvalue;
+            if (PyObject_TypeCheck(value,&(PyInt_Type))) {
+                cvalue = (double)PyInt_AsLong(value);
+            } else {
+                cvalue = PyFloat_AsDouble(value);
+            }
+            getCommandPtr()->Parameters[ckey]=cvalue;
         }
-        std::string ckey = PyString_AsString(key);
-        boost::to_upper(ckey);
-        double cvalue;
-        if (PyObject_TypeCheck(value,&(PyInt_Type))) {
-            cvalue = (double)PyInt_AsLong(value);
-        } else {
-            cvalue = PyFloat_AsDouble(value);
-        }
-        getCommandPtr()->Parameters[ckey]=cvalue;
+        return 0;
     }
-    return 0;
+    PyErr_Clear(); // set by PyArg_ParseTuple()
+    
+    if ( PyArg_ParseTupleAndKeywords(args, kwd, "|sO!", kwlist, &name, &(Base::PlacementPy::Type), &parameters) ) {
+        std::string sname(name);
+        boost::to_upper(sname);
+        if (!sname.empty())
+            getCommandPtr()->setFromGCode(name);
+        Base::PlacementPy *p = static_cast<Base::PlacementPy*>(parameters);
+        getCommandPtr()->setFromPlacement( *p->getPlacementPtr() );
+        return 0;
+    }
+    return -1;
 }
 
 // Name attribute
@@ -167,19 +181,52 @@ Py::Object CommandPy::getPlacement(void) const
 
 void CommandPy::setPlacement(Py::Object arg)
 {
-    // TODO implement setPlacement
+    union PyType_Object pyType = {&(Base::PlacementPy::Type)};
+    Py::Type PlacementType(pyType.o);
+    if(arg.isType(PlacementType)) {
+        getCommandPtr()->setFromPlacement( *static_cast<Base::PlacementPy*>((*arg))->getPlacementPtr() );
+    } else
+    throw Py::Exception("Argument must be a placement");
 }
 
 // custom attributes get/set
 
-PyObject *CommandPy::getCustomAttributes(const char* /*attr*/) const
+PyObject *CommandPy::getCustomAttributes(const char* attr) const
 {
+    std::string satt(attr);
+    if (satt.length() == 1) {
+        if (isalpha(satt[0])) {
+            boost::to_upper(satt);
+            if (getCommandPtr()->Parameters.count(satt)) {
+                return PyFloat_FromDouble(getCommandPtr()->Parameters[satt]);
+            }
+            return Py_None;
+        }
+    }
     return 0;
 }
 
-int CommandPy::setCustomAttributes(const char* /*attr*/, PyObject* /*obj*/)
+int CommandPy::setCustomAttributes(const char* attr, PyObject* obj)
 {
-    return 0; 
+    std::string satt(attr);
+    if (satt.length() == 1) { 
+        if (isalpha(satt[0])) { 
+            boost::to_upper(satt);
+            double cvalue;
+            if (PyObject_TypeCheck(obj,&(PyInt_Type))) {
+                cvalue = (double)PyInt_AsLong(obj);
+            } else if (PyObject_TypeCheck(obj,&(PyFloat_Type))) {
+                cvalue = PyFloat_AsDouble(obj);
+            } else {
+                return 0;
+            }
+            getCommandPtr()->Parameters[satt]=cvalue;
+            return 1;
+        }
+    }
+    return 0;
 }
+
+
 
 
