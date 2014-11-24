@@ -72,6 +72,43 @@ int PathPy::PyInit(PyObject* args, PyObject* /*kwd*/)
 }
 
 
+// Commands get/set
+
+Py::List PathPy::getCommands(void) const
+{
+    Py::List list;
+    for(unsigned int i = 0; i < getToolpathPtr()->getSize(); i++)
+        list.append(Py::Object(new Path::CommandPy(new Path::Command(getToolpathPtr()->getCommand(i)))));
+    return list;
+}
+
+void PathPy::setCommands(Py::List list)
+{
+    getToolpathPtr()->clear();
+    for (Py::List::iterator it = list.begin(); it != list.end(); ++it) {
+        if (PyObject_TypeCheck((*it).ptr(), &(Path::CommandPy::Type))) {
+            Path::Command &cmd = *static_cast<Path::CommandPy*>((*it).ptr())->getCommandPtr();
+            getToolpathPtr()->addCommand(cmd);
+        } else {
+            throw Py::Exception("The list can only contain Path Commands");
+        }
+    }
+}
+
+// read-only attributes
+
+Py::Float PathPy::getLength(void) const
+{
+    return Py::Float(getToolpathPtr()->getLength());
+}
+
+Py::Int PathPy::getSize(void) const
+{
+    return Py::Int((int)getToolpathPtr()->getSize());
+}
+
+// specific methods
+
 PyObject* PathPy::addCommands(PyObject * args)
 {
     PyObject* o;
@@ -95,23 +132,51 @@ PyObject* PathPy::addCommands(PyObject * args)
     Py_Error(Base::BaseExceptionFreeCADError, "Wrong parameters - command or list of commands expected");
 }
 
-Py::List PathPy::getCommands(void) const
+PyObject* PathPy::insertCommand(PyObject * args)
 {
-    Py::List list;
-    for(unsigned int i = 0; i < getToolpathPtr()->getSize(); i++)
-        list.append(Py::Object(new Path::CommandPy(new Path::Command(getToolpathPtr()->getCommand(i)))));
-    return list;
+    PyObject* o;
+    int pos = -1;
+    if (PyArg_ParseTuple(args, "O!|i", &(Path::CommandPy::Type), &o, &pos)) {
+        Path::Command &cmd = *static_cast<Path::CommandPy*>(o)->getCommandPtr();
+        getToolpathPtr()->insertCommand(cmd,pos);
+        return new PathPy(new Path::Toolpath(*getToolpathPtr()));
+    }
+    Py_Error(Base::BaseExceptionFreeCADError, "Wrong parameters - expected command and optional integer");
 }
 
-Py::Float PathPy::getLength(void) const
+PyObject* PathPy::deleteCommand(PyObject * args)
 {
-    return Py::Float(getToolpathPtr()->getLength());
+    int pos = -1;
+    if (PyArg_ParseTuple(args, "|i", &pos)) {
+        getToolpathPtr()->deleteCommand(pos);
+        return new PathPy(new Path::Toolpath(*getToolpathPtr()));
+    }
+    Py_Error(Base::BaseExceptionFreeCADError, "Wrong parameters - expected an integer (optional)");
 }
 
-void PathPy::setCommands(Py::List)
+// GCode methods
+
+PyObject* PathPy::toGCode(PyObject * args)
 {
-    // TODO
+    if (PyArg_ParseTuple(args, "")) {
+        std::string result = getToolpathPtr()->toGCode();
+        return PyString_FromString(result.c_str());
+    }
+    throw Py::Exception("This method accepts no argument");
 }
+
+PyObject* PathPy::setFromGCode(PyObject * args)
+{
+    char *pstr=0;
+    if (PyArg_ParseTuple(args, "s", &pstr)) {
+        std::string gcode(pstr);
+        getToolpathPtr()->setFromGCode(gcode);
+        return Py_None;
+    }
+    throw Py::Exception("Argument must be a string");
+}
+
+// custom attributes get/set
 
 PyObject *PathPy::getCustomAttributes(const char* /*attr*/) const
 {

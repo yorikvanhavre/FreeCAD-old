@@ -51,13 +51,22 @@ namespace Path
             virtual void Restore(Base::XMLReader &/*reader*/);
         
             // interface
-            void addCommand(const Command &Cmd);
+            void clear(void); // clears the internal data
+            void addCommand(const Command &Cmd); // adds a command at the end
+            void insertCommand(const Command &Cmd, int); // inserts a command
+            void deleteCommand(int); // deletes a command
+            double getLength(void); // return the Length (mm) of the Path
+            void recalculate(void); // recalculates the points
+            void setFromGCode(const std::string); // sets the path from the contents of the given GCode string
+            std::string toGCode(void); // gets a gcode string representation from the PAth
+            
+            // shortcut functions
             unsigned int getSize(void) const{return vpcCommands.size();}
+            unsigned int numPoints(void) const{return points.size();}
             const std::vector<Command*> &getCommands(void)const{return vpcCommands;}
             const Command &getCommand(unsigned int pos)const {return *vpcCommands[pos];}
             const std::vector<Base::Vector3d*> &getPoints(void)const{return points;}
             const Base::Vector3d &getPoint(unsigned int pos)const {return *points[pos];}
-            double getLength(void); // return the Length (mm) of the Path
         
         protected:
             std::vector<Command*> vpcCommands;
