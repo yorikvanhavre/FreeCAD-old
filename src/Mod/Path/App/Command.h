@@ -49,6 +49,7 @@ namespace Path
         Base::Placement getPlacement (void); // returns a placement from the x,y,z,a,b,c parameters
         std::string toGCode (void); // returns a GCode string representation of the command
         void setFromGCode (std::string); // sets the parameters from the contents of the given GCode string
+        void setFromPlacement (const Base::Placement&); // sets the parameters from the contents of the given placement
 
         // attributes
         std::string Name;
