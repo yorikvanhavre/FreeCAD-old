@@ -47,6 +47,7 @@
 #include <vector>
 #include <set>
 #include <bitset>
+#include <cctype>
 
 #include <Python.h>
 

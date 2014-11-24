@@ -26,7 +26,6 @@
 #ifndef _PreComp_
 
 #endif
-#include <cctype>
 #include <boost/algorithm/string.hpp>
 #include <Base/Vector3D.h>
 #include <Base/Rotation.h>
@@ -106,6 +105,7 @@ std::string Command::toGCode (void)
 
 void Command::setFromGCode (std::string str)
 {
+    Parameters.clear();
     std::string mode = "none";
     std::string key;
     std::string value;
@@ -142,12 +142,46 @@ void Command::setFromGCode (std::string str)
         }
     }
     if (!key.empty() && !value.empty()) {
-        double val = std::atof(value.c_str());
-        boost::to_upper(key);
-        Parameters[key] = val;
+        if (mode == "command") {
+            std::string cmd = key + value;
+            boost::to_upper(cmd);
+            Name = cmd;
+        } else {
+            double val = std::atof(value.c_str());
+            boost::to_upper(key);
+            Parameters[key] = val;
+        }
     } else {
         throw Base::Exception("Badly formatted GCode argument");
     }
+}
+
+void Command::setFromPlacement (const Base::Placement &plac)
+{
+    Parameters.clear();
+    std::string x = "X";
+    std::string y = "Y";
+    std::string z = "Z";
+    std::string a = "A";
+    std::string b = "B";
+    std::string c = "C";
+    double xval, yval, zval, aval, bval, cval;
+    xval = plac.getPosition().x;
+    yval = plac.getPosition().y;
+    zval = plac.getPosition().z;
+    plac.getRotation().getYawPitchRoll(aval,bval,cval);
+    if (xval != 0.0)
+        Parameters[x] = xval;
+    if (yval != 0.0)
+        Parameters[y] = yval;
+    if (zval != 0.0)
+        Parameters[z] = zval;
+    if (aval != 0.0)
+        Parameters[a] = aval;
+    if (bval != 0.0)
+        Parameters[b] = bval;
+    if (cval != 0.0)
+        Parameters[c] = cval;
 }
 
 // Reimplemented from base class
