@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GenerateModel xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="generateMetaModel_Module.xsd">
+    <PythonExport 
+        Father="PersistencePy" 
+        Name="TooltablePy" 
+        Twin="Tooltable" 
+        TwinPointer="Tooltable" 
+        Include="Mod/Path/App/Tooltable.h" 
+        Namespace="Path" 
+        FatherInclude="Base/PersistencePy.h" 
+        FatherNamespace="Base"
+        Constructor="true"
+        Delete="true">
+        <Documentation>
+            <Author Licence="LGPL" Name="Yorik van Havre" EMail="yorik@uncreated.net" />
+            <UserDocu>The Tooltable object holds a table of CNC tools</UserDocu>
+        </Documentation>
+        <Attribute Name="Tools" ReadOnly="false">
+            <Documentation>
+                <UserDocu>the list of tools of this table</UserDocu>
+            </Documentation>
+            <Parameter Name="Tools" Type="List"/>
+        </Attribute>
+        <Methode Name="addTools">
+            <Documentation>
+                <UserDocu>adds a tool or a list of tools at the end of the table</UserDocu>
+            </Documentation>
+        </Methode>
+        <Methode Name="insertTool">
+            <Documentation>
+                <UserDocu>insertTool(tool,[int]):
+adds a tool at the given position or at the end of the table</UserDocu>
+            </Documentation>
+        </Methode>
+        <Methode Name="deleteTool">
+            <Documentation>
+                <UserDocu>deleteTool([int]):
+deletes the tool found at the given position or from the end of the table</UserDocu>
+            </Documentation>
+        </Methode>
+        <ClassDeclarations>
+            bool touched;
+        </ClassDeclarations>
+    </PythonExport>
+</GenerateModel>

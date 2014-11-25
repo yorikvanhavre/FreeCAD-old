@@ -28,6 +28,7 @@
 
 #include <Base/Writer.h>
 #include <Base/Reader.h>
+#include <Base/Stream.h>
 #include <Base/Exception.h>
 
 #include "Path.h"
@@ -39,7 +40,6 @@ TYPESYSTEM_SOURCE(Path::Toolpath , Base::Persistence);
 
 Toolpath::Toolpath()
 {
-    recalculate();
 }
 
 Toolpath::Toolpath(const Toolpath& otherPath)
@@ -147,16 +147,17 @@ void Toolpath::setFromGCode(const std::string str)
     recalculate();
 }
 
-std::string Toolpath::toGCode(void) 
+std::string Toolpath::toGCode(void) const
 {
     std::string result;
     for (std::vector<Command*>::const_iterator it=vpcCommands.begin();it!=vpcCommands.end();++it) {
         result += (*it)->toGCode();
+        result += "\n";
     }
     return result;
 }    
 
-void Toolpath::recalculate(void) // recalculates the points
+void Toolpath::recalculate(void) // recalculates the points cache
 {
     //for(std::vector<Vector3d*>::iterator it = points.begin();it!=points.end();++it)
     //    delete ( *it ); // causes crash
@@ -172,18 +173,30 @@ void Toolpath::recalculate(void) // recalculates the points
 
 unsigned int Toolpath::getMemSize (void) const
 {
-    return 0;
+    return toGCode().size();
 }
 
 void Toolpath::Save (Writer &writer) const
 {
-    writer.Stream() << writer.ind() << "<Path count=\"" <<  getSize() <<"\">" << std::endl;
-    writer.incInd();
-    for(unsigned int i = 0;i<getSize(); i++)
-        vpcCommands[i]->Save(writer);
-    writer.decInd();
-    writer.Stream() << writer.ind() << "</Path>" << std::endl ;
+    if (writer.isForceXML()) {
+        writer.Stream() << writer.ind() << "<Path count=\"" <<  getSize() <<"\">" << std::endl;
+        writer.incInd();
+        for(unsigned int i = 0;i<getSize(); i++)
+            vpcCommands[i]->Save(writer);
+        writer.decInd();
+        writer.Stream() << writer.ind() << "</Path>" << std::endl;
+    } else {
+        writer.Stream() << writer.ind()
+            << "<Path file=\"" << writer.addFile((writer.ObjectName+".nc").c_str(), this) << "\"/>" << std::endl;
+    }
+}
 
+void Toolpath::SaveDocFile (Base::Writer &writer) const
+{
+    // TODO doesn't work
+    Base::OutputStream str(writer.Stream());
+    const uint8_t* sbuffer = (uint8_t*) toGCode().c_str();
+    str << sbuffer;
 }
 
 void Toolpath::Restore(XMLReader &reader)
@@ -191,15 +204,30 @@ void Toolpath::Restore(XMLReader &reader)
     clear();
     // read my element
     reader.readElement("Path");
-    // get the value of my Attribute
-    int count = reader.getAttributeAsInteger("count");
-    vpcCommands.resize(count);
-    for (int i = 0; i < count; i++) {
-        Command *tmp = new Command();
-        tmp->Restore(reader);
-        vpcCommands[i] = tmp;
+    std::string file (reader.getAttribute("file") );
+    if(file == "") {
+        // XML data
+        int count = reader.getAttributeAsInteger("count");
+        vpcCommands.resize(count);
+        for (int i = 0; i < count; i++) {
+            Command *tmp = new Command();
+            tmp->Restore(reader);
+            vpcCommands[i] = tmp;
+        }
+    } else {
+        reader.addFile(file.c_str(),this);
     }
     recalculate();
+}
+
+void Toolpath::RestoreDocFile(Base::Reader &reader)
+{
+    // TODO doesn't work
+    Base::InputStream str(reader);
+    uint8_t sbuffer;
+    str >> sbuffer;
+    std::string gcode(reinterpret_cast<const char *>(sbuffer));
+    setFromGCode(gcode);
 }
 
 

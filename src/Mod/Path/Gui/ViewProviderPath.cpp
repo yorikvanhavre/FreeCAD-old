@@ -132,20 +132,19 @@ void ViewProviderPath::updateData(const App::Property* prop)
 {
     Path::Feature* pcPathObj = static_cast<Path::Feature*>(pcObject);
 
-    if (prop == &pcPathObj->Path) {
+    if ( (prop == &pcPathObj->Path) || (prop == &pcPathObj->Base) ) {
         const Toolpath &tp = pcPathObj->Path.getValue();
-        Base::Vector3d pos;
+        Base::Placement loc = *(&pcPathObj->Base.getValue());
+        Base::Vector3d pos = loc.getPosition();
         pcCoords->point.deleteValues(0);
         pcCoords->point.setNum(tp.numPoints());
-
         for(unsigned int i=0;i<tp.numPoints();i++){
-            pos += tp.getPoint(i);
+            Base::Vector3d cur;
+            loc.getRotation().multVec(tp.getPoint(i),cur);
+            pos += cur;
             pcCoords->point.set1Value(i,pos.x,pos.y,pos.z);
         }
         pcLines->numVertices.set1Value(0, tp.numPoints());
-    }else if (prop == &pcPathObj->Base) {
-        Base::Placement loc = *(&pcPathObj->Base.getValue());
     }
-
 }
 

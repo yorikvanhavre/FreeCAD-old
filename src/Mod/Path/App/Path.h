@@ -49,6 +49,8 @@ namespace Path
             virtual unsigned int getMemSize (void) const;
             virtual void Save (Base::Writer &/*writer*/) const;
             virtual void Restore(Base::XMLReader &/*reader*/);
+            void SaveDocFile (Base::Writer &writer) const;
+            void RestoreDocFile(Base::Reader &reader);
         
             // interface
             void clear(void); // clears the internal data
@@ -58,7 +60,7 @@ namespace Path
             double getLength(void); // return the Length (mm) of the Path
             void recalculate(void); // recalculates the points
             void setFromGCode(const std::string); // sets the path from the contents of the given GCode string
-            std::string toGCode(void); // gets a gcode string representation from the PAth
+            std::string toGCode(void) const; // gets a gcode string representation from the PAth
             
             // shortcut functions
             unsigned int getSize(void) const{return vpcCommands.size();}
