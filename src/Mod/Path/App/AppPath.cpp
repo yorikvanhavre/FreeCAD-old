@@ -33,6 +33,9 @@
 #include "CommandPy.h"
 #include "Path.h"
 #include "PathPy.h"
+#include "Tooltable.h"
+#include "ToolPy.h"
+#include "TooltablePy.h"
 #include "PropertyPath.h"
 #include "FeaturePath.h"
 
@@ -53,12 +56,16 @@ void PathExport initPath()
     // Add Types to module
     Base::Interpreter().addType(&Path::CommandPy            ::Type,pathModule,"Command");
     Base::Interpreter().addType(&Path::PathPy               ::Type,pathModule,"Path");
+    Base::Interpreter().addType(&Path::ToolPy               ::Type,pathModule,"Tool");
+    Base::Interpreter().addType(&Path::TooltablePy          ::Type,pathModule,"Tooltable");
 
     // NOTE: To finish the initialization of our own type objects we must
     // call PyType_Ready, otherwise we run into a segmentation fault, later on.
     // This function is responsible for adding inherited slots from a type's base class.
     Path::Command                ::init();
     Path::Toolpath               ::init();
+    Path::Tool                   ::init();
+    Path::Tooltable              ::init();
     Path::PropertyPath           ::init();
     Path::Feature                ::init();
 }

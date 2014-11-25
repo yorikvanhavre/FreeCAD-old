@@ -35,12 +35,17 @@ endif(MSVC)
 
 generate_from_xml(CommandPy)
 generate_from_xml(PathPy)
+generate_from_xml(ToolPy)
+generate_from_xml(TooltablePy)
 
 SET(Python_SRCS
     CommandPy.xml
     CommandPyImp.cpp
     PathPy.xml
     PathPyImp.cpp
+    ToolPy.xml
+    TooltablePy.xml
+    TooltablePyImp.cpp
 )
 
 SET(Mod_SRCS
@@ -55,6 +60,8 @@ SET(Path_SRCS
     Command.h
     Path.cpp
     Path.h
+    Tooltable.cpp
+    Tooltable.h
     PropertyPath.cpp
     PropertyPath.h
     FeaturePath.cpp

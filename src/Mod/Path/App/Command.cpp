@@ -90,12 +90,12 @@ Placement Command::getPlacement (void)
     return plac;
 }
 
-std::string Command::toGCode (void)
+std::string Command::toGCode (void) const
 {
     std::stringstream str;
     str.precision(5);
     str << Name;
-    for(std::map<std::string,double>::iterator i = Parameters.begin(); i != Parameters.end(); ++i) {
+    for(std::map<std::string,double>::const_iterator i = Parameters.begin(); i != Parameters.end(); ++i) {
         std::string k = i->first;
         double v = i->second;
         str << k << v;
@@ -188,22 +188,21 @@ void Command::setFromPlacement (const Base::Placement &plac)
 
 unsigned int Command::getMemSize (void) const
 {
-    return 0;
+    return toGCode().size();
 }
 
 void Command::Save (Writer &writer) const
 {
+    // this will only get used if saved as XML (probably never)
     writer.Stream() << writer.ind() << "<Command "
-                    << "name=\"" << Name << "\" " 
-                    << "/>";
-                    // TODO handle parameters saving
+                    << "gcode=\"" << toGCode() << "\" />";
     writer.Stream()<< std::endl;
 }
 
 void Command::Restore(XMLReader &reader)
 {
     reader.readElement("Command");
-    Name = reader.getAttribute("name");
-    // TODO handle parameters restore
+    std::string gcode = reader.getAttribute("gcode");
+    setFromGCode(gcode);
 }
 

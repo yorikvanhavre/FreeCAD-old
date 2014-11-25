@@ -46,8 +46,10 @@ namespace Path
         virtual unsigned int getMemSize (void) const;
         virtual void Save (Base::Writer &/*writer*/) const;
         virtual void Restore(Base::XMLReader &/*reader*/);
+        
+        // specific methods
         Base::Placement getPlacement (void); // returns a placement from the x,y,z,a,b,c parameters
-        std::string toGCode (void); // returns a GCode string representation of the command
+        std::string toGCode (void) const; // returns a GCode string representation of the command
         void setFromGCode (std::string); // sets the parameters from the contents of the given GCode string
         void setFromPlacement (const Base::Placement&); // sets the parameters from the contents of the given placement
 
