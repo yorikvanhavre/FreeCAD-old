@@ -84,10 +84,10 @@ void Tool::Save (Writer &writer) const
                     << "height=\"" << CuttingEdgeHeight << "\" ";
     if(Type == Tool::ENDMILL)
         writer.Stream() << " type=\"endmill\" ";
-    else if(Type == Tool::DRILLBIT)
-        writer.Stream() << " type=\"drillbit\" ";
-    else if(Type == Tool::CENTERDRILLBIT)
-        writer.Stream() << " type=\"centerdrillbit\" ";
+    else if(Type == Tool::DRILL)
+        writer.Stream() << " type=\"drill\" ";
+    else if(Type == Tool::CENTERDRILL)
+        writer.Stream() << " type=\"centerdrill\" ";
     else if(Type == Tool::SLOTCUTTER)
         writer.Stream() << " type=\"slotcutter\" ";
     else if(Type == Tool::BALLENDMILL)
@@ -120,10 +120,10 @@ void Tool::Restore(XMLReader &reader)
     std::string type = reader.getAttribute("type");
     if(type=="endmill")
         Type = Tool::ENDMILL;
-    else if(type=="drillbit")
-        Type = Tool::DRILLBIT;
-    else if(type=="centerdrillbit")
-        Type = Tool::CENTERDRILLBIT;
+    else if(type=="drill")
+        Type = Tool::DRILL;
+    else if(type=="centerdrill")
+        Type = Tool::CENTERDRILL;
     else if(type=="slotcutter")
         Type = Tool::SLOTCUTTER;
     else if(type=="ballendmill")

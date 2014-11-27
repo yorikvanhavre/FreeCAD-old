@@ -77,10 +77,10 @@ int ToolPy::PyInit(PyObject* args, PyObject* kwd)
 
     getToolPtr()->Name = name;
     std::string typeStr(type);
-    if(typeStr=="DrillBit")
-        getToolPtr()->Type = Tool::DRILLBIT;
-    else if(typeStr=="CenterDrillBit")
-        getToolPtr()->Type = Tool::CENTERDRILLBIT;
+    if(typeStr=="Drill")
+        getToolPtr()->Type = Tool::DRILL;
+    else if(typeStr=="CenterDrill")
+        getToolPtr()->Type = Tool::CENTERDRILL;
     else if(typeStr=="EndMill")
         getToolPtr()->Type = Tool::ENDMILL;
     else if(typeStr=="SlotCutter")
@@ -126,10 +126,10 @@ void ToolPy::setName(Py::String arg)
 
 Py::String ToolPy::getToolType(void) const
 {
-    if(getToolPtr()->Type == Tool::DRILLBIT)
-        return Py::String("DrillBit");
-    else if(getToolPtr()->Type == Tool::CENTERDRILLBIT)
-        return Py::String("CenterDrillBit");
+    if(getToolPtr()->Type == Tool::DRILL)
+        return Py::String("Drill");
+    else if(getToolPtr()->Type == Tool::CENTERDRILL)
+        return Py::String("CenterDrill");
     else if(getToolPtr()->Type == Tool::ENDMILL)
         return Py::String("EndMill");
     else if(getToolPtr()->Type == Tool::SLOTCUTTER)
@@ -147,10 +147,10 @@ Py::String ToolPy::getToolType(void) const
 void ToolPy::setToolType(Py::String arg)
 {
     std::string typeStr(arg.as_std_string());
-    if(typeStr=="DrillBit")
-        getToolPtr()->Type = Tool::DRILLBIT;
-    else if(typeStr=="CenterDrillBit")
-        getToolPtr()->Type = Tool::CENTERDRILLBIT;
+    if(typeStr=="Drill")
+        getToolPtr()->Type = Tool::DRILL;
+    else if(typeStr=="CenterDrill")
+        getToolPtr()->Type = Tool::CENTERDRILL;
     else if(typeStr=="EndMill")
         getToolPtr()->Type = Tool::ENDMILL;
     else if(typeStr=="SlotCutter")
