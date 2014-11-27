@@ -81,9 +81,9 @@ int ToolPy::PyInit(PyObject* args, PyObject* kwd)
         getToolPtr()->Type = Tool::DRILL;
     else if(typeStr=="CenterDrill")
         getToolPtr()->Type = Tool::CENTERDRILL;
-    if(typeStr=="Countersink")
+    if(typeStr=="CounterSink")
         getToolPtr()->Type = Tool::COUNTERSINK;
-    if(typeStr=="Counterbore")
+    if(typeStr=="CounterBore")
         getToolPtr()->Type = Tool::COUNTERBORE;
     if(typeStr=="Reamer")
         getToolPtr()->Type = Tool::REAMER;
@@ -97,6 +97,9 @@ int ToolPy::PyInit(PyObject* args, PyObject* kwd)
         getToolPtr()->Type = Tool::BALLENDMILL;
     else if(typeStr=="ChamferMill")
         getToolPtr()->Type = Tool::CHAMFERMILL;
+    else if(typeStr=="CornerRound")
+        getToolPtr()->Type = Tool::CORNERROUND;
+
     else if(typeStr=="Engraver")
         getToolPtr()->Type = Tool::ENGRAVER;
     else 
@@ -139,9 +142,9 @@ Py::String ToolPy::getToolType(void) const
     else if(getToolPtr()->Type == Tool::CENTERDRILL)
         return Py::String("CenterDrill");
     else if(getToolPtr()->Type == Tool::COUNTERSINK)
-        return Py::String("Countersink");
+        return Py::String("CounterSink");
     else if(getToolPtr()->Type == Tool::COUNTERBORE)
-        return Py::String("Counterbore");
+        return Py::String("CounterBore");
     else if(getToolPtr()->Type == Tool::REAMER)
         return Py::String("Reamer");
     else if(getToolPtr()->Type == Tool::TAP)
@@ -154,6 +157,8 @@ Py::String ToolPy::getToolType(void) const
         return Py::String("BallEndMill");
     else if(getToolPtr()->Type == Tool::CHAMFERMILL)
         return Py::String("ChamferMill");
+    else if(getToolPtr()->Type == Tool::CORNERROUND)
+        return Py::String("CornerRound");
     else if(getToolPtr()->Type == Tool::ENGRAVER)
         return Py::String("Engraver");
     else
@@ -167,9 +172,9 @@ void ToolPy::setToolType(Py::String arg)
         getToolPtr()->Type = Tool::DRILL;
     else if(typeStr=="CenterDrill")
         getToolPtr()->Type = Tool::CENTERDRILL;
-    else if(typeStr=="Countersink")
+    else if(typeStr=="CounterSink")
         getToolPtr()->Type = Tool::COUNTERSINK;
-    else if(typeStr=="Counterbore")
+    else if(typeStr=="CounterBore")
         getToolPtr()->Type = Tool::COUNTERBORE;
     else if(typeStr=="Reamer")
         getToolPtr()->Type = Tool::REAMER;
@@ -183,6 +188,9 @@ void ToolPy::setToolType(Py::String arg)
         getToolPtr()->Type = Tool::BALLENDMILL;
     else if(typeStr=="ChamferMill")
         getToolPtr()->Type = Tool::CHAMFERMILL;
+    else if(typeStr=="CornerRound")
+        getToolPtr()->Type = Tool::CORNERROUND;
+
     else if(typeStr=="Engraver")
         getToolPtr()->Type = Tool::ENGRAVER;
     else 

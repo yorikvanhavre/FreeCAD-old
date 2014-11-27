@@ -102,6 +102,10 @@ void Tool::Save (Writer &writer) const
         writer.Stream() << " type=\"ballendmill\" ";
     else if(Type == Tool::CHAMFERMILL)
         writer.Stream() << " type=\"chamfermill\" ";
+    else if(Type == Tool::CORNERROUND)
+        writer.Stream() << " type=\"cornerround\" ";
+
+
     else if(Type == Tool::ENGRAVER)
         writer.Stream() << " type=\"engraver\" ";
     else
@@ -146,6 +150,9 @@ void Tool::Restore(XMLReader &reader)
         Type = Tool::BALLENDMILL;
     else if(type=="chamfermill")
         Type = Tool::CHAMFERMILL;
+    else if(type=="cornerround")
+        Type = Tool::CORNERROUND;
+
     else if(type=="engraver")
         Type = Tool::ENGRAVER;
     else 
