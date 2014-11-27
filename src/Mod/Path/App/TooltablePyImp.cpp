@@ -81,16 +81,27 @@ int ToolPy::PyInit(PyObject* args, PyObject* kwd)
         getToolPtr()->Type = Tool::DRILL;
     else if(typeStr=="CenterDrill")
         getToolPtr()->Type = Tool::CENTERDRILL;
+
+    if(typeStr=="Countersink")
+        getToolPtr()->Type = Tool::COUNTERSINK;
+
+    if(typeStr=="Reamer")
+        getToolPtr()->Type = Tool::REAMER;
+
+    if(typeStr=="Tap")
+        getToolPtr()->Type = Tool::TAP;
+
+
     else if(typeStr=="EndMill")
         getToolPtr()->Type = Tool::ENDMILL;
     else if(typeStr=="SlotCutter")
         getToolPtr()->Type = Tool::SLOTCUTTER;
     else if(typeStr=="BallEndMill")
         getToolPtr()->Type = Tool::BALLENDMILL;
-    else if(typeStr=="Chamfer")
-        getToolPtr()->Type = Tool::CHAMFER;
-    else if(typeStr=="EngravingBit")
-        getToolPtr()->Type = Tool::ENGRAVINGBIT;
+    else if(typeStr=="ChamferMill")
+        getToolPtr()->Type = Tool::CHAMFERMILL;
+    else if(typeStr=="Engraver")
+        getToolPtr()->Type = Tool::ENGRAVER;
     else 
         getToolPtr()->Type = Tool::UNDEFINED;
     std::string matStr(mat);
@@ -130,16 +141,23 @@ Py::String ToolPy::getToolType(void) const
         return Py::String("Drill");
     else if(getToolPtr()->Type == Tool::CENTERDRILL)
         return Py::String("CenterDrill");
+
+    else if(getToolPtr()->Type == Tool::REAMER)
+        return Py::String("Reamer");
+
+    else if(getToolPtr()->Type == Tool::TAP)
+        return Py::String("Tap");
+
     else if(getToolPtr()->Type == Tool::ENDMILL)
         return Py::String("EndMill");
     else if(getToolPtr()->Type == Tool::SLOTCUTTER)
         return Py::String("SlotCutter");
     else if(getToolPtr()->Type == Tool::BALLENDMILL)
         return Py::String("BallEndMill");
-    else if(getToolPtr()->Type == Tool::CHAMFER)
-        return Py::String("Chamfer");
-    else if(getToolPtr()->Type == Tool::ENGRAVINGBIT)
-        return Py::String("EngravingBit");
+    else if(getToolPtr()->Type == Tool::CHAMFERMILL)
+        return Py::String("ChamferMill");
+    else if(getToolPtr()->Type == Tool::ENGRAVER)
+        return Py::String("Engraver");
     else
         return Py::String("Undefined");
 }
@@ -151,16 +169,24 @@ void ToolPy::setToolType(Py::String arg)
         getToolPtr()->Type = Tool::DRILL;
     else if(typeStr=="CenterDrill")
         getToolPtr()->Type = Tool::CENTERDRILL;
+
+    else if(typeStr=="Reamer")
+        getToolPtr()->Type = Tool::REAMER;
+
+    else if(typeStr=="Tap")
+        getToolPtr()->Type = Tool::TAP;
+
+
     else if(typeStr=="EndMill")
         getToolPtr()->Type = Tool::ENDMILL;
     else if(typeStr=="SlotCutter")
         getToolPtr()->Type = Tool::SLOTCUTTER;
     else if(typeStr=="BallEndMill")
         getToolPtr()->Type = Tool::BALLENDMILL;
-    else if(typeStr=="Chamfer")
-        getToolPtr()->Type = Tool::CHAMFER;
-    else if(typeStr=="EngravingBit")
-        getToolPtr()->Type = Tool::ENGRAVINGBIT;
+    else if(typeStr=="ChamferMill")
+        getToolPtr()->Type = Tool::CHAMFERMILL;
+    else if(typeStr=="Engraver")
+        getToolPtr()->Type = Tool::ENGRAVER;
     else 
         getToolPtr()->Type = Tool::UNDEFINED;
 }

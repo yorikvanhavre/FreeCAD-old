@@ -88,14 +88,25 @@ void Tool::Save (Writer &writer) const
         writer.Stream() << " type=\"drill\" ";
     else if(Type == Tool::CENTERDRILL)
         writer.Stream() << " type=\"centerdrill\" ";
+
+    else if(Type == Tool::COUNTERSINK)
+        writer.Stream() << " type=\"countersink\" ";
+
+    else if(Type == Tool::REAMER)
+        writer.Stream() << " type=\"reamer\" ";
+
+    else if(Type == Tool::TAP)
+        writer.Stream() << " type=\"tap\" ";
+
+        
     else if(Type == Tool::SLOTCUTTER)
         writer.Stream() << " type=\"slotcutter\" ";
     else if(Type == Tool::BALLENDMILL)
         writer.Stream() << " type=\"ballendmill\" ";
-    else if(Type == Tool::CHAMFER)
-        writer.Stream() << " type=\"chamfer\" ";
-    else if(Type == Tool::ENGRAVINGBIT)
-        writer.Stream() << " type=\"engravingbit\" ";
+    else if(Type == Tool::CHAMFERMILL)
+        writer.Stream() << " type=\"chamfermill\" ";
+    else if(Type == Tool::ENGRAVER)
+        writer.Stream() << " type=\"engraver\" ";
     else
         writer.Stream() << " type=\"undefined\" ";
     if(Material == Tool::CARBIDE)
@@ -124,14 +135,21 @@ void Tool::Restore(XMLReader &reader)
         Type = Tool::DRILL;
     else if(type=="centerdrill")
         Type = Tool::CENTERDRILL;
+
+    else if(type=="reamer")
+        Type = Tool::REAMER;
+
+    else if(type=="tap")
+        Type = Tool::TAP;
+
     else if(type=="slotcutter")
         Type = Tool::SLOTCUTTER;
     else if(type=="ballendmill")
         Type = Tool::BALLENDMILL;
-    else if(type=="chamfer")
-        Type = Tool::CHAMFER;
-    else if(type=="engravingbit")
-        Type = Tool::ENGRAVINGBIT;
+    else if(type=="chamfermill")
+        Type = Tool::CHAMFERMILL;
+    else if(type=="engraver")
+        Type = Tool::ENGRAVER;
     else 
         Type = Tool::UNDEFINED;
     std::string mat = reader.getAttribute("mat");
