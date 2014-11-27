@@ -88,17 +88,14 @@ void Tool::Save (Writer &writer) const
         writer.Stream() << " type=\"drill\" ";
     else if(Type == Tool::CENTERDRILL)
         writer.Stream() << " type=\"centerdrill\" ";
-
     else if(Type == Tool::COUNTERSINK)
         writer.Stream() << " type=\"countersink\" ";
-
+    else if(Type == Tool::COUNTERBORE)
+        writer.Stream() << " type=\"counterbore\" ";
     else if(Type == Tool::REAMER)
         writer.Stream() << " type=\"reamer\" ";
-
     else if(Type == Tool::TAP)
         writer.Stream() << " type=\"tap\" ";
-
-        
     else if(Type == Tool::SLOTCUTTER)
         writer.Stream() << " type=\"slotcutter\" ";
     else if(Type == Tool::BALLENDMILL)
@@ -135,6 +132,10 @@ void Tool::Restore(XMLReader &reader)
         Type = Tool::DRILL;
     else if(type=="centerdrill")
         Type = Tool::CENTERDRILL;
+    else if(type=="countersink")
+        Type = Tool::COUNTERSINK;
+    else if(type=="counterbore")
+        Type = Tool::COUNTERBORE;
     else if(type=="reamer")
         Type = Tool::REAMER;
     else if(type=="tap")

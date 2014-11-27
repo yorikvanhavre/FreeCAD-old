@@ -42,6 +42,7 @@ namespace Path
             DRILL,
             CENTERDRILL,
             COUNTERSINK,
+            COUNTERBORE,
             REAMER,
             TAP,
             ENDMILL,
