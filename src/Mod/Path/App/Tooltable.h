@@ -41,11 +41,14 @@ namespace Path
             UNDEFINED,
             DRILL,
             CENTERDRILL,
+            COUNTERSINK,
+            REAMER,
+            TAP,
             ENDMILL,
             SLOTCUTTER,
             BALLENDMILL,
-            CHAMFER,
-            ENGRAVINGBIT };
+            CHAMFERMILL,
+            ENGRAVER };
             
         enum ToolMaterial {
             MATUNDEFINED,
