@@ -39,8 +39,8 @@ namespace Path
     public:
         enum ToolType {
             UNDEFINED,
-            DRILLBIT,
-            CENTERDRILLBIT,
+            DRILL,
+            CENTERDRILL,
             ENDMILL,
             SLOTCUTTER,
             BALLENDMILL,

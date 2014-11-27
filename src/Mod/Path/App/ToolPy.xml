@@ -16,7 +16,7 @@
             <UserDocu>The Tool objects holds the properties of a CNC tool.
 optional attributes:
   name: a user-defined name for this tool
-  tooltype: DrillBit, CenterDrillBit, EndMill, SlotCutter, BallEndMill, Chamfer, EngravingBit or Undefined 
+  tooltype: Drill, CenterDrill, EndMill, SlotCutter, BallEndMill, Chamfer, EngravingBit or Undefined 
   material: Steel, Carbide or Undefined
   diameter : the diameter of this tool
   lengthOffset
@@ -33,7 +33,7 @@ optional attributes:
         </Attribute>
         <Attribute Name="ToolType" ReadOnly="false">
             <Documentation>
-                <UserDocu>the type of this tool: DrillBit, CenterDrillBit, 
+                <UserDocu>the type of this tool: Drill, CenterDrill, 
 EndMill, SlotCutter, BallEndMill, Chamfer, EngravingBit or Undefined</UserDocu>
             </Documentation>
             <Parameter Name="ToolType" Type="String"/>
