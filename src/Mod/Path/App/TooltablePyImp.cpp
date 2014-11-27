@@ -169,14 +169,10 @@ void ToolPy::setToolType(Py::String arg)
         getToolPtr()->Type = Tool::DRILL;
     else if(typeStr=="CenterDrill")
         getToolPtr()->Type = Tool::CENTERDRILL;
-
     else if(typeStr=="Reamer")
         getToolPtr()->Type = Tool::REAMER;
-
     else if(typeStr=="Tap")
         getToolPtr()->Type = Tool::TAP;
-
-
     else if(typeStr=="EndMill")
         getToolPtr()->Type = Tool::ENDMILL;
     else if(typeStr=="SlotCutter")
