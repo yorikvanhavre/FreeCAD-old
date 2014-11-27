@@ -135,13 +135,10 @@ void Tool::Restore(XMLReader &reader)
         Type = Tool::DRILL;
     else if(type=="centerdrill")
         Type = Tool::CENTERDRILL;
-
     else if(type=="reamer")
         Type = Tool::REAMER;
-
     else if(type=="tap")
         Type = Tool::TAP;
-
     else if(type=="slotcutter")
         Type = Tool::SLOTCUTTER;
     else if(type=="ballendmill")
