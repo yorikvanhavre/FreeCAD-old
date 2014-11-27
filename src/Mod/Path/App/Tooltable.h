@@ -49,6 +49,7 @@ namespace Path
             SLOTCUTTER,
             BALLENDMILL,
             CHAMFERMILL,
+            CORNERROUND,
             ENGRAVER };
             
         enum ToolMaterial {
