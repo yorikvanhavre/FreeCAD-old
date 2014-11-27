@@ -33,7 +33,7 @@ optional attributes:
         </Attribute>
         <Attribute Name="ToolType" ReadOnly="false">
             <Documentation>
-                <UserDocu>the type of this tool: Drill, CenterDrill, 
+                <UserDocu>the type of this tool: Drill, CenterDrill, Reamer, Tap,
 EndMill, SlotCutter, BallEndMill, ChamferMill, Engraver or Undefined</UserDocu>
             </Documentation>
             <Parameter Name="ToolType" Type="String"/>
