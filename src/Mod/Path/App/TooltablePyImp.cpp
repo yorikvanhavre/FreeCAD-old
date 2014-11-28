@@ -99,16 +99,26 @@ int ToolPy::PyInit(PyObject* args, PyObject* kwd)
         getToolPtr()->Type = Tool::CHAMFERMILL;
     else if(typeStr=="CornerRound")
         getToolPtr()->Type = Tool::CORNERROUND;
-
     else if(typeStr=="Engraver")
         getToolPtr()->Type = Tool::ENGRAVER;
     else 
         getToolPtr()->Type = Tool::UNDEFINED;
+        
     std::string matStr(mat);
-    if(matStr=="Steel")
-        getToolPtr()->Material = Tool::STEEL;
+    if(matStr=="HighSpeedSteel")
+        getToolPtr()->Material = Tool::HIGHSPEEDSTEEL;
     else if(matStr=="Carbide")
         getToolPtr()->Material = Tool::CARBIDE;
+    else if(matStr=="HighCarbonToolSteel")
+        getToolPtr()->Material = Tool::HIGHCARBONTOOLSTEEL;
+    else if(matStr=="CastAlloy")
+        getToolPtr()->Material = Tool::CASTALLOY;
+    else if(matStr=="Ceramics")
+        getToolPtr()->Material = Tool::CERAMICS;
+    else if(matStr=="Diamond")
+        getToolPtr()->Material = Tool::DIAMOND;
+    else if(matStr=="Sialon")
+        getToolPtr()->Material = Tool::SIALON;
     else 
         getToolPtr()->Material = Tool::MATUNDEFINED;
 
@@ -199,10 +209,20 @@ void ToolPy::setToolType(Py::String arg)
 
 Py::String ToolPy::getMaterial(void) const
 {
-    if(getToolPtr()->Material == Tool::STEEL)
-        return Py::String("Steel");
+    if(getToolPtr()->Material == Tool::HIGHSPEEDSTEEL)
+        return Py::String("HighSpeedSteel");
     else if(getToolPtr()->Material == Tool::CARBIDE)
         return Py::String("Carbide");
+    else if(getToolPtr()->Material == Tool::HIGHCARBONTOOLSTEEL)
+        return Py::String("HighCarbonToolSteel");
+    else if(getToolPtr()->Material == Tool::CASTALLOY)
+        return Py::String("CastAlloy");
+    else if(getToolPtr()->Material == Tool::CERAMICS)
+        return Py::String("Ceramics");
+    else if(getToolPtr()->Material == Tool::DIAMOND)
+        return Py::String("Diamond");
+    else if(getToolPtr()->Material == Tool::SIALON)
+        return Py::String("Sialon");
     else
         return Py::String("Undefined");
 }
@@ -210,10 +230,20 @@ Py::String ToolPy::getMaterial(void) const
 void ToolPy::setMaterial(Py::String arg)
 {
     std::string matStr(arg.as_std_string());
-    if(matStr=="Steel")
-        getToolPtr()->Material = Tool::STEEL;
+    if(matStr=="HighSpeedSteel")
+        getToolPtr()->Material = Tool::HIGHSPEEDSTEEL;
     else if(matStr=="Carbide")
         getToolPtr()->Material = Tool::CARBIDE;
+    else if(matStr=="HighCarbonToolSteel")
+        getToolPtr()->Material = Tool::HIGHCARBONTOOLSTEEL;
+    else if(matStr=="CastAlloy")
+        getToolPtr()->Material = Tool::CASTALLOY;
+    else if(matStr=="Ceramics")
+        getToolPtr()->Material = Tool::CERAMICS;
+    else if(matStr=="Diamond")
+        getToolPtr()->Material = Tool::DIAMOND;
+    else if(matStr=="Sialon")
+        getToolPtr()->Material = Tool::SIALON;
     else 
         getToolPtr()->Material = Tool::MATUNDEFINED;
 }
