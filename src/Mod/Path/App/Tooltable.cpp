@@ -82,40 +82,50 @@ void Tool::Save (Writer &writer) const
                     << "corner=\"" << CornerRadius << "\" "
                     << "angle=\"" << CuttingEdgeAngle << "\" "
                     << "height=\"" << CuttingEdgeHeight << "\" ";
+                    
     if(Type == Tool::ENDMILL)
-        writer.Stream() << " type=\"endmill\" ";
+        writer.Stream() << " type=\"EndMill\" ";
     else if(Type == Tool::DRILL)
-        writer.Stream() << " type=\"drill\" ";
+        writer.Stream() << " type=\"Drill\" ";
     else if(Type == Tool::CENTERDRILL)
-        writer.Stream() << " type=\"centerdrill\" ";
+        writer.Stream() << " type=\"CenterDrill\" ";
     else if(Type == Tool::COUNTERSINK)
-        writer.Stream() << " type=\"countersink\" ";
+        writer.Stream() << " type=\"CounterSink\" ";
     else if(Type == Tool::COUNTERBORE)
-        writer.Stream() << " type=\"counterbore\" ";
+        writer.Stream() << " type=\"CounterBore\" ";
     else if(Type == Tool::REAMER)
-        writer.Stream() << " type=\"reamer\" ";
+        writer.Stream() << " type=\"Reamer\" ";
     else if(Type == Tool::TAP)
-        writer.Stream() << " type=\"tap\" ";
+        writer.Stream() << " type=\"Tap\" ";
     else if(Type == Tool::SLOTCUTTER)
-        writer.Stream() << " type=\"slotcutter\" ";
+        writer.Stream() << " type=\"SlotCutter\" ";
     else if(Type == Tool::BALLENDMILL)
-        writer.Stream() << " type=\"ballendmill\" ";
+        writer.Stream() << " type=\"BallEndMill\" ";
     else if(Type == Tool::CHAMFERMILL)
-        writer.Stream() << " type=\"chamfermill\" ";
+        writer.Stream() << " type=\"ChamferMill\" ";
     else if(Type == Tool::CORNERROUND)
-        writer.Stream() << " type=\"cornerround\" ";
-
-
+        writer.Stream() << " type=\"CornerRound\" ";
     else if(Type == Tool::ENGRAVER)
-        writer.Stream() << " type=\"engraver\" ";
+        writer.Stream() << " type=\"Engraver\" ";
     else
-        writer.Stream() << " type=\"undefined\" ";
+        writer.Stream() << " type=\"Undefined\" ";
+        
     if(Material == Tool::CARBIDE)
-        writer.Stream() << " mat=\"carbide\" /> ";
-    else if(Material == Tool::STEEL)
-        writer.Stream() << " mat=\"steel\" /> ";
+        writer.Stream() << " mat=\"Carbide\" /> ";
+    else if(Material == Tool::HIGHSPEEDSTEEL)
+        writer.Stream() << " mat=\"HighSpeedSteel\" /> ";
+    else if(Material == Tool::HIGHCARBONTOOLSTEEL)
+        writer.Stream() << " mat=\"HighCarbonToolSteel\" /> ";
+    else if(Material == Tool::CASTALLOY)
+        writer.Stream() << " mat=\"CastAlloy\" /> ";
+    else if(Material == Tool::CERAMICS)
+        writer.Stream() << " mat=\"Ceramics\" /> ";
+    else if(Material == Tool::DIAMOND)
+        writer.Stream() << " mat=\"Diamond\" /> ";
+    else if(Material == Tool::SIALON)
+        writer.Stream() << " mat=\"Sialon\" /> ";
     else
-        writer.Stream() << " mat=\"undefined\" /> ";
+        writer.Stream() << " mat=\"Undefined\" /> ";
     writer.Stream()<< std::endl;
 }
 
@@ -129,39 +139,50 @@ void Tool::Restore(XMLReader &reader)
     CornerRadius = (double) reader.getAttributeAsFloat("corner");
     CuttingEdgeAngle = (double) reader.getAttributeAsFloat("angle");
     CuttingEdgeHeight = (double) reader.getAttributeAsFloat("height");
+    
     std::string type = reader.getAttribute("type");
-    if(type=="endmill")
+    if(type=="EndMill")
         Type = Tool::ENDMILL;
-    else if(type=="drill")
+    else if(type=="Drill")
         Type = Tool::DRILL;
-    else if(type=="centerdrill")
+    else if(type=="CenterDrill")
         Type = Tool::CENTERDRILL;
-    else if(type=="countersink")
+    else if(type=="CounterSink")
         Type = Tool::COUNTERSINK;
-    else if(type=="counterbore")
+    else if(type=="CounterBore")
         Type = Tool::COUNTERBORE;
-    else if(type=="reamer")
+    else if(type=="Reamer")
         Type = Tool::REAMER;
-    else if(type=="tap")
+    else if(type=="Tap")
         Type = Tool::TAP;
-    else if(type=="slotcutter")
+    else if(type=="SlotCutter")
         Type = Tool::SLOTCUTTER;
-    else if(type=="ballendmill")
+    else if(type=="BallEndMill")
         Type = Tool::BALLENDMILL;
-    else if(type=="chamfermill")
+    else if(type=="ChamferMill")
         Type = Tool::CHAMFERMILL;
-    else if(type=="cornerround")
+    else if(type=="CornerRound")
         Type = Tool::CORNERROUND;
-
-    else if(type=="engraver")
+    else if(type=="Engraver")
         Type = Tool::ENGRAVER;
     else 
         Type = Tool::UNDEFINED;
+        
     std::string mat = reader.getAttribute("mat");
-    if(mat=="carbide")
+    if(mat=="Carbide")
         Material = Tool::CARBIDE;
-    else if(type=="steel")
-        Material = Tool::STEEL;
+    else if(mat=="HighSpeedSteel")
+        Material = Tool::HIGHSPEEDSTEEL;
+    else if(mat=="HighCarbonToolSteel")
+        Material = Tool::HIGHCARBONTOOLSTEEL;
+    else if(mat=="CastAlloy")
+        Material = Tool::CASTALLOY;
+    else if(mat=="Ceramics")
+        Material = Tool::CERAMICS;
+    else if(mat=="Diamond")
+        Material = Tool::DIAMOND;
+    else if(mat=="Sialon")
+        Material = Tool::SIALON;
     else
         Material = Tool::MATUNDEFINED;
 }

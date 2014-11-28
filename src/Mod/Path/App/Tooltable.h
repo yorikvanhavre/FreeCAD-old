@@ -54,8 +54,13 @@ namespace Path
             
         enum ToolMaterial {
             MATUNDEFINED,
+            HIGHSPEEDSTEEL,
+            HIGHCARBONTOOLSTEEL,
+            CASTALLOY,
             CARBIDE,
-            STEEL };
+            CERAMICS,
+            DIAMOND,
+            SIALON };
     
         //constructors
         Tool();
