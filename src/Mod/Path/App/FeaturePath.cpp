@@ -37,7 +37,6 @@ PROPERTY_SOURCE(Path::Feature, App::GeoFeature)
 
 Feature::Feature()
 {
-    ADD_PROPERTY_TYPE(Base,(Base::Placement()),"Path",App::Prop_None,"The base placement of this feature");
     ADD_PROPERTY_TYPE(Path,(Path::Toolpath()),"Path",App::Prop_None,"The path data of this feature");
 }
 
