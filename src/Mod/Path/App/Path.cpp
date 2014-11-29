@@ -194,49 +194,9 @@ void Toolpath::Save (Writer &writer) const
 
 void Toolpath::SaveDocFile (Base::Writer &writer) const
 {
-    // If the path is empty we simply store nothing. The file size will be 0 which
-    // can be checked when reading in the data.
     if (toGCode().empty())
         return;
-    // create a temporary file and copy the content to the zip stream
-    // once the tmp. filename is known use always the same because otherwise
-    // we may run into some problems on the Linux platform
-    static Base::FileInfo fi(Base::FileInfo::getTempFileName());
-    
-    std::ofstream tfile;
-    tfile.open(fi.filePath().c_str());
-    if (tfile.fail()) {
-        // Note: Do NOT throw an exception here because if the tmp. file could
-        // not be created we should not abort.
-        // We only print an error message but continue writing the next files to the
-        // stream...
-        throw Base::Exception("Error while saving Path data to file");
-    } else {
-        tfile << toGCode();
-        tfile.close();
-        
-        Base::ifstream file(fi, std::ios::in | std::ios::binary);
-        
-        if (file){
-            unsigned long ulSize = 0; 
-            std::streambuf* buf = file.rdbuf();
-            if (buf) {
-                unsigned long ulCurr;
-                ulCurr = buf->pubseekoff(0, std::ios::cur, std::ios::in);
-                ulSize = buf->pubseekoff(0, std::ios::end, std::ios::in);
-                buf->pubseekoff(ulCurr, std::ios::beg, std::ios::in);
-            }
-    
-            // read in the ASCII file and write back to the stream
-            std::strstreambuf sbuf(ulSize);
-            file >> &sbuf;
-            writer.Stream() << &sbuf;
-        }
-        file.close();
-    }
-
-    // remove temp file
-    fi.deleteFile();
+    writer.Stream() << toGCode();
 }
 
 void Toolpath::Restore(XMLReader &reader)
@@ -252,34 +212,12 @@ void Toolpath::Restore(XMLReader &reader)
 
 void Toolpath::RestoreDocFile(Base::Reader &reader)
 {
-    // create a temporary file and copy the content from the zip stream
-    Base::FileInfo fi(Base::FileInfo::getTempFileName());
+    std::string gcode;
+    std::string line;
+    while (reader >> line)
+        gcode += line;
+    setFromGCode(gcode);
 
-    // read in the ASCII file and write back to the file stream
-    Base::ofstream file(fi, std::ios::out | std::ios::binary);
-    unsigned long ulSize = 0; 
-    if (reader) {
-        std::streambuf* buf = file.rdbuf();
-        reader >> buf;
-        file.flush();
-        ulSize = buf->pubseekoff(0, std::ios::cur, std::ios::in);
-    }
-    file.close();
-
-    // Read the path from the temp file, if the file is empty the stored path was already empty.
-    // If it's still empty after reading the (non-empty) file there must occurred an error.
-    if (ulSize > 0) {
-        std::ifstream tfile(fi.filePath().c_str());
-        if (tfile.fail()) {
-            throw Base::Exception("Error reading Path data from file");
-        } else {
-            std::string gcode((std::istreambuf_iterator<char>(tfile)), std::istreambuf_iterator<char>());
-            setFromGCode(gcode);
-        }
-    }
-
-    // delete the temp file
-    fi.deleteFile();
 }
 
 
