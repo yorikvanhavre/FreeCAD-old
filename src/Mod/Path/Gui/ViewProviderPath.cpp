@@ -62,8 +62,8 @@ PROPERTY_SOURCE(PathGui::ViewProviderPath, Gui::ViewProviderGeometryObject)
 ViewProviderPath::ViewProviderPath()
 {
     pcPathRoot = new Gui::SoFCSelection();
-    pcPathRoot->highlightMode = Gui::SoFCSelection::OFF;
-    pcPathRoot->selectionMode = Gui::SoFCSelection::SEL_OFF;
+    //pcPathRoot->highlightMode = Gui::SoFCSelection::OFF;
+    //pcPathRoot->selectionMode = Gui::SoFCSelection::SEL_OFF;
     pcPathRoot->ref();
 
     pcCoords = new SoCoordinate3();
@@ -100,7 +100,7 @@ void ViewProviderPath::attach(App::DocumentObject *pcObj)
 
     // Draw markers
     SoBaseColor * markcol = new SoBaseColor;
-    markcol->rgb.setValue( 0.0f, 0.2f, 0.0f );
+    markcol->rgb.setValue( 1.0f, 1.0f, 1.0f );
     SoMarkerSet* marker = new SoMarkerSet;
     marker->markerIndex=SoMarkerSet::CROSS_5_5;
     linesep->addChild(markcol);
@@ -132,19 +132,20 @@ void ViewProviderPath::updateData(const App::Property* prop)
 {
     Path::Feature* pcPathObj = static_cast<Path::Feature*>(pcObject);
 
-    if ( (prop == &pcPathObj->Path) || (prop == &pcPathObj->Base) ) {
+    if ( (prop == &pcPathObj->Path) || (prop == &pcPathObj->Placement) ) {
         const Toolpath &tp = pcPathObj->Path.getValue();
-        Base::Placement loc = *(&pcPathObj->Base.getValue());
+        Base::Placement loc = *(&pcPathObj->Placement.getValue());
         Base::Vector3d pos = loc.getPosition();
         pcCoords->point.deleteValues(0);
-        pcCoords->point.setNum(tp.numPoints());
+        pcCoords->point.setNum(tp.numPoints()+1);
+        pcCoords->point.set1Value(0,pos.x,pos.y,pos.z);
         for(unsigned int i=0;i<tp.numPoints();i++){
             Base::Vector3d cur;
             loc.getRotation().multVec(tp.getPoint(i),cur);
             pos += cur;
-            pcCoords->point.set1Value(i,pos.x,pos.y,pos.z);
+            pcCoords->point.set1Value(i+1,pos.x,pos.y,pos.z);
         }
-        pcLines->numVertices.set1Value(0, tp.numPoints());
+        pcLines->numVertices.set1Value(0, tp.numPoints()+1);
     }
 }
 

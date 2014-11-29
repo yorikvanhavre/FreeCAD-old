@@ -58,6 +58,8 @@ public:
     //@{
     void Save (Base::Writer &writer) const;
     void Restore(Base::XMLReader &reader);
+    void SaveDocFile (Base::Writer &writer) const;
+    void RestoreDocFile(Base::Reader &reader);
 
     App::Property *Copy(void) const;
     void Paste(const App::Property &from);

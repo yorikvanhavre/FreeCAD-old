@@ -109,9 +109,25 @@ void PropertyPath::Save (Base::Writer &writer) const
 
 void PropertyPath::Restore(Base::XMLReader &reader)
 {
-    Path::Toolpath temp;
-    temp.Restore(reader);
-    setValue(temp);
+    reader.readElement("Path");
+    std::string file (reader.getAttribute("file") );
+
+    if (!file.empty()) {
+        // initate a file read
+        reader.addFile(file.c_str(),this);
+    }
+}
+
+void PropertyPath::SaveDocFile (Base::Writer &writer) const
+{
+    // does nothing
+}
+
+void PropertyPath::RestoreDocFile(Base::Reader &reader)
+{
+    aboutToSetValue();
+    _Path.RestoreDocFile(reader);
+    hasSetValue();
 }
 
 

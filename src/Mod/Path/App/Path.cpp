@@ -26,6 +26,7 @@
 #ifndef _PreComp_
 #endif
 
+#include <strstream>
 #include <Base/Writer.h>
 #include <Base/Reader.h>
 #include <Base/Stream.h>
@@ -129,7 +130,7 @@ void Toolpath::setFromGCode(const std::string str)
     while (found!=std::string::npos)
     {
         if (last > -1) {
-            std::string gcodestr = str.substr(last,found);
+            std::string gcodestr = str.substr(last,found-last);
             Command *tmp = new Command();
             tmp->setFromGCode(gcodestr);
             vpcCommands.push_back(tmp);
@@ -138,8 +139,8 @@ void Toolpath::setFromGCode(const std::string str)
         found=str.find_first_of("gGmM",found+1);
     }
     // add the last command found, if any
-    if (found != 0) {
-        std::string gcodestr = str.substr(found,std::string::npos);
+    if (last > -1) {
+        std::string gcodestr = str.substr(last,std::string::npos);
         Command *tmp = new Command();
         tmp->setFromGCode(gcodestr);
         vpcCommands.push_back(tmp);
@@ -193,41 +194,92 @@ void Toolpath::Save (Writer &writer) const
 
 void Toolpath::SaveDocFile (Base::Writer &writer) const
 {
-    // TODO doesn't work
-    Base::OutputStream str(writer.Stream());
-    const uint8_t* sbuffer = (uint8_t*) toGCode().c_str();
-    str << sbuffer;
+    // If the path is empty we simply store nothing. The file size will be 0 which
+    // can be checked when reading in the data.
+    if (toGCode().empty())
+        return;
+    // create a temporary file and copy the content to the zip stream
+    // once the tmp. filename is known use always the same because otherwise
+    // we may run into some problems on the Linux platform
+    static Base::FileInfo fi(Base::FileInfo::getTempFileName());
+    
+    std::ofstream tfile;
+    tfile.open(fi.filePath().c_str());
+    if (tfile.fail()) {
+        // Note: Do NOT throw an exception here because if the tmp. file could
+        // not be created we should not abort.
+        // We only print an error message but continue writing the next files to the
+        // stream...
+        throw Base::Exception("Error while saving Path data to file");
+    } else {
+        tfile << toGCode();
+        tfile.close();
+        
+        Base::ifstream file(fi, std::ios::in | std::ios::binary);
+        
+        if (file){
+            unsigned long ulSize = 0; 
+            std::streambuf* buf = file.rdbuf();
+            if (buf) {
+                unsigned long ulCurr;
+                ulCurr = buf->pubseekoff(0, std::ios::cur, std::ios::in);
+                ulSize = buf->pubseekoff(0, std::ios::end, std::ios::in);
+                buf->pubseekoff(ulCurr, std::ios::beg, std::ios::in);
+            }
+    
+            // read in the ASCII file and write back to the stream
+            std::strstreambuf sbuf(ulSize);
+            file >> &sbuf;
+            writer.Stream() << &sbuf;
+        }
+        file.close();
+    }
+
+    // remove temp file
+    fi.deleteFile();
 }
 
 void Toolpath::Restore(XMLReader &reader)
 {
-    clear();
-    // read my element
     reader.readElement("Path");
     std::string file (reader.getAttribute("file") );
-    if(file == "") {
-        // XML data
-        int count = reader.getAttributeAsInteger("count");
-        vpcCommands.resize(count);
-        for (int i = 0; i < count; i++) {
-            Command *tmp = new Command();
-            tmp->Restore(reader);
-            vpcCommands[i] = tmp;
-        }
-    } else {
+
+    if (!file.empty()) {
+        // initate a file read
         reader.addFile(file.c_str(),this);
     }
-    recalculate();
 }
 
 void Toolpath::RestoreDocFile(Base::Reader &reader)
 {
-    // TODO doesn't work
-    Base::InputStream str(reader);
-    uint8_t sbuffer;
-    str >> sbuffer;
-    std::string gcode(reinterpret_cast<const char *>(sbuffer));
-    setFromGCode(gcode);
+    // create a temporary file and copy the content from the zip stream
+    Base::FileInfo fi(Base::FileInfo::getTempFileName());
+
+    // read in the ASCII file and write back to the file stream
+    Base::ofstream file(fi, std::ios::out | std::ios::binary);
+    unsigned long ulSize = 0; 
+    if (reader) {
+        std::streambuf* buf = file.rdbuf();
+        reader >> buf;
+        file.flush();
+        ulSize = buf->pubseekoff(0, std::ios::cur, std::ios::in);
+    }
+    file.close();
+
+    // Read the path from the temp file, if the file is empty the stored path was already empty.
+    // If it's still empty after reading the (non-empty) file there must occurred an error.
+    if (ulSize > 0) {
+        std::ifstream tfile(fi.filePath().c_str());
+        if (tfile.fail()) {
+            throw Base::Exception("Error reading Path data from file");
+        } else {
+            std::string gcode((std::istreambuf_iterator<char>(tfile)), std::istreambuf_iterator<char>());
+            setFromGCode(gcode);
+        }
+    }
+
+    // delete the temp file
+    fi.deleteFile();
 }
 
 
