@@ -26,6 +26,7 @@
 
 #include <vector>
 #include <string>
+#include <map>
 #include <Base/Persistence.h>
 
 namespace Path
@@ -110,16 +111,17 @@ namespace Path
 
         // new functions
         void addTool(const Tool &tool); // adds a tool at the end
-        void insertTool(const Tool &tool, int); // inserts a tool
+        void setTool(const Tool &tool, int); // inserts a tool
         void deleteTool(int); // deletes a tool
         
         // auto
-        unsigned int getSize(void) const{return Tools.size();}
-        const Tool &getTool(unsigned int pos)const {return *Tools[pos];}
-        const std::vector<Tool*> &getTools(void)const{return Tools;}
+        unsigned int getSize(void) const {return Tools.size();}
+        const Tool &getTool(int pos) {return *Tools[pos];}
+        const std::map<int,Tool*> &getTools(void) const {return Tools;}
+        bool hasTool(int pos) const {return (Tools.count(pos) != 0);}
 
         // attributes
-        std::vector<Tool*> Tools;
+        std::map<int,Tool*> Tools;
     };
     
 } //namespace Path

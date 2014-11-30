@@ -63,7 +63,7 @@ PyObject *CommandPy::PyMake(struct _typeobject *, PyObject *, PyObject *)  // Py
 // constructor method
 int CommandPy::PyInit(PyObject* args, PyObject* kwd)
 {
-    PyObject *parameters = PyDict_New();
+    PyObject *parameters;
     char *name = "";
     static char *kwlist[] = {"name", "parameters", NULL};
     if ( PyArg_ParseTupleAndKeywords(args, kwd, "|sO!", kwlist, &name, &PyDict_Type, &parameters) ) {

@@ -346,11 +346,24 @@ PyObject *TooltablePy::PyMake(struct _typeobject *, PyObject *, PyObject *)  // 
 // constructor method
 int TooltablePy::PyInit(PyObject* args, PyObject* /*kwd*/)
 {
-    PyObject *pcObj=0;
-    if (!PyArg_ParseTuple(args, "|O!", &(PyList_Type), &pcObj))
-        return -1;
-
-    if (pcObj) {
+    PyObject *pcObj;
+    if (PyArg_ParseTuple(args, "|O!", &(PyDict_Type), &pcObj)) {
+        PyObject *key, *value;
+        Py_ssize_t pos = 0;
+        while (PyDict_Next(pcObj, &pos, &key, &value)) {
+            if ( !PyObject_TypeCheck(key,&(PyInt_Type)) || !PyObject_TypeCheck(value,&(Path::ToolPy::Type)) ) {
+                PyErr_SetString(PyExc_TypeError, "The dictionary can only contain int:tool pairs");
+                return -1;
+            }
+            int ckey = (int)PyInt_AsLong(key);
+            Path::Tool &tool = *static_cast<Path::ToolPy*>(value)->getToolPtr();
+            getTooltablePtr()->setTool(tool,ckey);
+        }
+        return 0;
+    }
+    PyErr_Clear(); // set by PyArg_ParseTuple()
+    
+    if (PyArg_ParseTuple(args, "|O!", &(PyList_Type), &pcObj)) {
         Py::List list(pcObj);
         for (Py::List::iterator it = list.begin(); it != list.end(); ++it) {
             if (PyObject_TypeCheck((*it).ptr(), &(Path::ToolPy::Type))) {
@@ -358,30 +371,38 @@ int TooltablePy::PyInit(PyObject* args, PyObject* /*kwd*/)
                 getTooltablePtr()->addTool(tool);
             }
         }
+        return 0;
     }
-    return 0;
+    
+    PyErr_SetString(PyExc_TypeError, "Argument must be a list or a dictionary");
+    return -1;    
 }
-
 
 // Commands get/set
 
-Py::List TooltablePy::getTools(void) const
+Py::Dict TooltablePy::getTools(void) const
 {
-    Py::List list;
-    for(unsigned int i = 0; i < getTooltablePtr()->getSize(); i++)
-        list.append(Py::Object(new Path::ToolPy(new Path::Tool(getTooltablePtr()->getTool(i)))));
-    return list;
+    PyObject *dict = PyDict_New();
+    for(std::map<int,Path::Tool*>::iterator i = getTooltablePtr()->Tools.begin(); i != getTooltablePtr()->Tools.end(); ++i) {
+        PyObject *tool = new Path::ToolPy(i->second);
+        PyDict_SetItem(dict,PyInt_FromLong(i->first),tool);
+    }
+    return Py::Dict(dict);
 }
 
-void TooltablePy::setTools(Py::List list)
+void TooltablePy::setTools(Py::Dict arg)
 {
     getTooltablePtr()->Tools.clear();
-    for (Py::List::iterator it = list.begin(); it != list.end(); ++it) {
-        if (PyObject_TypeCheck((*it).ptr(), &(Path::ToolPy::Type))) {
-            Path::Tool &tool = *static_cast<Path::ToolPy*>((*it).ptr())->getToolPtr();
-            getTooltablePtr()->addTool(tool);
+    PyObject* dict_copy = PyDict_Copy(arg.ptr());
+    PyObject *key, *value;
+    Py_ssize_t pos = 0;
+    while (PyDict_Next(dict_copy, &pos, &key, &value)) {
+        if ( PyObject_TypeCheck(key,&(PyInt_Type)) && (PyObject_TypeCheck(value,&(Path::ToolPy::Type))) ) {
+            int ckey = (int)PyInt_AsLong(key);
+            Path::Tool &tool = *static_cast<Path::ToolPy*>(value)->getToolPtr();
+            getTooltablePtr()->setTool(tool,ckey);
         } else {
-            throw Py::Exception("The list can only contain Path Tools");
+            throw Py::Exception("The dictionary can only contain int:tool pairs");
         }
     }
 }
@@ -411,16 +432,30 @@ PyObject* TooltablePy::addTools(PyObject * args)
     Py_Error(Base::BaseExceptionFreeCADError, "Wrong parameters - tool or list of tools expected");
 }
 
-PyObject* TooltablePy::insertTool(PyObject * args)
+PyObject* TooltablePy::setTool(PyObject * args)
 {
     PyObject* o;
     int pos = -1;
-    if (PyArg_ParseTuple(args, "O!|i", &(Path::ToolPy::Type), &o, &pos)) {
+    if (PyArg_ParseTuple(args, "iO!", &pos, &(Path::ToolPy::Type), &o)) {
         Path::Tool &tool = *static_cast<Path::ToolPy*>(o)->getToolPtr();
-        getTooltablePtr()->insertTool(tool,pos);
+        getTooltablePtr()->setTool(tool,pos);
         return new TooltablePy(new Path::Tooltable(*getTooltablePtr()));
     }
     Py_Error(Base::BaseExceptionFreeCADError, "Wrong parameters - expected tool and optional integer");
+}
+
+PyObject* TooltablePy::getTool(PyObject * args)
+{
+    int pos = -1;
+    if (PyArg_ParseTuple(args, "i", &pos)) {
+        if (getTooltablePtr()->hasTool(pos))
+        {
+            Path::Tool tool = getTooltablePtr()->getTool(pos);
+            return new ToolPy(new Path::Tool(tool));
+        } else
+            return Py_None;
+    }
+    Py_Error(Base::BaseExceptionFreeCADError, "Argument must be integer");
 }
 
 PyObject* TooltablePy::deleteTool(PyObject * args)

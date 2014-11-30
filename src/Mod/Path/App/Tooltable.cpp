@@ -206,29 +206,29 @@ Tooltable::~Tooltable()
 void Tooltable::addTool(const Tool &tool)
 {
     Tool *tmp = new Tool(tool);
-    Tools.push_back(tmp);
+    if (!Tools.empty()) {
+        int last = Tools.end()->first;
+        Tools[last+1]= tmp;
+    } else
+        Tools[1] = tmp;
 }
 
-void Tooltable::insertTool(const Tool &tool, int pos)
+void Tooltable::setTool(const Tool &tool, int pos)
 {
     if (pos == -1) {
         addTool(tool);
-    } else if (pos <= Tools.size()) {
-        Tool *tmp = new Tool(tool);
-        Tools.insert(Tools.begin()+pos,tmp);
     } else {
-        throw Base::Exception("Index not in range");
+        Tool *tmp = new Tool(tool);
+        Tools[pos] = tmp;
     }
 }
 
 void Tooltable::deleteTool(int pos)
 {
-    if (pos == -1) {
-        Tools.pop_back();
-    } else if (pos <= Tools.size()) {
-        Tools.erase (Tools.begin()+pos);
+    if (Tools.find(pos) != Tools.end()) {
+        Tools.erase(pos);
     } else {
-        throw Base::Exception("Index not in range");
+        throw Base::Exception("Index not found");
     }
 }
 
@@ -241,23 +241,31 @@ void Tooltable::Save (Writer &writer) const
 {
     writer.Stream() << writer.ind() << "<Tooltable count=\"" <<  getSize() <<"\">" << std::endl;
     writer.incInd();
-    for(unsigned int i = 0;i<getSize(); i++)
-        Tools[i]->Save(writer);
+    
+    //for(unsigned int i = 0;i<getSize(); i++)
+    for(std::map<int,Tool*>::const_iterator i = Tools.begin(); i != Tools.end(); ++i) {
+        int k = i->first;
+        Tool *v = i->second;
+        writer.Stream() << "<Toolslot number=\"" << k << "\">";
+        v->Save(writer);
+        writer.Stream() << "</Toolslot>";
+    }
     writer.decInd();
     writer.Stream() << writer.ind() << "</Tooltable>" << std::endl ;
 
 }
 
-void Tooltable::Restore(XMLReader &reader)
+void Tooltable::Restore (XMLReader &reader)
 {
     Tools.clear();
     reader.readElement("Tooltable");
     int count = reader.getAttributeAsInteger("count");
-    Tools.resize(count);
     for (int i = 0; i < count; i++) {
+        reader.readElement("Toolslot");
+        int id = reader.getAttributeAsInteger("number");
         Tool *tmp = new Tool();
         tmp->Restore(reader);
-        Tools[i] = tmp;
+        Tools[id] = tmp;
     }
 }
 
