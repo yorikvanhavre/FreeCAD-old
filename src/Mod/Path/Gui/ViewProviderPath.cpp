@@ -142,7 +142,8 @@ void ViewProviderPath::updateData(const App::Property* prop)
         for(unsigned int i=0;i<tp.numPoints();i++){
             Base::Vector3d cur;
             loc.getRotation().multVec(tp.getPoint(i),cur);
-            pos += cur;
+            //pos += cur; // relative
+            pos = cur; // absolute
             pcCoords->point.set1Value(i+1,pos.x,pos.y,pos.z);
         }
         pcLines->numVertices.set1Value(0, tp.numPoints()+1);
