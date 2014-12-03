@@ -1,7 +1,7 @@
 if(MSVC)
-    add_definitions(-DFCGuiPath -DHAVE_ACOSH -DHAVE_ASINH -DHAVE_ATANH -DEIGEN2_SUPPORT)
+    add_definitions(-DFCGuiPath -DHAVE_ACOSH -DHAVE_ASINH -DHAVE_ATANH)
 else(MSVC)
-    add_definitions(-DHAVE_LIMITS_H -DHAVE_CONFIG_H -DEIGEN2_SUPPORT)
+    add_definitions(-DHAVE_LIMITS_H -DHAVE_CONFIG_H)
 endif(MSVC)
 
 include_directories(
@@ -29,6 +29,18 @@ qt4_add_resources(PathResource_SRCS Resources/Path.qrc)
 
 SOURCE_GROUP("Resources" FILES ${PathResource_SRCS})
 
+set(PathGui_MOC_HDRS
+    DlgSettingsPathColor.h
+)
+fc_wrap_cpp(PathGui_MOC_SRCS ${PathGui_MOC_HDRS})
+
+SOURCE_GROUP("Moc" FILES ${PathGui_MOC_SRCS})
+
+set(PathGui_UIC_SRCS
+    DlgSettingsPathColor.ui
+)
+qt4_wrap_ui(PathGui_UIC_HDRS ${PathGui_UIC_SRCS})
+
 SET(PathGui_SRCS_Module
     AppPathGui.cpp
     AppPathGuiPy.cpp
@@ -37,17 +49,23 @@ SET(PathGui_SRCS_Module
     PreCompiled.h
     Workbench.cpp
     Workbench.h
+    DlgSettingsPathColor.ui
+    DlgSettingsPathColor.cpp
+    DlgSettingsPathColor.h
 )
+
 SOURCE_GROUP("Module" FILES ${PathGui_SRCS_Module})
 
 SET(PathGui_SRCS_ViewProvider
     ViewProviderPath.cpp
     ViewProviderPath.h
 )
+
 SOURCE_GROUP("ViewProvider" FILES ${PathGui_SRCS_ViewProvider})
 
 SET(PathGui_SRCS
     ${PathResource_SRCS}
+    ${PathGui_UIC_HDRS}
     ${PathGui_SRCS_Module}
     ${PathGui_SRCS_ViewProvider}
 )

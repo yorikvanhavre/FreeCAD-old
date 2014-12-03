@@ -29,7 +29,8 @@
 
 class SoCoordinate3;
 class SoDrawStyle;  
-class SoLineSet; 
+class SoLineSet;
+class SoBaseColor;
 
 namespace PathGui
 {
@@ -44,18 +45,30 @@ public:
 
     /// destructor.
     ~ViewProviderPath();
+    
+    // Display properties
+    App::PropertyInteger LineWidth;
+    App::PropertyColor NormalColor;
+    App::PropertyColor RapidColor;
+    App::PropertyColor MarkerColor;
 
     void attach(App::DocumentObject *pcObject);
     void setDisplayMode(const char* ModeName);
     std::vector<std::string> getDisplayModes() const;
     void updateData(const App::Property*);
+    virtual QIcon getIcon() const;
 
 protected:
+
+    virtual void onChanged(const App::Property* prop);
  
     Gui::SoFCSelection    * pcPathRoot;
-    SoCoordinate3         * pcCoords;
+    SoCoordinate3         * pcLineCoords;
+    SoCoordinate3         * pcMarkerCoords;
     SoDrawStyle           * pcDrawStyle;
     SoLineSet             * pcLines;
+    SoBaseColor           * pcLineColor;
+    SoBaseColor           * pcMarkerColor;
 
  };
 

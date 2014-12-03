@@ -29,10 +29,12 @@
 // Exporting of App classes
 #ifdef FC_OS_WIN32
 # define PathExport  __declspec(dllexport)
+# define RobotExport __declspec(dllexport)
 # define BaseExport  __declspec(dllimport)
 #else // for Linux
-# define PathExport 
-# define BaseExport  
+# define PathExport
+# define RobotExport
+# define BaseExport
 #endif
 
 #ifdef _PreComp_
