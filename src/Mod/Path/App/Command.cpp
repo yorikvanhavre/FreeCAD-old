@@ -90,6 +90,24 @@ Placement Command::getPlacement (void)
     return plac;
 }
 
+Vector3d Command::getCenter (void)
+{
+    std::string i = "I";
+    std::string j = "J";
+    std::string k = "K";
+    double ival = 0.0;
+    double jval = 0.0;
+    double kval = 0.0;
+    if (Parameters.count(i))
+        ival = Parameters[i];
+    if (Parameters.count(j))
+        jval = Parameters[j];
+    if (Parameters.count(k))
+        kval = Parameters[k];
+    Vector3d vec(ival,jval,kval);
+    return vec;
+}
+
 std::string Command::toGCode (void) const
 {
     std::stringstream str;
@@ -158,6 +176,7 @@ void Command::setFromGCode (std::string str)
 
 void Command::setFromPlacement (const Base::Placement &plac)
 {
+    Name = "G1";
     Parameters.clear();
     std::string x = "X";
     std::string y = "Y";

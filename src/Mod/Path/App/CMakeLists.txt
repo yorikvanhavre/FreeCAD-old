@@ -1,7 +1,7 @@
 if(MSVC)
-    add_definitions(-DHAVE_ACOSH -DHAVE_ASINH -DHAVE_ATANH -DEIGEN2_SUPPORT)
+    add_definitions(-DHAVE_ACOSH -DHAVE_ASINH -DHAVE_ATANH)
 else(MSVC)
-    add_definitions(-DHAVE_LIMITS_H -DHAVE_CONFIG_H -DEIGEN2_SUPPORT)
+    add_definitions(-DHAVE_LIMITS_H -DHAVE_CONFIG_H)
 endif(MSVC)
 
 
@@ -21,13 +21,15 @@ include_directories(
 link_directories(${OCC_LIBRARY_DIR})
 
 if(MSVC)
-    set(Part
+    set(Path_LIBS
+        Robot
         ${QT_QTCORE_LIBRARY}
         ${QT_QTCORE_LIBRARY_DEBUG}
         FreeCADApp
     )
 else(MSVC)
-    set(Part
+    set(Path_LIBS
+        Robot
         ${QT_QTCORE_LIBRARY}
         FreeCADApp
     )

@@ -28,6 +28,7 @@
 #include <string>
 #include <Base/Persistence.h>
 #include <Base/Placement.h>
+#include <Base/Vector3D.h>
 
 namespace Path
 {
@@ -49,6 +50,7 @@ namespace Path
         
         // specific methods
         Base::Placement getPlacement (void); // returns a placement from the x,y,z,a,b,c parameters
+        Base::Vector3d getCenter (void); // returns a 3d vector from the i,j,k parameters
         std::string toGCode (void) const; // returns a GCode string representation of the command
         void setFromGCode (std::string); // sets the parameters from the contents of the given GCode string
         void setFromPlacement (const Base::Placement&); // sets the parameters from the contents of the given placement

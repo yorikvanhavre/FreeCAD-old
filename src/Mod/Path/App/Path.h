@@ -25,7 +25,8 @@
 #define PATH_Path_H
 
 #include "Command.h"
-
+#include "Mod/Robot/App/kdl_cp/path_composite.hpp"
+#include "Mod/Robot/App/kdl_cp/frames_io.hpp"
 #include <Base/Persistence.h>
 #include <Base/Vector3D.h>
 
@@ -64,15 +65,27 @@ namespace Path
             
             // shortcut functions
             unsigned int getSize(void) const{return vpcCommands.size();}
-            unsigned int numPoints(void) const{return points.size();}
             const std::vector<Command*> &getCommands(void)const{return vpcCommands;}
             const Command &getCommand(unsigned int pos)const {return *vpcCommands[pos];}
-            const std::vector<Base::Vector3d*> &getPoints(void)const{return points;}
-            const Base::Vector3d &getPoint(unsigned int pos)const {return *points[pos];}
         
         protected:
             std::vector<Command*> vpcCommands;
-            std::vector<Base::Vector3d*> points;
+            KDL::Path_Composite *pcPath;
+            
+        inline  KDL::Frame toFrame(const Base::Placement &To){
+            return KDL::Frame(KDL::Rotation::Quaternion(To.getRotation()[0],
+                                                        To.getRotation()[1],
+                                                        To.getRotation()[2],
+                                                        To.getRotation()[3]),
+                                                        KDL::Vector(To.getPosition()[0],
+                                                        To.getPosition()[1],
+                                                        To.getPosition()[2]));
+        }
+        inline  Base::Placement toPlacement(const KDL::Frame &To){
+            double x,y,z,w;
+            To.M.GetQuaternion(x,y,z,w);
+            return Base::Placement(Base::Vector3d(To.p[0],To.p[1],To.p[2]),Base::Rotation(x,y,z,w));
+        }
     };
 
 } //namespace Path

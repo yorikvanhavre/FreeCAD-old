@@ -29,8 +29,10 @@
 #include <Base/Console.h>
 #include <Base/Interpreter.h>
 #include <Gui/Application.h>
+#include <Gui/WidgetFactory.h>
 #include <Gui/Language/Translator.h>
 #include "ViewProviderPath.h"
+#include "DlgSettingsPathColor.h"
 #include "Workbench.h"
 
 // use a different name to CreateCommand()
@@ -75,6 +77,9 @@ void PathGuiExport initPathGui()
 
      // add resources and reloads the translators
     loadPathResource();
+    
+    // register preferences pages
+    new Gui::PrefPageProducer<PathGui::DlgSettingsPathColor> ("Display");
 }
 
 } // extern "C" {
