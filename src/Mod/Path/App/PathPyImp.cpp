@@ -56,19 +56,29 @@ PyObject *PathPy::PyMake(struct _typeobject *, PyObject *, PyObject *)  // Pytho
 int PathPy::PyInit(PyObject* args, PyObject* /*kwd*/)
 {
     PyObject *pcObj=0;
-    if (!PyArg_ParseTuple(args, "|O!", &(PyList_Type), &pcObj))
-        return -1;
-
-    if (pcObj) {
-        Py::List list(pcObj);
-        for (Py::List::iterator it = list.begin(); it != list.end(); ++it) {
-            if (PyObject_TypeCheck((*it).ptr(), &(Path::CommandPy::Type))) {
-                Path::Command &cmd = *static_cast<Path::CommandPy*>((*it).ptr())->getCommandPtr();
-                getToolpathPtr()->addCommand(cmd);
+    char *gcode;
+    if (PyArg_ParseTuple(args, "|O!", &(PyList_Type), &pcObj)) {
+        if (pcObj) {
+            Py::List list(pcObj);
+            for (Py::List::iterator it = list.begin(); it != list.end(); ++it) {
+                if (PyObject_TypeCheck((*it).ptr(), &(Path::CommandPy::Type))) {
+                    Path::Command &cmd = *static_cast<Path::CommandPy*>((*it).ptr())->getCommandPtr();
+                    getToolpathPtr()->addCommand(cmd);
+                } else {
+                    PyErr_SetString(PyExc_TypeError, "The list must contain only Path Commands");
+                    return -1; 
+                }
             }
         }
+        return 0;
     }
-    return 0;
+    PyErr_Clear(); // set by PyArg_ParseTuple()
+    if (PyArg_ParseTuple(args, "|s", &gcode)) {
+        getToolpathPtr()->setFromGCode(gcode);
+        return 0;
+    }
+    PyErr_SetString(PyExc_TypeError, "Argument must be a list of commands or a gcode string");
+    return -1; 
 }
 
 

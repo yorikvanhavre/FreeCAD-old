@@ -32,6 +32,11 @@
 #include <Base/Stream.h>
 #include <Base/Exception.h>
 
+#include "Mod/Robot/App/kdl_cp/path_line.hpp"
+#include "Mod/Robot/App/kdl_cp/path_circle.hpp"
+#include "Mod/Robot/App/kdl_cp/rotational_interpolation_sa.hpp"
+#include "Mod/Robot/App/kdl_cp/utilities/error.h"
+
 #include "Path.h"
 
 using namespace Path;
@@ -109,13 +114,25 @@ void Toolpath::deleteCommand(int pos)
 
 double Toolpath::getLength()
 {
-    double l = 0.0;
-    if (!points.empty()) {
-        Vector3d pos(0.,0.,0.);
-        for(unsigned int i = 0;i<points.size(); i++) {
-            Vector3d vec = *points[i];
-            l += vec.Length();
-            pos = pos + vec;
+    if(vpcCommands.size()==0)
+        return 0;
+    double l = 0;
+    Vector3d last(0,0,0);
+    Vector3d next;
+    for(std::vector<Command*>::const_iterator it = vpcCommands.begin();it!=vpcCommands.end();++it) {
+        std::string name = (*it)->Name;
+        next = (*it)->getPlacement().getPosition();
+        if ( (name == "G0") || (name == "G1") || (name == "G01") ) {
+            // straight line
+            l += (next - last).Length();
+            last = next;
+        } else if ( (name == "G2") || (name == "G02") || (name == "G3") || (name == "G03") ) {
+            // arc
+            Vector3d center = (*it)->getCenter();
+            double radius = (last - center).Length();
+            double angle = (next - center).GetAngle(last - center);
+            l += angle * radius;
+            last = next;
         }
     }
     return l;
@@ -158,16 +175,67 @@ std::string Toolpath::toGCode(void) const
     return result;
 }    
 
-void Toolpath::recalculate(void) // recalculates the points cache
+void Toolpath::recalculate(void) // recalculates the path cache
 {
-    //for(std::vector<Vector3d*>::iterator it = points.begin();it!=points.end();++it)
-    //    delete ( *it ); // causes crash
-    points.clear();
-    //points.resize(vpcCommands.size()); // TODO later there might be more points than commands (ie. arcs)
-    for (std::vector<Command*>::const_iterator it=vpcCommands.begin();it!=vpcCommands.end();++it) {
-        Vector3d *pos = new Vector3d((*it)->getPlacement().getPosition());
-        points.push_back(pos);
+    
+    if(vpcCommands.size()==0)
+        return;
+        
+    // TODO recalculate the KDL stuff. At the moment, this is unused.
+
+    /*
+    // delete the old and create a new one
+    if(pcPath) 
+        delete (pcPath);
+        
+    pcPath = new KDL::Path_Composite();
+    
+    KDL::Path *tempPath;
+    KDL::Frame Last;
+
+    try {
+        // handle the first waypoint differently
+        bool first=true;
+
+        for(std::vector<Command*>::const_iterator it = vpcCommands.begin();it!=vpcCommands.end();++it) {
+            if(first){
+                Last = toFrame((*it)->getPlacement());
+                first = false;
+            }else{
+                Base::Placement p = (*it)->getPlacement();
+                KDL::Frame Next = toFrame(p);
+                std::string name = (*it)->Name;
+                Vector3d zaxis(0,0,1);
+
+                if ( (name == "G0") || (name == "G1") || (name == "G01") ) {
+                    // line segment
+                    tempPath = new KDL::Path_Line(Last, Next, new KDL::RotationalInterpolation_SingleAxis(), 1.0, true);
+                    pcPath->Add(tempPath);
+                    Last = Next;
+                } else if ( (name == "G2") || (name == "G02") ) {
+                    // clockwise arc
+                    Vector3d fcenter = (*it)->getCenter();
+                    KDL::Vector center(fcenter.x,fcenter.y,fcenter.z);
+                    Vector3d fnorm;
+                    p.getRotation().multVec(zaxis,fnorm);
+                    KDL::Vector norm(fnorm.x,fnorm.y,fnorm.z);
+                    Vector3d fstart = toPlacement(Last).getPosition();
+                    Vector3d fend = toPlacement(Last).getPosition();
+                    Rotation frot(fstart-fcenter,fend-fcenter);
+                    double q0,q1,q2,q3;
+                    frot.getValue(q0,q1,q2,q3);
+                    KDL::Rotation rot;
+                    rot.Quaternion(q0,q1,q2,q3);
+                    tempPath = new KDL::Path_Circle(Last, center, norm, rot, 0.0, new KDL::RotationalInterpolation_SingleAxis(), 1.0, true);
+                    pcPath->Add(tempPath);
+                    Last = Next;
+                }
+            }
+        }
+    } catch (KDL::Error &e) {
+        throw Base::Exception(e.Description());
     }
+    */
 }
 
 // reimplemented from base class
