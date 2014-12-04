@@ -65,20 +65,19 @@ ViewProviderPath::ViewProviderPath()
 {
     ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Path");
     unsigned long lcol = hGrp->GetUnsigned("DefaultNormalPathColor",11141375UL); // dark green (0,170,0)
+    float lr,lg,lb;
+    lr = ((lcol >> 24) & 0xff) / 255.0; lg = ((lcol >> 16) & 0xff) / 255.0; lb = ((lcol >> 8) & 0xff) / 255.0;
     unsigned long rcol = hGrp->GetUnsigned("DefaultRapidPathColor",2852126975UL); // dark red (170,0,0)
+    float rr,rg,rb;
+    rr = ((rcol >> 24) & 0xff) / 255.0; rg = ((rcol >> 16) & 0xff) / 255.0; rb = ((rcol >> 8) & 0xff) / 255.0;
     unsigned long mcol = hGrp->GetUnsigned("DefaultPathMarkerColor",1442775295UL); // lime green (85,255,0)
+    float mr,mg,mb;
+    mr = ((mcol >> 24) & 0xff) / 255.0; mg = ((mcol >> 16) & 0xff) / 255.0; mb = ((mcol >> 8) & 0xff) / 255.0;
     int lwidth = hGrp->GetInt("DefaultPathLineWidth",1);
-    ADD_PROPERTY(NormalColor,(0.0f,0.0f,0.0f));
-    ADD_PROPERTY(RapidColor,(0.0f,0.0f,0.0f));
-    ADD_PROPERTY(MarkerColor,(0.0f,0.0f,0.0f));
+    ADD_PROPERTY(NormalColor,(lr,lg,lb));
+    ADD_PROPERTY(RapidColor,(rr,rg,rb));
+    ADD_PROPERTY(MarkerColor,(mr,mg,mb));
     ADD_PROPERTY(LineWidth,(lwidth));
-    App::Color color = NormalColor.getValue();
-    color.setPackedValue((uint32_t)lcol);
-    NormalColor.setValue(color);
-    color.setPackedValue((uint32_t)rcol);
-    RapidColor.setValue(color);
-    color.setPackedValue((uint32_t)mcol);
-    MarkerColor.setValue(color);
     
     pcPathRoot = new Gui::SoFCSelection();
     pcPathRoot->highlightMode = Gui::SoFCSelection::ON;
@@ -101,13 +100,13 @@ ViewProviderPath::ViewProviderPath()
     
     pcLineColor = new SoBaseColor;
     pcLineColor->ref();
-    const App::Color& c1 = NormalColor.getValue();
-    pcLineColor->rgb.setValue(c1.r,c1.g,c1.b);
     
     pcMarkerColor = new SoBaseColor;
     pcMarkerColor->ref();
-    const App::Color& c2 = MarkerColor.getValue();
-    pcMarkerColor->rgb.setValue(c2.r,c2.g,c2.b);
+    
+    NormalColor.touch();
+    RapidColor.touch();
+    MarkerColor.touch();
 }
 
 ViewProviderPath::~ViewProviderPath()
@@ -146,7 +145,7 @@ void ViewProviderPath::attach(App::DocumentObject *pcObj)
     addDisplayMaskMode(pcPathRoot, "Waypoints");
     pcPathRoot->objectName = pcObj->getNameInDocument();
     pcPathRoot->documentName = pcObj->getDocument()->getName();
-    pcPathRoot->subElementName = "Main";
+    pcPathRoot->subElementName = "Path";
 }
 
 void ViewProviderPath::setDisplayMode(const char* ModeName)
@@ -169,12 +168,10 @@ void ViewProviderPath::onChanged(const App::Property* prop)
         pcDrawStyle->lineWidth = LineWidth.getValue();
     } else if (prop == &NormalColor) {
         const App::Color& c = NormalColor.getValue();
-        //pcLineColor->rgb.setValue(c.r,c.g,c.b);
-        // pcLineColor->rgb.setValue( 0.0f, 1.0f, 0.0f );
-        // for some reason the above causes a crash - to be investigated...
+        pcLineColor->rgb.setValue(c.r,c.g,c.b);
     } else if (prop == &MarkerColor) {
         const App::Color& c = MarkerColor.getValue();
-        //pcMarkerColor->rgb.setValue(c.r,c.g,c.b);
+        pcMarkerColor->rgb.setValue(c.r,c.g,c.b);
     } else {
         ViewProviderGeometryObject::onChanged(prop);
     }
