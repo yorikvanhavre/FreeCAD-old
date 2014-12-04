@@ -203,6 +203,8 @@ void ViewProviderPath::updateData(const App::Property* prop)
             Path::Command cmd = tp.getCommand(i);
             std::string name = cmd.Name;
             Base::Vector3d pt = cmd.getPlacement().getPosition();
+            if (!cmd.has("z"))
+                pt.z = last.z;
             Base::Vector3d next;
             loc.multVec(pt,next);
             
