@@ -54,6 +54,7 @@ namespace Path
         std::string toGCode (void) const; // returns a GCode string representation of the command
         void setFromGCode (std::string); // sets the parameters from the contents of the given GCode string
         void setFromPlacement (const Base::Placement&); // sets the parameters from the contents of the given placement
+        const bool has(const std::string attr)const {return (bool)Parameters.count(attr);}
 
         // attributes
         std::string Name;
