@@ -108,6 +108,13 @@ Vector3d Command::getCenter (void)
     return vec;
 }
 
+const bool Command::has(const std::string attr)
+{
+    std::string a(attr);
+    boost::to_upper(a);
+    return (bool)Parameters.count(a);
+}
+
 std::string Command::toGCode (void) const
 {
     std::stringstream str;
