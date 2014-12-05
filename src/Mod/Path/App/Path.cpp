@@ -27,6 +27,8 @@
 #endif
 
 #include <strstream>
+#include <boost/regex.hpp>
+
 #include <Base/Writer.h>
 #include <Base/Reader.h>
 #include <Base/Stream.h>
@@ -138,9 +140,12 @@ double Toolpath::getLength()
     return l;
 }
 
-void Toolpath::setFromGCode(const std::string str)
+void Toolpath::setFromGCode(const std::string instr)
 {
     clear();
+    // remove comments
+    boost::regex e("\\(.*\\)");
+    std::string str = boost::regex_replace(instr, e, "");
     // split input string by G or M commands
     std::size_t found = str.find_first_of("gGmM");
     int last = -1;
@@ -148,6 +153,7 @@ void Toolpath::setFromGCode(const std::string str)
     {
         if (last > -1) {
             std::string gcodestr = str.substr(last,found-last);
+            std::cout << gcodestr << std::endl;
             Command *tmp = new Command();
             tmp->setFromGCode(gcodestr);
             vpcCommands.push_back(tmp);
@@ -158,6 +164,7 @@ void Toolpath::setFromGCode(const std::string str)
     // add the last command found, if any
     if (last > -1) {
         std::string gcodestr = str.substr(last,std::string::npos);
+        std::cout << gcodestr << std::endl;
         Command *tmp = new Command();
         tmp->setFromGCode(gcodestr);
         vpcCommands.push_back(tmp);
