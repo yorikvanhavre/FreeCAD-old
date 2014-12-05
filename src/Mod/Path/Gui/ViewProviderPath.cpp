@@ -260,7 +260,7 @@ void ViewProviderPath::updateData(const App::Property* prop)
         //for(unsigned int i=0;i<markers.size();i++)
         //    pcMarkerCoords->point.set1Value(i,markers[i].x,markers[i].y,markers[i].z);
         pcMarkerCoords->point.setNum(1);
-        pcMarkerCoords->point.set1Value(i,markers[0].x,markers[0].y,markers[0].z);
+        pcMarkerCoords->point.set1Value(0,markers[0].x,markers[0].y,markers[0].z);
     }
 }
 
