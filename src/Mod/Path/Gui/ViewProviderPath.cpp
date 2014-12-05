@@ -200,6 +200,10 @@ void ViewProviderPath::updateData(const App::Property* prop)
             Path::Command cmd = tp.getCommand(i);
             std::string name = cmd.Name;
             Base::Vector3d pt = cmd.getPlacement().getPosition();
+            if (!cmd.has("x"))
+                pt.x = last.x;
+            if (!cmd.has("y"))
+                pt.y = last.y;
             if (!cmd.has("z"))
                 pt.z = last.z;
             Base::Vector3d next;
@@ -249,9 +253,14 @@ void ViewProviderPath::updateData(const App::Property* prop)
         pcLines->numVertices.set1Value(0, points.size());
 
         pcMarkerCoords->point.deleteValues(0);
-        pcMarkerCoords->point.setNum(markers.size());
-        for(unsigned int i=0;i<markers.size();i++)
-            pcMarkerCoords->point.set1Value(i,markers[i].x,markers[i].y,markers[i].z);
+        
+        // putting one market at each node makes the display awfully slow
+        // leaving just one at the origin for now
+        //pcMarkerCoords->point.setNum(markers.size());
+        //for(unsigned int i=0;i<markers.size();i++)
+        //    pcMarkerCoords->point.set1Value(i,markers[i].x,markers[i].y,markers[i].z);
+        pcMarkerCoords->point.setNum(1);
+        pcMarkerCoords->point.set1Value(i,markers[0].x,markers[0].y,markers[0].z);
     }
 }
 
