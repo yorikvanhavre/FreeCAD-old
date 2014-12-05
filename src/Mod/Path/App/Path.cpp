@@ -144,7 +144,7 @@ void Toolpath::setFromGCode(const std::string instr)
 {
     clear();
     // remove comments
-    boost::regex e("\\(.*\\)");
+    boost::regex e("\\(.*?\\)");
     std::string str = boost::regex_replace(instr, e, "");
     // split input string by G or M commands
     std::size_t found = str.find_first_of("gGmM");
