@@ -72,8 +72,9 @@ ViewProviderPath::ViewProviderPath()
     ADD_PROPERTY(LineWidth,(lwidth));
     
     pcPathRoot = new Gui::SoFCSelection();
-    // TODO not working
-    pcPathRoot->highlightMode = Gui::SoFCSelection::ON;
+
+    pcPathRoot->style = Gui::SoFCSelection::EMISSIVE;
+    pcPathRoot->highlightMode = Gui::SoFCSelection::AUTO;
     pcPathRoot->selectionMode = Gui::SoFCSelection::SEL_ON;
     pcPathRoot->ref();
     

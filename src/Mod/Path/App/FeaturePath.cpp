@@ -62,3 +62,17 @@ void Feature::onChanged(const App::Property* prop)
 {
     App::GeoFeature::onChanged(prop);
 }
+
+// Python Path feature ---------------------------------------------------------
+
+namespace App {
+/// @cond DOXERR
+PROPERTY_SOURCE_TEMPLATE(Path::FeaturePython, Path::Feature)
+template<> const char* Path::FeaturePython::getViewProviderName(void) const {
+    return "PathGui::ViewProviderPath";
+}
+/// @endcond
+
+// explicit template instantiation
+template class PathExport FeaturePythonT<Path::Feature>;
+}
