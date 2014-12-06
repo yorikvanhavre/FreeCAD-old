@@ -24,20 +24,16 @@
 #include "PreCompiled.h"
 
 #ifndef _PreComp_
-# include <Inventor/SoDB.h>
-# include <Inventor/SoInput.h>
 # include <Inventor/SbVec3f.h>
 # include <Inventor/nodes/SoSeparator.h>
 # include <Inventor/nodes/SoTransform.h>
-# include <Inventor/nodes/SoSphere.h>
 # include <Inventor/nodes/SoRotation.h>
-# include <Inventor/actions/SoSearchAction.h>
-# include <Inventor/draggers/SoJackDragger.h>
 # include <Inventor/nodes/SoBaseColor.h>
+# include <Inventor/nodes/SoMaterial.h>
+# include <Inventor/nodes/SoMaterialBinding.h>
 # include <Inventor/nodes/SoCoordinate3.h>
 # include <Inventor/nodes/SoDrawStyle.h>
-# include <Inventor/nodes/SoFaceSet.h>
-# include <Inventor/nodes/SoLineSet.h>
+# include <Inventor/nodes/SoIndexedLineSet.h>
 # include <Inventor/nodes/SoMarkerSet.h>
 # include <Inventor/nodes/SoShapeHints.h>
 # include <QFile>
@@ -67,19 +63,16 @@ ViewProviderPath::ViewProviderPath()
     unsigned long lcol = hGrp->GetUnsigned("DefaultNormalPathColor",11141375UL); // dark green (0,170,0)
     float lr,lg,lb;
     lr = ((lcol >> 24) & 0xff) / 255.0; lg = ((lcol >> 16) & 0xff) / 255.0; lb = ((lcol >> 8) & 0xff) / 255.0;
-    unsigned long rcol = hGrp->GetUnsigned("DefaultRapidPathColor",2852126975UL); // dark red (170,0,0)
-    float rr,rg,rb;
-    rr = ((rcol >> 24) & 0xff) / 255.0; rg = ((rcol >> 16) & 0xff) / 255.0; rb = ((rcol >> 8) & 0xff) / 255.0;
     unsigned long mcol = hGrp->GetUnsigned("DefaultPathMarkerColor",1442775295UL); // lime green (85,255,0)
     float mr,mg,mb;
     mr = ((mcol >> 24) & 0xff) / 255.0; mg = ((mcol >> 16) & 0xff) / 255.0; mb = ((mcol >> 8) & 0xff) / 255.0;
     int lwidth = hGrp->GetInt("DefaultPathLineWidth",1);
     ADD_PROPERTY(NormalColor,(lr,lg,lb));
-    ADD_PROPERTY(RapidColor,(rr,rg,rb));
     ADD_PROPERTY(MarkerColor,(mr,mg,mb));
     ADD_PROPERTY(LineWidth,(lwidth));
     
     pcPathRoot = new Gui::SoFCSelection();
+    // TODO not working
     pcPathRoot->highlightMode = Gui::SoFCSelection::ON;
     pcPathRoot->selectionMode = Gui::SoFCSelection::SEL_ON;
     pcPathRoot->ref();
@@ -95,17 +88,20 @@ ViewProviderPath::ViewProviderPath()
     pcDrawStyle->style = SoDrawStyle::LINES;
     pcDrawStyle->lineWidth = LineWidth.getValue();
 
-    pcLines = new SoLineSet;
+    pcLines = new SoIndexedLineSet;
     pcLines->ref();
     
-    pcLineColor = new SoBaseColor;
+    pcLineColor = new SoMaterial;
     pcLineColor->ref();
     
+    pcMatBind = new SoMaterialBinding;
+    pcMatBind->ref();
+    pcMatBind->value = SoMaterialBinding::OVERALL;
+
     pcMarkerColor = new SoBaseColor;
     pcMarkerColor->ref();
     
     NormalColor.touch();
-    RapidColor.touch();
     MarkerColor.touch();
 }
 
@@ -117,6 +113,7 @@ ViewProviderPath::~ViewProviderPath()
     pcDrawStyle->unref();
     pcLines->unref();
     pcLineColor->unref();
+    pcMatBind->unref();
     pcMarkerColor->unref();
 }
 
@@ -127,6 +124,7 @@ void ViewProviderPath::attach(App::DocumentObject *pcObj)
     // Draw trajectory lines
     SoSeparator* linesep = new SoSeparator;
     linesep->addChild(pcLineColor);
+    linesep->addChild(pcMatBind);
     linesep->addChild(pcDrawStyle);
     linesep->addChild(pcLineCoords);
     linesep->addChild(pcLines);
@@ -167,8 +165,25 @@ void ViewProviderPath::onChanged(const App::Property* prop)
     if (prop == &LineWidth) {
         pcDrawStyle->lineWidth = LineWidth.getValue();
     } else if (prop == &NormalColor) {
-        const App::Color& c = NormalColor.getValue();
-        pcLineColor->rgb.setValue(c.r,c.g,c.b);
+        if (colorindex.size() > 0) {
+            const App::Color& c = NormalColor.getValue();            
+            ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Path");
+            unsigned long rcol = hGrp->GetUnsigned("DefaultRapidPathColor",2852126975UL); // dark red (170,0,0)
+            float rr,rg,rb;
+            rr = ((rcol >> 24) & 0xff) / 255.0; rg = ((rcol >> 16) & 0xff) / 255.0; rb = ((rcol >> 8) & 0xff) / 255.0;
+            
+            pcMatBind->value = SoMaterialBinding::PER_PART;
+            // resizing and writing the color vector:
+            pcLineColor->diffuseColor.setNum(colorindex.size());
+            SbColor* colors = pcLineColor->diffuseColor.startEditing();
+            for(unsigned int i=0;i<colorindex.size();i++) {
+                if (colorindex[i] == 0)
+                    colors[i] = SbColor(rr,rg,rb);
+                else
+                    colors[i] = SbColor(c.r,c.g,c.b);
+            }
+            pcLineColor->diffuseColor.finishEditing();
+        }
     } else if (prop == &MarkerColor) {
         const App::Color& c = MarkerColor.getValue();
         pcMarkerColor->rgb.setValue(c.r,c.g,c.b);
@@ -195,6 +210,7 @@ void ViewProviderPath::updateData(const App::Property* prop)
         Base::Vector3d last(loc.getPosition());
         points.push_back(last);
         markers.push_back(last);
+        colorindex.clear();
         
         for (int  i = 0; i < tp.getSize(); i++) {
             Path::Command cmd = tp.getCommand(i);
@@ -214,6 +230,10 @@ void ViewProviderPath::updateData(const App::Property* prop)
                 points.push_back(next);
                 markers.push_back(next);
                 last = next;
+                if (name == "G0")
+                    colorindex.push_back(0); // rapid color
+                else
+                    colorindex.push_back(1); // std color
                 
             } else if ( (name == "G2") || (name == "G02") || (name == "G3") || (name == "G03") ) {
                 // arc
@@ -228,7 +248,7 @@ void ViewProviderPath::updateData(const App::Property* prop)
                 loc.multVec(ce,center);
                 double radius = (last - center).Length();
                 double angle = (next - center).GetAngle(last - center);
-                int segments = 2/deviation; //we use a rather simple rule here, provisorily
+                int segments = 3/(deviation/angle); //we use a rather simple rule here, provisorily
                 for (int j = 1; j < segments; j++) {
                     //std::cout << "vector " << j << std::endl;
                     Base::Vector3d inter;
@@ -237,30 +257,38 @@ void ViewProviderPath::updateData(const App::Property* prop)
                     rot.multVec((last - center),inter);
                     //std::cout << "result " << inter.x << " , " << inter.y << " , " << inter.z << std::endl;
                     points.push_back( center + inter);
+                    colorindex.push_back(1);
                 }
                 //std::cout << "next " << next.x << " , " << next.y << " , " << next.z << std::endl;
                 points.push_back(next);
                 markers.push_back(next);
                 markers.push_back(center); // add a marker at center too, why not?
                 last = next;
+                colorindex.push_back(1);
             }
         }
         
         pcLineCoords->point.deleteValues(0);
         pcLineCoords->point.setNum(points.size());
-        for(unsigned int i=0;i<points.size();i++)
+        std::vector<int> ei;
+        for(unsigned int i=0;i<points.size();i++) {
             pcLineCoords->point.set1Value(i,points[i].x,points[i].y,points[i].z);
-        pcLines->numVertices.set1Value(0, points.size());
+            ei.push_back(i);
+        }
+        int* segs = &ei[0];
+        pcLines->coordIndex.setValues(0,points.size(),(const int32_t*)segs);
 
         pcMarkerCoords->point.deleteValues(0);
         
         // putting one market at each node makes the display awfully slow
-        // leaving just one at the origin for now
+        // leaving just one at the origin for now:
+        pcMarkerCoords->point.setNum(1);
+        pcMarkerCoords->point.set1Value(0,markers[0].x,markers[0].y,markers[0].z);
         //pcMarkerCoords->point.setNum(markers.size());
         //for(unsigned int i=0;i<markers.size();i++)
         //    pcMarkerCoords->point.set1Value(i,markers[i].x,markers[i].y,markers[i].z);
-        pcMarkerCoords->point.setNum(1);
-        pcMarkerCoords->point.set1Value(0,markers[0].x,markers[0].y,markers[0].z);
+        
+        NormalColor.touch();
     }
 }
 

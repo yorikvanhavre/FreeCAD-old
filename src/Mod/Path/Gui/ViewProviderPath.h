@@ -29,8 +29,10 @@
 
 class SoCoordinate3;
 class SoDrawStyle;  
-class SoLineSet;
+class SoIndexedLineSet;
+class SoMaterial;
 class SoBaseColor;
+class SoMaterialBinding;
 
 namespace PathGui
 {
@@ -49,7 +51,6 @@ public:
     // Display properties
     App::PropertyInteger LineWidth;
     App::PropertyColor NormalColor;
-    App::PropertyColor RapidColor;
     App::PropertyColor MarkerColor;
 
     void attach(App::DocumentObject *pcObject);
@@ -66,9 +67,11 @@ protected:
     SoCoordinate3         * pcLineCoords;
     SoCoordinate3         * pcMarkerCoords;
     SoDrawStyle           * pcDrawStyle;
-    SoLineSet             * pcLines;
-    SoBaseColor           * pcLineColor;
+    SoIndexedLineSet      * pcLines;
+    SoMaterial            * pcLineColor;
     SoBaseColor           * pcMarkerColor;
+    SoMaterialBinding     * pcMatBind;
+    std::vector<int>        colorindex;
 
  };
 

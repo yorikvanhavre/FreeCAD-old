@@ -55,39 +55,6 @@
           </property>
          </widget>
         </item>
-        <item row="1" column="0">
-         <widget class="QLabel" name="label_7">
-          <property name="minimumSize">
-           <size>
-            <width>182</width>
-            <height>0</height>
-           </size>
-          </property>
-          <property name="text">
-           <string>Defautl rapid path color</string>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="1">
-         <widget class="Gui::PrefColorButton" name="DefaultRapidPathColor">
-          <property name="toolTip">
-           <string>The default line color for new shapes</string>
-          </property>
-          <property name="color">
-           <color>
-            <red>170</red>
-            <green>0</green>
-            <blue>0</blue>
-           </color>
-          </property>
-          <property name="prefEntry" stdset="0">
-           <cstring>DefaultRapidPathColor</cstring>
-          </property>
-          <property name="prefPath" stdset="0">
-           <cstring>Mod/Path</cstring>
-          </property>
-         </widget>
-        </item>
         <item row="2" column="0">
          <widget class="QLabel" name="label_9">
           <property name="minimumSize">
@@ -156,6 +123,39 @@
           </property>
          </widget>
         </item>
+        <item row="4" column="0">
+         <widget class="QLabel" name="label_7">
+          <property name="minimumSize">
+           <size>
+            <width>182</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="text">
+           <string>Rapid path color</string>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="1">
+         <widget class="Gui::PrefColorButton" name="DefaultRapidPathColor">
+          <property name="toolTip">
+           <string>The default line color for new shapes</string>
+          </property>
+          <property name="color">
+           <color>
+            <red>170</red>
+            <green>0</green>
+            <blue>0</blue>
+           </color>
+          </property>
+          <property name="prefEntry" stdset="0">
+           <cstring>DefaultRapidPathColor</cstring>
+          </property>
+          <property name="prefPath" stdset="0">
+           <cstring>Mod/Path</cstring>
+          </property>
+         </widget>
+        </item>
        </layout>
       </item>
       <item>
@@ -209,7 +209,6 @@
  <tabstops>
   <tabstop>DefaultNormalPathColor</tabstop>
   <tabstop>DefaultPathLineWidth</tabstop>
-  <tabstop>DefaultRapidPathColor</tabstop>
  </tabstops>
  <resources/>
  <connections/>
