@@ -225,12 +225,12 @@ void ViewProviderPath::updateData(const App::Property* prop)
             Base::Vector3d next;
             loc.multVec(pt,next);
             
-            if ( (name == "G0") || (name == "G1") || (name == "G01") ) {
+            if ( (name == "G0") || (name == "G00") || (name == "G1") || (name == "G01") ) {
                 // straight line
                 points.push_back(next);
                 markers.push_back(next);
                 last = next;
-                if (name == "G0")
+                if ( (name == "G0") || (name == "G00") )
                     colorindex.push_back(0); // rapid color
                 else
                     colorindex.push_back(1); // std color
