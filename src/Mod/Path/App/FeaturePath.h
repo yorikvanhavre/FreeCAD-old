@@ -24,9 +24,11 @@
 #ifndef PATH_FeaturePath_H
 #define PATH_FeaturePath_H
 
+#include <App/DocumentObject.h>
 #include <App/GeoFeature.h>
 #include <App/PropertyFile.h>
 #include <App/PropertyGeo.h>
+#include <App/FeaturePython.h>
 
 #include "Path.h"
 #include "PropertyPath.h"
@@ -53,7 +55,6 @@ public:
     virtual short mustExecute(void) const;
     virtual PyObject *getPyObject(void);
 
-    App::PropertyPlacement Base;
     PropertyPath           Path;
 
 
@@ -62,6 +63,8 @@ protected:
     virtual void onChanged (const App::Property* prop);
 
 };
+
+typedef App::FeaturePythonT<Feature> FeaturePython;
 
 } //namespace Path
 
