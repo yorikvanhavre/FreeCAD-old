@@ -76,6 +76,9 @@ ViewProviderPath::ViewProviderPath()
     pcPathRoot->highlightMode = Gui::SoFCSelection::ON;
     pcPathRoot->selectionMode = Gui::SoFCSelection::SEL_ON;
     pcPathRoot->ref();
+    
+    pcTransform = new SoTransform();
+    pcTransform->ref();
 
     pcLineCoords = new SoCoordinate3();
     pcLineCoords->ref();
@@ -108,6 +111,7 @@ ViewProviderPath::ViewProviderPath()
 ViewProviderPath::~ViewProviderPath()
 {
     pcPathRoot->unref();
+    pcTransform->unref();
     pcLineCoords->unref();
     pcMarkerCoords->unref();
     pcDrawStyle->unref();
@@ -132,11 +136,12 @@ void ViewProviderPath::attach(App::DocumentObject *pcObj)
     // Draw markers
     SoSeparator* markersep = new SoSeparator;
     SoMarkerSet* marker = new SoMarkerSet;
-    marker->markerIndex=SoMarkerSet::CROSS_5_5;
+    marker->markerIndex=SoMarkerSet::PLUS_7_7;
     markersep->addChild(pcMarkerColor);
     markersep->addChild(pcMarkerCoords);
     markersep->addChild(marker);
 
+    pcPathRoot->addChild(pcTransform);
     pcPathRoot->addChild(linesep);
     pcPathRoot->addChild(markersep);
 
@@ -196,7 +201,7 @@ void ViewProviderPath::updateData(const App::Property* prop)
 {
     Path::Feature* pcPathObj = static_cast<Path::Feature*>(pcObject);
 
-    if ( (prop == &pcPathObj->Path) || (prop == &pcPathObj->Placement) ) {
+    if ( prop == &pcPathObj->Path) {
         
         const Toolpath &tp = pcPathObj->Path.getValue();
         if(tp.getSize()==0)
@@ -204,26 +209,26 @@ void ViewProviderPath::updateData(const App::Property* prop)
             
         ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Part");
         float deviation = hGrp->GetFloat("MeshDeviation",0.2);
-        Base::Placement loc = *(&pcPathObj->Placement.getValue());
         std::vector<Base::Vector3d> points;
         std::vector<Base::Vector3d> markers;
-        Base::Vector3d last(loc.getPosition());
+        Base::Vector3d last(0,0,0);
         points.push_back(last);
         markers.push_back(last);
         colorindex.clear();
+        bool absolute = true;
         
         for (int  i = 0; i < tp.getSize(); i++) {
             Path::Command cmd = tp.getCommand(i);
             std::string name = cmd.Name;
-            Base::Vector3d pt = cmd.getPlacement().getPosition();
+            Base::Vector3d next = cmd.getPlacement().getPosition();
             if (!cmd.has("x"))
-                pt.x = last.x;
+                next.x = last.x;
             if (!cmd.has("y"))
-                pt.y = last.y;
+                next.y = last.y;
             if (!cmd.has("z"))
-                pt.z = last.z;
-            Base::Vector3d next;
-            loc.multVec(pt,next);
+                next.z = last.z;
+            if (!absolute)
+                next = last + next;
             
             if ( (name == "G0") || (name == "G00") || (name == "G1") || (name == "G01") ) {
                 // straight line
@@ -237,15 +242,12 @@ void ViewProviderPath::updateData(const App::Property* prop)
                 
             } else if ( (name == "G2") || (name == "G02") || (name == "G3") || (name == "G03") ) {
                 // arc
-                Base::Vector3d norm, zaxis;
+                Base::Vector3d norm;
                 if ( (name == "G2") || (name == "G02") )
-                    zaxis.Set(0,0,-1);
+                    norm.Set(0,0,-1);
                 else
-                    zaxis.Set(0,0,1);
-                loc.getRotation().multVec(zaxis,norm);
-                Base::Vector3d ce = (last + cmd.getCenter());
-                Base::Vector3d center;
-                loc.multVec(ce,center);
+                    norm.Set(0,0,1);
+                Base::Vector3d center = (last + cmd.getCenter());
                 double radius = (last - center).Length();
                 double angle = (next - center).GetAngle(last - center);
                 int segments = 3/(deviation/angle); //we use a rather simple rule here, provisorily
@@ -265,6 +267,12 @@ void ViewProviderPath::updateData(const App::Property* prop)
                 markers.push_back(center); // add a marker at center too, why not?
                 last = next;
                 colorindex.push_back(1);
+                
+            } else if (name == "G90") {
+                absolute = true;
+                
+            } else if (name == "G91") {
+                absolute = false;
             }
         }
         
@@ -289,6 +297,14 @@ void ViewProviderPath::updateData(const App::Property* prop)
         //    pcMarkerCoords->point.set1Value(i,markers[i].x,markers[i].y,markers[i].z);
         
         NormalColor.touch();
+        
+    } else if ( prop == &pcPathObj->Placement) {
+        Base::Placement pl = *(&pcPathObj->Placement.getValue());
+        Base::Vector3d pos = pl.getPosition();
+        double q1, q2, q3, q4;
+        pl.getRotation().getValue(q1,q2,q3,q4);
+        pcTransform->translation.setValue(pos.x,pos.y,pos.z);
+        pcTransform->rotation.setValue(q1,q2,q3,q4);
     }
 }
 
