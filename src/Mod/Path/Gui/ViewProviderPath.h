@@ -33,6 +33,7 @@ class SoIndexedLineSet;
 class SoMaterial;
 class SoBaseColor;
 class SoMaterialBinding;
+class SoTransform;
 
 namespace PathGui
 {
@@ -64,6 +65,7 @@ protected:
     virtual void onChanged(const App::Property* prop);
  
     Gui::SoFCSelection    * pcPathRoot;
+    SoTransform           * pcTransform;
     SoCoordinate3         * pcLineCoords;
     SoCoordinate3         * pcMarkerCoords;
     SoDrawStyle           * pcDrawStyle;
