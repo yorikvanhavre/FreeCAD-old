@@ -68,6 +68,7 @@ void PathExport initPath()
     Path::Tooltable              ::init();
     Path::PropertyPath           ::init();
     Path::Feature                ::init();
+    Path::FeaturePython          ::init();
 }
 
 } // extern "C"
