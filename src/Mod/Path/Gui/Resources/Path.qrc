@@ -2,6 +2,6 @@
     <qresource> 
         <file>icons/preferences-path.svg</file>
         <file>icons/Path-Toolpath.svg</file>
-        <file>icons/Path-Project.svg</file>
+        <file>icons/Path-Compound.svg</file>
     </qresource>
 </RCC> 
