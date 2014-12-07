@@ -59,6 +59,8 @@ SOURCE_GROUP("Module" FILES ${PathGui_SRCS_Module})
 SET(PathGui_SRCS_ViewProvider
     ViewProviderPath.cpp
     ViewProviderPath.h
+    ViewProviderPathCompound.cpp
+    ViewProviderPathCompound.h
 )
 
 SOURCE_GROUP("ViewProvider" FILES ${PathGui_SRCS_ViewProvider})
