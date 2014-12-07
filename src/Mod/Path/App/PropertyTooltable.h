@@ -21,53 +21,55 @@
  ***************************************************************************/
 
 
-#include "PreCompiled.h"
-#ifndef _PreComp_
-# include <Python.h>
-#endif
+#ifndef PROPERTYTOOLTABLE_H
+#define PROPERTYTOOLTABLE_H
 
-#include <Base/Console.h>
-#include <Base/VectorPy.h>
-#include <App/Document.h>
-#include <App/Application.h>
+#include "Tooltable.h"
+#include <App/Property.h>
 
-#include "CommandPy.h"
-#include "PathPy.h"
-#include "FeaturePath.h"
-
-using namespace Path;
-
-
-static PyObject * 
-show(PyObject *self, PyObject *args)
+namespace Path
 {
-    PyObject *pcObj;
-    if (!PyArg_ParseTuple(args, "O!", &(PathPy::Type), &pcObj))     // convert args: Python->C
-        return NULL;                             // NULL triggers exception
-
-    PY_TRY {
-        App::Document *pcDoc = App::GetApplication().getActiveDocument(); 	 
-        if (!pcDoc)
-            pcDoc = App::GetApplication().newDocument();
-        PathPy* pPath = static_cast<PathPy*>(pcObj);
-        Path::Feature *pcFeature = (Path::Feature *)pcDoc->addObject("Path::Feature", "Path");
-        Path::Toolpath* pa = pPath->getToolpathPtr();
-        if (!pa) {
-            PyErr_SetString(PyExc_ReferenceError,
-                "object doesn't reference a valid path");
-            return 0;
-        }
-        // copy the data
-        pcFeature->Path.setValue(*pa);
-    } PY_CATCH;
-
-    Py_Return;
-}
 
 
-/* registration table  */
-struct PyMethodDef Path_methods[] = {
-    {"show"       ,show      ,METH_VARARGS,
-     "show(path) -- Add the path to the active document or create one if no document exists."},
-    {NULL, NULL}        /* end of table marker */
+/** The tooltable property class.  */
+class PathExport PropertyTooltable : public App::Property
+{
+    TYPESYSTEM_HEADER();
+
+public:
+    PropertyTooltable();
+    ~PropertyTooltable();
+
+    /** @name Getter/setter */
+    //@{
+    /// set the part shape
+    void setValue(const Tooltable&);
+    /// get the part shape
+    const Tooltable &getValue(void) const;
+    //@}
+
+    /** @name Python interface */
+    //@{
+    PyObject* getPyObject(void);
+    void setPyObject(PyObject *value);
+    //@}
+
+    /** @name Save/restore */
+    //@{
+    void Save (Base::Writer &writer) const;
+    void Restore(Base::XMLReader &reader);
+
+    App::Property *Copy(void) const;
+    void Paste(const App::Property &from);
+    unsigned int getMemSize (void) const;
+    //@}
+
+private:
+    Tooltable _Tooltable;
 };
+
+
+} //namespace Path
+
+
+#endif // PROPERTYTOOLTABLE_H

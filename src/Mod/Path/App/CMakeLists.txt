@@ -68,6 +68,8 @@ SET(Path_SRCS
     PropertyPath.h
     FeaturePath.cpp
     FeaturePath.h
+    PropertyTooltable.cpp
+    PropertyTooltable.h
     ${Mod_SRCS}
     ${Python_SRCS}
 )
