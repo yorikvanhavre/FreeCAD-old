@@ -22,66 +22,64 @@
 
 
 #include "PreCompiled.h"
+
 #ifndef _PreComp_
-# include <Python.h>
 #endif
 
-#include <Base/Console.h>
-#include <Base/Interpreter.h>
-#include <Gui/Application.h>
-#include <Gui/WidgetFactory.h>
-#include <Gui/Language/Translator.h>
-#include "ViewProviderPath.h"
-#include "DlgSettingsPathColor.h"
-#include "Workbench.h"
 #include "ViewProviderPathCompound.h"
+#include <Gui/Control.h>
+//#include <Mod/Path/Gui/TaskDlgTrajectoryCompound.h>
+#include <Mod/Path/App/FeaturePathCompound.h>
+#include <Gui/BitmapFactory.h>
 
-// use a different name to CreateCommand()
-//void CreatePathCommands(void);
+using namespace Gui;
+using namespace PathGui;
 
-void loadPathResource()
+PROPERTY_SOURCE(PathGui::ViewProviderPathCompound, PathGui::ViewProviderPath)
+
+
+bool ViewProviderPathCompound::setEdit(int ModNum)
 {
-    // add resources and reloads the translators
-    Q_INIT_RESOURCE(Path);
-    Gui::Translator::instance()->refresh();
+    //Gui::TaskView::TaskDialog* dlg = new TaskDlgTrajectoryCompound(dynamic_cast<Robot::TrajectoryCompound *>(getObject()));
+    //Gui::Control().showDialog(dlg);
+    //return true;
+
 }
 
-/* registration table  */
-extern struct PyMethodDef PathGui_methods[];
-
-
-/* Python entry */
-extern "C" {
-void PathGuiExport initPathGui()  
+void ViewProviderPathCompound::unsetEdit(int ModNum)
 {
-     if (!Gui::Application::Instance) {
-        PyErr_SetString(PyExc_ImportError, "Cannot load Gui module in console application.");
-        return;
-    }
-    try {
-        Base::Interpreter().runString("import Path");
-    }
-    catch(const Base::Exception& e) {
-        PyErr_SetString(PyExc_ImportError, e.what());
-        return;
-    }
-    (void) Py_InitModule("PathGui", PathGui_methods);   /* mod name, table ptr */
-    Base::Console().Log("Loading GUI of Path module... done\n");
+    // when pressing ESC make sure to close the dialog
+    Gui::Control().closeDialog();
 
-    // instantiating the commands
-    // Reenable once this fuction is implemented in Commands.cpp
-    //CreatePathCommands();
 
-    // addition objects
-    PathGui::Workbench                      ::init();
-    PathGui::ViewProviderPath               ::init();
-    PathGui::ViewProviderPathCompound       ::init();
-
-     // add resources and reloads the translators
-    loadPathResource();
-    
-    // register preferences pages
-    new Gui::PrefPageProducer<PathGui::DlgSettingsPathColor> ("Display");
 }
 
-} // extern "C" {
+std::vector<App::DocumentObject*> ViewProviderPathCompound::claimChildren(void)const
+{
+    return std::vector<App::DocumentObject*>(static_cast<Path::FeatureCompound *>(getObject())->Group.getValues());
+}
+
+bool ViewProviderPathCompound::canDragObjects() const
+{
+    return true;
+}
+
+void ViewProviderPathCompound::dragObject(App::DocumentObject* obj)
+{
+    static_cast<Path::FeatureCompound *>(getObject())->removeObject(obj);
+}
+
+bool ViewProviderPathCompound::canDropObjects() const
+{
+    return true;
+}
+
+void ViewProviderPathCompound::dropObject(App::DocumentObject* obj)
+{
+    static_cast<Path::FeatureCompound *>(getObject())->addObject(obj);
+}
+
+QIcon ViewProviderPathCompound::getIcon() const
+{
+    return Gui::BitmapFactory().pixmap("Path-Compound");
+}
