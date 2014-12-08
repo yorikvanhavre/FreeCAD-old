@@ -20,6 +20,7 @@ INSTALL(
         PathScripts/heeks_funcs.py
         PathScripts/parseGroups.py
         PathScripts/toolpathparams.py
+        PathScripts/pre_example.py
     DESTINATION
         Mod/Path/PathScripts
        )
