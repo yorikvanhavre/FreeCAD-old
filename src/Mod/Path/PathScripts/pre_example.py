@@ -12,7 +12,10 @@ def parse(inputstring):
         if not l:
             # discard empty lines
             continue
-        if l[0] in ["(","%"]:
+        if l[0].upper() in ["N"]:
+            # remove line numbers
+            l = l.split(" ",1)[1]
+        if l[0] in ["(","%","#"]:
             # discard comment and other non-gcode lines
             continue
         if l[0].upper() in ["G","M"]:

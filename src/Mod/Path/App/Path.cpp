@@ -153,7 +153,8 @@ void Toolpath::setFromGCode(const std::string instr)
     {
         if (last > -1) {
             std::string gcodestr = str.substr(last,found-last);
-            std::cout << gcodestr << std::endl;
+            // TODO outputting each command can be useful anyway.. we should add a pref setting to control this
+            //std::cout << gcodestr << std::endl;
             Command *tmp = new Command();
             tmp->setFromGCode(gcodestr);
             vpcCommands.push_back(tmp);
@@ -164,7 +165,7 @@ void Toolpath::setFromGCode(const std::string instr)
     // add the last command found, if any
     if (last > -1) {
         std::string gcodestr = str.substr(last,std::string::npos);
-        std::cout << gcodestr << std::endl;
+        //std::cout << gcodestr << std::endl;
         Command *tmp = new Command();
         tmp->setFromGCode(gcodestr);
         vpcCommands.push_back(tmp);
