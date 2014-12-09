@@ -123,7 +123,7 @@ std::string Command::toGCode (void) const
     for(std::map<std::string,double>::const_iterator i = Parameters.begin(); i != Parameters.end(); ++i) {
         std::string k = i->first;
         double v = i->second;
-        str << k << v;
+        str << " " << k << v;
     }
     return str.str();
 }
