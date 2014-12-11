@@ -22,6 +22,7 @@ INSTALL(
         PathScripts/toolpathparams.py
         PathScripts/pre_example.py
         PathScripts/post_example.py
+        PathScripts/post_editor.py
     DESTINATION
         Mod/Path/PathScripts
        )
