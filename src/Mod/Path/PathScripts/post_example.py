@@ -23,69 +23,67 @@
 
 
 '''
-This is an example preprocessor file for the Path workbench. Its aim is to
-parse the contents of a given GCode file, and transform it to make it
-suitable for use in a Path object. This preprocessor, once placed in the
-appropriate PathScripts folder, can be used directly from inside FreeCAD,
+This is an example postprocessor file for the Path workbench. It is used to
+take a pseudo-gcode fragment outputted by a Path object, and output
+real GCode suitable for a particular machine. This postprocessor, once placed 
+in the appropriate PathScripts folder, can be used directly from inside FreeCAD,
 via the GUI importer or via python scripts with:
 
 import Path
-Path.read("/path/to/file.ncc","DocumentName","pre_example")
+Path.write(object,"/path/to/file.ncc","post_example")
 
 It must contain at least a parse() function, that takes a string as 
-argument, which is the unmodified contents of the input GCode file, and 
-returns another string, that must respect the following 
-rules in order to be used by the Path workbench:
-
-- All lines must begin with a G or M command. Lines that don't respect that 
-  rule will be discarded on import.
-- Only one occurence of another letter can happen after a G  or M command. 
-  For example this is invalid:
-    G1 X1 Y2 
-    X2 Y3
-  You must write it like this: 
-    G1 X1 Y2 
-    G1 X2 Y3
-- Center coordinates (I,J) in G2 and G3 arcs are relative to the last point.
+argument, which is the pseudo-GCode data from a Path object, and return
+another string, which is properly formatted GCode.
 '''
+
+import datetime
+now = datetime.datetime.now()
+
 
 def parse(inputstring):
     "parse(inputstring): returns a parsed output string"
-    print "preprocessing..."
+    print "postprocessing..."
     
-    # split the input by line
-    lines = inputstring.split("\n")
     output = ""
-    lastcommand = None
     
-    for l in lines:
-        # remove any leftover trailing and preceding spaces
-        l = l.strip()
-        if not l:
-            # discard empty lines
-            continue
-        if l[0].upper() in ["N"]:
-            # remove line numbers
-            l = l.split(" ",1)[1]
-        if l[0] in ["(","%","#"]:
-            # discard comment and other non strictly gcode lines
-            continue
-        if l[0].upper() in ["G","M"]:
-            # found a G or M command: we store it
-            output += l + "\n"
-            last = l[0].upper()
-            for c in l[1:]:
-                if not c.isdigit():
-                    break
-                else:
-                    last += c
-            lastcommand = last
-        elif lastcommand:
-            # no G or M command: we repeat the last one
-            output += lastcommand + " " + l + "\n"
-            
-    print "done preprocessing."
+    # write some stuff first
+    output += "N10 ;time:"+str(now)+"\n"
+    output += "N20 G17 G20 G80 G40 G90\n"
+    output += "N30 (Exported by FreeCAD)\n"
+    
+    linenr = 100
+    lastcommand = None
+    # treat the input line by line
+    lines = inputstring.split("\n")
+    for line in lines:
+        # split the G/M command from the arguments
+        if " " in line:
+            command,args = line.split(" ",1)
+        else:
+            # no space found, which means there are no arguments
+            command = line
+            args = ""
+        # add a line number
+        output += "N" + str(linenr) + " "
+        # only print the command if it is not the same as the last one
+        if command != lastcommand:
+            output += command + " "
+        output += args + "\n"
+        # increment the line number
+        linenr += 10
+        # store the latest command
+        lastcommand = command
+        
+    # write some more stuff at the end
+    output += "N" + str(linenr) + " M05\n"
+    output += "N" + str(linenr + 10) + " M25\n"
+    output += "N" + str(linenr + 20) + " G00 X-1.0 Y1.0\n"
+    output += "N" + str(linenr + 30) + " G17 G80 G40 G90\n"
+    output += "N" + str(linenr + 40) + " M99\n"
+    
+    print "done postprocessing."
     return output
 
-print __name__ + " gcode preprocessor loaded."
+print __name__ + " gcode postprocessor loaded."
 
