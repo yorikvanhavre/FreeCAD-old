@@ -23,67 +23,94 @@
 
 
 '''
-This is an example postprocessor file for the Path workbench. It is used to
-take a pseudo-gcode fragment outputted by a Path object, and output
-real GCode suitable for a particular machine. This postprocessor, once placed 
-in the appropriate PathScripts folder, can be used directly from inside FreeCAD,
-via the GUI importer or via python scripts with:
-
-import Path
-Path.write(object,"/path/to/file.ncc","post_example")
-
-It must contain at least a parse() function, that takes a string as 
-argument, which is the pseudo-GCode data from a Path object, and return
-another string, which is properly formatted GCode.
+This is a postprocessor file for the Path workbench. It offers an editor
+to manually edit the GCode output.
 '''
 
-import datetime
-now = datetime.datetime.now()
+from PySide import QtCore, QtGui
+import FreeCADGui
 
+class OldHighlighter(QtGui.QSyntaxHighlighter):
+    def highlightBlock(self, text):
+        myClassFormat = QtGui.QTextCharFormat()
+        myClassFormat.setFontWeight(QtGui.QFont.Bold)
+        myClassFormat.setForeground(QtCore.Qt.green)
+        # the regex pattern to be colored
+        pattern = "(G.*?|M.*?)\\s"
+        expression = QtCore.QRegExp(pattern)
+        index = text.index(expression)
+        while index >= 0:
+            length = expression.matchedLength()
+            setFormat(index, length, myClassFormat)
+            index = text.index(expression, index + length)
+            
+
+
+class GCodeHighlighter(QtGui.QSyntaxHighlighter):
+    def __init__(self, parent=None):
+        super(GCodeHighlighter, self).__init__(parent)
+        
+
+        keywordFormat = QtGui.QTextCharFormat()
+        keywordFormat.setForeground(QtCore.Qt.cyan)
+        keywordFormat.setFontWeight(QtGui.QFont.Bold)
+        keywordPatterns = ["\\bG[0-9]+\\b",
+                           "\\bM[0-9]+\\b"]
+
+        self.highlightingRules = [(QtCore.QRegExp(pattern), keywordFormat) for pattern in keywordPatterns]
+
+        speedFormat = QtGui.QTextCharFormat()
+        speedFormat.setFontWeight(QtGui.QFont.Bold)
+        speedFormat.setForeground(QtCore.Qt.green)
+        self.highlightingRules.append((QtCore.QRegExp("\\bF[0-9\\.]+\\b"),speedFormat))
+
+    def highlightBlock(self, text):
+        for pattern, format in self.highlightingRules:
+            expression = QtCore.QRegExp(pattern)
+            index = expression.indexIn(text)
+            while index >= 0:
+                length = expression.matchedLength()
+                self.setFormat(index, length, format)
+                index = expression.indexIn(text, index + length)
+
+
+
+class GCodeEditorDialog(QtGui.QDialog):
+    def __init__(self, parent = FreeCADGui.getMainWindow()):
+        QtGui.QDialog.__init__(self,parent)
+
+        layout = QtGui.QVBoxLayout(self)
+
+        # nice text editor widget for editing the gcode
+        self.editor = QtGui.QTextEdit()
+        font = QtGui.QFont()
+        font.setFamily("Courier")
+        font.setFixedPitch(True)
+        font.setPointSize(10)
+        self.editor.setFont(font)
+        self.editor.setText("G01 X55 Y4.5 F300.0")
+        self.highlighter = GCodeHighlighter(self.editor.document())
+        layout.addWidget(self.editor)
+
+        # OK and Cancel buttons
+        self.buttons = QtGui.QDialogButtonBox(
+            QtGui.QDialogButtonBox.Ok | QtGui.QDialogButtonBox.Cancel,
+            QtCore.Qt.Horizontal, self)
+        layout.addWidget(self.buttons)
+
+        self.buttons.accepted.connect(self.accept)
+        self.buttons.rejected.connect(self.reject)
 
 def parse(inputstring):
     "parse(inputstring): returns a parsed output string"
-    print "postprocessing..."
-    
-    output = ""
-    
-    # write some stuff first
-    output += "N10 ;time:"+str(now)+"\n"
-    output += "N20 G17 G20 G80 G40 G90\n"
-    output += "N30 (Exported by FreeCAD)\n"
-    
-    linenr = 100
-    lastcommand = None
-    # treat the input line by line
-    lines = inputstring.split("\n")
-    for line in lines:
-        # split the G/M command from the arguments
-        if " " in line:
-            command,args = line.split(" ",1)
-        else:
-            # no space found, which means there are no arguments
-            command = line
-            args = ""
-        # add a line number
-        output += "N" + str(linenr) + " "
-        # only print the command if it is not the same as the last one
-        if command != lastcommand:
-            output += command + " "
-        output += args + "\n"
-        # increment the line number
-        linenr += 10
-        # store the latest command
-        lastcommand = command
-        
-    # write some more stuff at the end
-    output += "N" + str(linenr) + " M05\n"
-    output += "N" + str(linenr + 10) + " M25\n"
-    output += "N" + str(linenr + 20) + " G00 X-1.0 Y1.0\n"
-    output += "N" + str(linenr + 30) + " G17 G80 G40 G90\n"
-    output += "N" + str(linenr + 40) + " M99\n"
-    
-    print "done postprocessing."
-    return output
+    dia = GCodeEditorDialog()
+    dia.editor.setText(inputstring)
+    result = dia.exec_()
+    # exec_() returns 0 or 1 depending on the button pressed (Ok or Cancel)
+    if result:
+        return dia.editor.toPlainText()
+    else:
+        return inputstring
 
 print __name__ + " gcode postprocessor loaded."
 
