@@ -31,6 +31,7 @@
 #include <Base/FileInfo.h>
 #include <Base/Interpreter.h>
 #include <App/Document.h>
+#include <App/DocumentObjectPy.h>
 #include <App/Application.h>
 
 #include "CommandPy.h"
@@ -41,7 +42,69 @@
 using namespace Path;
 
 
-static PyObject * insert (PyObject *self, PyObject *args)
+static PyObject * write (PyObject *self, PyObject *args)
+{
+    char* Name;
+    PyObject* pObj;
+    char* Pre = "";
+    if (!PyArg_ParseTuple(args, "Oet|s",&pObj,"utf-8",&Name,&Pre))
+        return NULL;
+    std::string EncodedName = std::string(Name);
+    PyMem_Free(Name);
+
+    Base::FileInfo file(EncodedName.c_str());
+    
+    if (PyObject_TypeCheck(pObj, &(App::DocumentObjectPy::Type))) {
+        App::DocumentObject* obj = static_cast<App::DocumentObjectPy*>(pObj)->getDocumentObjectPtr();
+        if (obj->getTypeId().isDerivedFrom(Base::Type::fromName("Path::Feature"))) {
+            const Toolpath& path = static_cast<Path::Feature*>(obj)->Path.getValue();
+            std::string gcode = path.toGCode();
+
+            if (strcmp(Pre, "") != 0) {
+                // use a python Postprocessor
+                // by calling its parse() function
+                std::string modpath = "PathScripts.";
+                modpath += Pre;
+                PyObject *pModule, *pFunc, *pName, *pInput, *pOutput, *pArgs;
+                // get the global interpreter lock otherwise the app may crash with the error
+                // 'PyThreadState_Get: no current thread' (see pystate.c)
+                Base::PyGILStateLocker lock;
+                pName = PyString_FromString(modpath.c_str());
+                pModule = PyImport_Import(pName);
+                if (pModule != NULL) {
+                    pFunc = PyObject_GetAttrString(pModule,"parse");
+                    if (pFunc && PyCallable_Check(pFunc)) {
+                        // function arguments must be packed into a tuple
+                        pInput = PyString_FromString(gcode.c_str());
+                        pArgs = PyTuple_New(1);
+                        PyTuple_SetItem(pArgs, 0, pInput);
+                        pOutput = PyObject_CallObject(pFunc, pArgs);
+                        if (pOutput != NULL) {
+                            gcode = std::string(PyString_AsString(pOutput));
+                        } else
+                            Py_Error(Base::BaseExceptionFreeCADError, "Postprocessor failed to parse the given file");
+                    } else
+                        Py_Error(Base::BaseExceptionFreeCADError, "Postprocessor does not contain a valid parse() function");
+                } else
+                    Py_Error(Base::BaseExceptionFreeCADError, "Unable to load the given postprocessor");
+                Py_DECREF(pName);
+                Py_DECREF(pInput);
+                Py_DECREF(pOutput);
+                Py_DECREF(pModule);
+                Py_DECREF(pFunc);
+            }
+    
+            std::ofstream ofile(EncodedName.c_str());
+            ofile << gcode;
+            ofile.close();
+        } else
+            Py_Error(Base::BaseExceptionFreeCADError, "The given file is not a path");
+    }
+    Py_Return;
+}
+
+
+static PyObject * read (PyObject *self, PyObject *args)
 {
     char* Name;
     const char* DocName;
@@ -72,7 +135,6 @@ static PyObject * insert (PyObject *self, PyObject *args)
         // get the global interpreter lock otherwise the app may crash with the error
         // 'PyThreadState_Get: no current thread' (see pystate.c)
         Base::PyGILStateLocker lock;
-        //Py_Initialize();
         pName = PyString_FromString(modpath.c_str());
         pModule = PyImport_Import(pName);
         if (pModule != NULL) {
@@ -97,7 +159,6 @@ static PyObject * insert (PyObject *self, PyObject *args)
         Py_DECREF(pModule);
         Py_DECREF(pFunc);
     }
-    std::cout << "after" << gcode << std::endl;
     Toolpath path;
     path.setFromGCode(gcode);
 
@@ -137,8 +198,10 @@ static PyObject * show (PyObject *self, PyObject *args)
 
 /* registration table  */
 struct PyMethodDef Path_methods[] = {
-    {"insert"     ,insert    ,METH_VARARGS,
-     "insert(filename,document,[preprocessor]): Imports a gcode file into the given document, optionally passing it through a pre-processor"},
+    {"write"      ,write     ,METH_VARARGS,
+     "write(object,filename,[preprocessor]): Exports a given path object to a GCode file, optionally passing it through a post-processor"},
+    {"read"       ,read      ,METH_VARARGS,
+     "read(filename,document,[preprocessor]): Imports a GCode file into the given document, optionally passing it through a pre-processor"},
     {"show"       ,show      ,METH_VARARGS,
      "show(path): Add the path to the active document or create one if no document exists."},
     {NULL, NULL}        /* end of table marker */

@@ -21,6 +21,7 @@ INSTALL(
         PathScripts/parseGroups.py
         PathScripts/toolpathparams.py
         PathScripts/pre_example.py
+        PathScripts/post_example.py
     DESTINATION
         Mod/Path/PathScripts
        )
@@ -31,5 +32,5 @@ INSTALL(
         DemoParts/motor_mount_inch.fcstd
         DemoParts/strange_part_with_holes.fcstd
     DESTINATION
-        Mod/Path/DemoParts
+        ${CMAKE_INSTALL_DATADIR}/Mod/Path/DemoParts
        )
