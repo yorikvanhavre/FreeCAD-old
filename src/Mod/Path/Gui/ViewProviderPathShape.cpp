@@ -21,40 +21,20 @@
  ***************************************************************************/
 
 
-#ifndef PATH_PRECOMPILED_H
-#define PATH_PRECOMPILED_H
+#include "PreCompiled.h"
 
-#include <FCConfig.h>
-
-// Exporting of App classes
-#ifdef FC_OS_WIN32
-# define PathExport  __declspec(dllexport)
-# define RobotExport __declspec(dllexport)
-# define PartExport __declspec(dllexport)
-# define BaseExport  __declspec(dllimport)
-#else // for Linux
-# define PathExport
-# define RobotExport
-# define PartExport
-# define BaseExport
+#ifndef _PreComp_
 #endif
 
-#ifdef _PreComp_
+#include "ViewProviderPathShape.h"
+#include <Gui/BitmapFactory.h>
 
-// standard
-#include <iostream>
-#include <sstream>
-#include <stdio.h>
-#include <assert.h>
-#include <string>
-#include <map>
-#include <vector>
-#include <set>
-#include <bitset>
-#include <cctype>
+using namespace Gui;
+using namespace PathGui;
 
-#include <Python.h>
+PROPERTY_SOURCE(PathGui::ViewProviderPathShape, PathGui::ViewProviderPath)
 
-#endif // _PreComp_
-#endif
-
+QIcon ViewProviderPathShape::getIcon() const
+{
+    return Gui::BitmapFactory().pixmap("Path-Shape");
+}

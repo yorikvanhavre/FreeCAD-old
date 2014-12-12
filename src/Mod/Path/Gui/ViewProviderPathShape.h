@@ -21,40 +21,24 @@
  ***************************************************************************/
 
 
-#ifndef PATH_PRECOMPILED_H
-#define PATH_PRECOMPILED_H
+#ifndef PATH_ViewProviderPathShape_H
+#define PATH_ViewProviderPathShape_H
 
-#include <FCConfig.h>
+#include "ViewProviderPath.h"
 
-// Exporting of App classes
-#ifdef FC_OS_WIN32
-# define PathExport  __declspec(dllexport)
-# define RobotExport __declspec(dllexport)
-# define PartExport __declspec(dllexport)
-# define BaseExport  __declspec(dllimport)
-#else // for Linux
-# define PathExport
-# define RobotExport
-# define PartExport
-# define BaseExport
-#endif
+namespace PathGui
+{
 
-#ifdef _PreComp_
+class PathGuiExport ViewProviderPathShape: public ViewProviderPath
+{
+    PROPERTY_HEADER(PathGui::ViewProviderPathShape);
 
-// standard
-#include <iostream>
-#include <sstream>
-#include <stdio.h>
-#include <assert.h>
-#include <string>
-#include <map>
-#include <vector>
-#include <set>
-#include <bitset>
-#include <cctype>
+public:
+        
+    QIcon getIcon(void) const;
+};
 
-#include <Python.h>
+} //namespace PathGui
 
-#endif // _PreComp_
-#endif
 
+#endif // PATH_ViewProviderPathShape_H
