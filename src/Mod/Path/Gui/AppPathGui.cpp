@@ -35,6 +35,7 @@
 #include "DlgSettingsPathColor.h"
 #include "Workbench.h"
 #include "ViewProviderPathCompound.h"
+#include "ViewProviderPathShape.h"
 
 // use a different name to CreateCommand()
 //void CreatePathCommands(void);
@@ -76,6 +77,7 @@ void PathGuiExport initPathGui()
     PathGui::Workbench                      ::init();
     PathGui::ViewProviderPath               ::init();
     PathGui::ViewProviderPathCompound       ::init();
+    PathGui::ViewProviderPathShape          ::init();
 
      // add resources and reloads the translators
     loadPathResource();
