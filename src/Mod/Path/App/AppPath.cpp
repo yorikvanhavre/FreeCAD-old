@@ -40,6 +40,7 @@
 #include "FeaturePath.h"
 #include "PropertyTooltable.h"
 #include "FeaturePathCompound.h"
+#include "FeaturePathShape.h"
 
 extern struct PyMethodDef Path_methods[];
 
@@ -73,6 +74,8 @@ void PathExport initPath()
     Path::FeaturePython          ::init();
     Path::PropertyTooltable      ::init();
     Path::FeatureCompound        ::init();
+    Path::FeatureShape           ::init();
+    Path::FeatureShapePython     ::init();
 }
 
 } // extern "C"

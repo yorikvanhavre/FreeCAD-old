@@ -30,6 +30,7 @@ if(MSVC)
 else(MSVC)
     set(Path_LIBS
         Robot
+        Part
         ${QT_QTCORE_LIBRARY}
         FreeCADApp
     )
@@ -72,6 +73,8 @@ SET(Path_SRCS
     PropertyTooltable.h
     FeaturePathCompound.cpp
     FeaturePathCompound.h
+    FeaturePathShape.cpp
+    FeaturePathShape.h
     ${Mod_SRCS}
     ${Python_SRCS}
 )

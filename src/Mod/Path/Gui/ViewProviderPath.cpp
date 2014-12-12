@@ -51,6 +51,15 @@
 #include <Base/Parameter.h>
 #include <Gui/BitmapFactory.h>
 
+#ifndef M_PI
+    #define M_PI 3.14159265358979323846
+    #define M_PI    3.14159265358979323846 /* pi */
+#endif
+
+#ifndef M_PI_2
+    #define M_PI_2  1.57079632679489661923 /* pi/2 */
+#endif
+
 using namespace Gui;
 using namespace PathGui;
 using namespace Path;
@@ -251,6 +260,10 @@ void ViewProviderPath::updateData(const App::Property* prop)
                 Base::Vector3d center = (last + cmd.getCenter());
                 double radius = (last - center).Length();
                 double angle = (next - center).GetAngle(last - center);
+                // BUGGY: not needed anyway?
+                //Base::Vector3d anorm = (last - center) % (next - center);
+                //if (anorm.z < 0)
+                //    angle = M_PI - angle;
                 int segments = 3/(deviation/angle); //we use a rather simple rule here, provisorily
                 for (int j = 1; j < segments; j++) {
                     //std::cout << "vector " << j << std::endl;

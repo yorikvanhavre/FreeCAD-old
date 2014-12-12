@@ -21,40 +21,54 @@
  ***************************************************************************/
 
 
-#ifndef PATH_PRECOMPILED_H
-#define PATH_PRECOMPILED_H
+#ifndef PATH_FeaturePathShape_H
+#define PATH_FeaturePathShape_H
 
-#include <FCConfig.h>
+#include <App/DocumentObject.h>
+#include <App/GeoFeature.h>
+#include <App/PropertyFile.h>
+#include <App/PropertyGeo.h>
+#include <App/FeaturePython.h>
+#include "Mod/Part/App/PropertyTopoShape.h"
 
-// Exporting of App classes
-#ifdef FC_OS_WIN32
-# define PathExport  __declspec(dllexport)
-# define RobotExport __declspec(dllexport)
-# define PartExport __declspec(dllexport)
-# define BaseExport  __declspec(dllimport)
-#else // for Linux
-# define PathExport
-# define RobotExport
-# define PartExport
-# define BaseExport
-#endif
+#include "Path.h"
+#include "PropertyPath.h"
+#include "FeaturePath.h"
 
-#ifdef _PreComp_
+namespace Path
+{
 
-// standard
-#include <iostream>
-#include <sstream>
-#include <stdio.h>
-#include <assert.h>
-#include <string>
-#include <map>
-#include <vector>
-#include <set>
-#include <bitset>
-#include <cctype>
+class PathExport FeatureShape : public Path::Feature
+{
+    PROPERTY_HEADER(Path::FeatureShape);
 
-#include <Python.h>
+public:
+    /// Constructor
+    FeatureShape(void);
+    virtual ~FeatureShape();
+    
+    Part::PropertyPartShape Shape;
 
-#endif // _PreComp_
-#endif
+    //@{
+    /// recalculate the feature
+    virtual App::DocumentObjectExecReturn *execute(void);
+    virtual short mustExecute(void) const;
+    //@}
 
+    /// returns the type name of the ViewProvider
+    virtual const char* getViewProviderName(void) const {
+        return "PathGui::ViewProviderPathShape";
+    }
+    
+protected:
+    /// get called by the container when a property has changed
+    //virtual void onChanged (const App::Property* prop);
+
+};
+
+typedef App::FeaturePythonT<FeatureShape> FeatureShapePython;
+
+} //namespace Path
+
+
+#endif // PATH_FeaturePathShape_H
