@@ -26,11 +26,13 @@
 #ifndef _PreComp_
 #endif
 
-#include "ViewProviderPathCompound.h"
 #include <Gui/Control.h>
-//#include <Mod/Path/Gui/TaskDlgTrajectoryCompound.h>
-#include <Mod/Path/App/FeaturePathCompound.h>
 #include <Gui/BitmapFactory.h>
+
+#include <Mod/Path/App/FeaturePathCompound.h>
+
+#include "TaskDlgPathCompound.h"
+
 
 using namespace Gui;
 using namespace PathGui;
@@ -40,9 +42,9 @@ PROPERTY_SOURCE(PathGui::ViewProviderPathCompound, PathGui::ViewProviderPath)
 
 bool ViewProviderPathCompound::setEdit(int ModNum)
 {
-    //Gui::TaskView::TaskDialog* dlg = new TaskDlgTrajectoryCompound(dynamic_cast<Robot::TrajectoryCompound *>(getObject()));
-    //Gui::Control().showDialog(dlg);
-    //return true;
+    Gui::TaskView::TaskDialog* dlg = new TaskDlgPathCompound(this);
+    Gui::Control().showDialog(dlg);
+    return true;
 
 }
 
