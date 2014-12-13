@@ -265,6 +265,12 @@ if(BUILD_ROBOT)
   set(BUILD_PART ON)
 endif(BUILD_ROBOT)
 
+#path module dependencies.
+if(BUILD_PATH)
+  set(BUILD_PART ON)
+  set(BUILD_ROBOT ON)
+endif(BUILD_PATH)
+
 #inferred from cmakelists.txt. appears to be working.
 if(BUILD_SKETCHER)
   set(BUILD_PART ON)
