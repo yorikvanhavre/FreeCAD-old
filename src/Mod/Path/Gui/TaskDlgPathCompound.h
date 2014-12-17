@@ -48,6 +48,9 @@ public:
 
 protected:
     void changeEvent(QEvent *e);
+    
+private Q_SLOTS:
+    void editTooltable();
 
 private:
     QWidget* proxy;
