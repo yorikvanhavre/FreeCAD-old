@@ -21,6 +21,11 @@
             </Documentation>
             <Parameter Name="Tools" Type="Dict"/>
         </Attribute>
+        <Methode Name="copy">
+            <Documentation>
+                <UserDocu>returns a copy of this tooltable</UserDocu>
+            </Documentation>
+        </Methode>
         <Methode Name="addTools">
             <Documentation>
                 <UserDocu>adds a tool or a list of tools at the end of the table</UserDocu>

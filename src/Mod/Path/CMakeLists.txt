@@ -23,6 +23,7 @@ INSTALL(
         PathScripts/pre_example.py
         PathScripts/post_example.py
         PathScripts/post_editor.py
+        PathScripts/TooltableEditor.py
     DESTINATION
         Mod/Path/PathScripts
        )

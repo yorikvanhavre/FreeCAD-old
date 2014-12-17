@@ -37,6 +37,7 @@
 #include <Gui/Application.h>
 #include <Gui/Document.h>
 #include <Gui/BitmapFactory.h>
+#include <Gui/Command.h>
 
 
 using namespace PathGui;
@@ -65,6 +66,8 @@ TaskWidgetPathCompound::TaskWidgetPathCompound(ViewProviderPathCompound *Compoun
     for (std::vector<App::DocumentObject*>::const_iterator it= Paths.begin();it!=Paths.end();++it) {
         QString name = QString::fromAscii((*it)->getNameInDocument());
         ui->PathsList->addItem(name);
+        
+    connect(ui->ButtonTooltable, SIGNAL(clicked()),this, SLOT(editTooltable()));
     }
 }
 
@@ -89,6 +92,15 @@ void TaskWidgetPathCompound::changeEvent(QEvent *e)
     if (e->type() == QEvent::LanguageChange) {
         ui->retranslateUi(proxy);
     }
+}
+
+void TaskWidgetPathCompound::editTooltable()
+{
+    Path::FeatureCompound* pcCompound = static_cast<Path::FeatureCompound*>(CompoundView->getObject());
+    std::ostringstream cmd;
+    cmd << "TooltableEditor.edit(\"" << pcCompound->getNameInDocument() << "\")";
+    Gui::Command::runCommand(Gui::Command::Gui,"from PathScripts import TooltableEditor");
+    Gui::Command::runCommand(Gui::Command::Gui,cmd.str().c_str());
 }
 
 

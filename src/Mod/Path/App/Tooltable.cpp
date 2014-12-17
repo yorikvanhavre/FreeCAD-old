@@ -207,8 +207,13 @@ void Tooltable::addTool(const Tool &tool)
 {
     Tool *tmp = new Tool(tool);
     if (!Tools.empty()) {
-        int last = Tools.end()->first;
-        Tools[last+1]= tmp;
+        int max = 0;
+        for(std::map<int,Tool*>::const_iterator i = Tools.begin(); i != Tools.end(); ++i) {
+            int k = i->first;
+            if (k > max)
+                max = k;
+        }
+        Tools[max+1]= tmp;
     } else
         Tools[1] = tmp;
 }
@@ -241,14 +246,14 @@ void Tooltable::Save (Writer &writer) const
 {
     writer.Stream() << writer.ind() << "<Tooltable count=\"" <<  getSize() <<"\">" << std::endl;
     writer.incInd();
-    
-    //for(unsigned int i = 0;i<getSize(); i++)
     for(std::map<int,Tool*>::const_iterator i = Tools.begin(); i != Tools.end(); ++i) {
         int k = i->first;
         Tool *v = i->second;
-        writer.Stream() << "<Toolslot number=\"" << k << "\">";
+        writer.Stream() << writer.ind() << "<Toolslot number=\"" << k << "\">" << std::endl;
+        writer.incInd();
         v->Save(writer);
-        writer.Stream() << "</Toolslot>";
+        writer.decInd();
+        writer.Stream() << writer.ind() << "</Toolslot>" << std::endl;
     }
     writer.decInd();
     writer.Stream() << writer.ind() << "</Tooltable>" << std::endl ;
