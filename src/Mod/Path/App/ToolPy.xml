@@ -81,6 +81,11 @@ HighCarbonToolSteel CastAlloy, Ceramics, Diamond, Sialon or Undefined</UserDocu>
             </Documentation>
             <Parameter Name="CuttingEdgeHeight" Type="Float"/>
         </Attribute>
+        <Methode Name="copy">
+            <Documentation>
+                <UserDocu>returns a copy of this tool</UserDocu>
+            </Documentation>
+        </Methode>
         <ClassDeclarations>
             bool touched;
         </ClassDeclarations>
