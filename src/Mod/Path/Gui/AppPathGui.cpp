@@ -33,7 +33,6 @@
 #include <Gui/Language/Translator.h>
 #include "ViewProviderPath.h"
 #include "DlgSettingsPathColor.h"
-#include "Workbench.h"
 #include "ViewProviderPathCompound.h"
 #include "ViewProviderPathShape.h"
 
@@ -74,7 +73,6 @@ void PathGuiExport initPathGui()
     //CreatePathCommands();
 
     // addition objects
-    PathGui::Workbench                      ::init();
     PathGui::ViewProviderPath               ::init();
     PathGui::ViewProviderPathCompound       ::init();
     PathGui::ViewProviderPathShape          ::init();

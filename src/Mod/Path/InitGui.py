@@ -59,9 +59,11 @@ class PathWorkbench ( Workbench ):
     ToolTip = "Path workbench"
 
     def Initialize(self):
-        # load the module
+        # load the builtin modules
         import Path
         import PathGui
+        # load python modules
+
     def GetClassName(self):
         return "PathGui::Workbench"
 
