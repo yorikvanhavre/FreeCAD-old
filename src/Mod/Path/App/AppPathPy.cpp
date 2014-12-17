@@ -38,6 +38,7 @@
 #include "PathPy.h"
 #include "Path.h"
 #include "FeaturePath.h"
+#include "FeaturePathCompound.h"
 
 using namespace Path;
 
@@ -126,6 +127,8 @@ static PyObject * read (PyObject *self, PyObject *args)
     std::stringstream buffer;
     buffer << filestr.rdbuf();
     std::string gcode = buffer.str();
+    std::vector<std::string> gcodelist;
+    bool isList = false;
     if (strcmp(Pre, "") != 0) {
         // use a python Preprocessor
         // by calling its parse() function
@@ -146,7 +149,19 @@ static PyObject * read (PyObject *self, PyObject *args)
                 PyTuple_SetItem(pArgs, 0, pInput);
                 pOutput = PyObject_CallObject(pFunc, pArgs);
                 if (pOutput != NULL) {
-                    gcode = std::string(PyString_AsString(pOutput));
+                    if (PyObject_TypeCheck(pOutput,&(PyString_Type))) {
+                        gcode = std::string(PyString_AsString(pOutput));
+                    } else if (PyObject_TypeCheck(pOutput,&(PyList_Type))) {
+                        isList = true;
+                        Py::List list(pOutput);
+                        for (Py::List::iterator it = list.begin(); it != list.end(); ++it) {
+                            if (PyObject_TypeCheck((*it).ptr(), &(PyString_Type))) {
+                                gcodelist.push_back(std::string(PyString_AsString((*it).ptr())));
+                            } else
+                                Py_Error(Base::BaseExceptionFreeCADError, "Preprocessor must return a string or a list of strings");
+                        }
+                    } else
+                        Py_Error(Base::BaseExceptionFreeCADError, "Preprocessor must return a string or a list of strings");
                 } else
                     Py_Error(Base::BaseExceptionFreeCADError, "Preprocessor failed to parse the given file");
             } else
@@ -159,13 +174,25 @@ static PyObject * read (PyObject *self, PyObject *args)
         Py_DECREF(pModule);
         Py_DECREF(pFunc);
     }
-    Toolpath path;
-    path.setFromGCode(gcode);
-
-    Path::Feature *object = static_cast<Path::Feature *>(pcDoc->addObject("Path::Feature",file.fileNamePure().c_str()));
-    object->Path.setValue(path);
+    
+    if (isList) {
+        std::vector<App::DocumentObject*> children;
+        for(std::vector<std::string>::iterator it = gcodelist.begin();it!=gcodelist.end();++it) {
+            Toolpath path;
+            path.setFromGCode((*it));
+            Path::Feature *object = static_cast<Path::Feature *>(pcDoc->addObject("Path::Feature","Path"));
+            object->Path.setValue(path);
+            children.push_back(static_cast<App::DocumentObject*>(object));
+        }
+        Path::FeatureCompound *compound = static_cast<Path::FeatureCompound *>(pcDoc->addObject("Path::FeatureCompound",file.fileNamePure().c_str()));
+        compound->Group.setValues(children);
+    } else {
+        Toolpath path;
+        path.setFromGCode(gcode);
+        Path::Feature *object = static_cast<Path::Feature *>(pcDoc->addObject("Path::Feature",file.fileNamePure().c_str()));
+        object->Path.setValue(path);
+    }
     pcDoc->recompute();
-
     Py_Return;
 }
 
