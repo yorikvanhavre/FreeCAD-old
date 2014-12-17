@@ -23,7 +23,7 @@
 #***************************************************************************
 
 
-import FreeCAD,Path, xml.sax
+import FreeCAD,Path, xml.sax, os
 from PySide import QtCore, QtGui
 
 
@@ -44,10 +44,10 @@ except AttributeError:
         return QtGui.QApplication.translate(context, text, disambig)
 
 
-# Tooltable XML reader
+# Tooltable XML readers
 
 
-class TooltableHandler( xml.sax.ContentHandler ):
+class FreeCADTooltableHandler( xml.sax.ContentHandler ):
     # http://www.tutorialspoint.com/python/python_xml_processing.htm
     def __init__(self):
         self.tooltable = None
@@ -77,6 +77,57 @@ class TooltableHandler( xml.sax.ContentHandler ):
     # Call when an elements ends
     def endElement(self, tag):
         if tag == "Toolslot":
+            if self.tooltable and self.tool and self.number:
+                self.tooltable.setTool(self.number,self.tool)
+                self.number = None
+                self.tool = None
+                
+                
+class HeeksTooltableHandler( xml.sax.ContentHandler ):
+    def __init__(self):
+        self.tooltable = Path.Tooltable()
+        self.tool = None
+        self.number = None
+
+    # Call when an element is found
+    def startElement(self, tag, attributes):
+        if tag == "Tool":     
+            self.tool = Path.Tool()           
+            self.number = int(attributes["tool_number"])
+            self.tool.Name = str(attributes["title"])
+        elif tag == "params":
+            t = str(attributes["type"])
+            if t == "drill":
+                self.tool.ToolType = "Drill"
+            elif t == "center_drill_bit":
+                self.tool.ToolType = "CenterDrill"
+            elif t == "end_mill":
+                self.tool.ToolType = "EndMill"
+            elif t == "slot_cutter":
+                self.tool.ToolType = "SlotCutter"
+            elif t == "ball_end_mill":
+                self.tool.ToolType = "BallEndMill"
+            elif t == "chamfer":
+                self.tool.ToolType = "Chamfer"
+            elif t == "engraving_bit":
+                self.tool.ToolType = "Engraver"
+            m = str(attributes["material"])
+            if m == "0":
+                self.tool.Material = "HighSpeedSteel"
+            elif m == "1":
+                self.tool.Material = "Carbide"
+            # for some reason without the following line I get an error 
+            print attributes["diameter"]
+            self.tool.Diameter = float(attributes["diameter"])
+            self.tool.LengthOffset = float(attributes["tool_length_offset"])
+            self.tool.FlatRadius = float(attributes["flat_radius"])
+            self.tool.CornerRadius = float(attributes["corner_radius"])
+            self.tool.CuttingEdgeAngle = float(attributes["cutting_edge_angle"])
+            self.tool.CuttingEdgeHeight = float(attributes["cutting_edge_height"])
+            
+    # Call when an elements ends
+    def endElement(self, tag):
+        if tag == "Tool":
             if self.tooltable and self.tool and self.number:
                 self.tooltable.setTool(self.number,self.tool)
                 self.number = None
@@ -526,11 +577,14 @@ class Editor(QtGui.QDialog):
         
     def read(self):
         "imports a tooltable from a file"
-        filename = QtGui.QFileDialog.getOpenFileName(self, _translate("TooltableEditor","Open tooltable",None),None, _translate("TooltableEditor","Tooltable XML (*.xml)",None))
+        filename = QtGui.QFileDialog.getOpenFileName(self, _translate("TooltableEditor","Open tooltable",None),None, _translate("TooltableEditor","Tooltable XML (*.xml);;HeeksCAD tooltable (*.tooltable)",None))
         if filename:
             parser = xml.sax.make_parser()
             parser.setFeature(xml.sax.handler.feature_namespaces, 0)
-            Handler = TooltableHandler()
+            if os.path.splitext(filename[0])[1].lower() == ".tooltable":
+                Handler = HeeksTooltableHandler()
+            else:
+                Handler = FreeCADTooltableHandler()
             parser.setContentHandler( Handler )
             parser.parse(str(filename[0]))
             if Handler.tooltable:

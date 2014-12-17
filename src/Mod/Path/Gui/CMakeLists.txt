@@ -49,8 +49,6 @@ SET(PathGui_SRCS_Module
     Resources/Path.qrc
     PreCompiled.cpp
     PreCompiled.h
-    Workbench.cpp
-    Workbench.h
     DlgSettingsPathColor.ui
     DlgSettingsPathColor.cpp
     DlgSettingsPathColor.h
