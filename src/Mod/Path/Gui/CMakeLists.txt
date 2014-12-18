@@ -32,6 +32,7 @@ SOURCE_GROUP("Resources" FILES ${PathResource_SRCS})
 set(PathGui_MOC_HDRS
     DlgSettingsPathColor.h
     TaskDlgPathCompound.h
+    DlgProcessorChooser.h
 )
 fc_wrap_cpp(PathGui_MOC_SRCS ${PathGui_MOC_HDRS})
 
@@ -40,6 +41,7 @@ SOURCE_GROUP("Moc" FILES ${PathGui_MOC_SRCS})
 set(PathGui_UIC_SRCS
     DlgSettingsPathColor.ui
     TaskDlgPathCompound.ui
+    DlgProcessorChooser.ui
 )
 qt4_wrap_ui(PathGui_UIC_HDRS ${PathGui_UIC_SRCS})
 
@@ -55,6 +57,9 @@ SET(PathGui_SRCS_Module
     TaskDlgPathCompound.ui
     TaskDlgPathCompound.cpp
     TaskDlgPathCompound.h
+    DlgProcessorChooser.ui
+    DlgProcessorChooser.cpp
+    DlgProcessorChooser.h
 )
 
 SOURCE_GROUP("Module" FILES ${PathGui_SRCS_Module})
