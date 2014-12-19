@@ -4,5 +4,6 @@
         <file>icons/Path-Toolpath.svg</file>
         <file>icons/Path-Compound.svg</file>
         <file>icons/Path-Shape.svg</file>
+        <file>icons/Path-Profile.svg</file>
     </qresource>
 </RCC> 

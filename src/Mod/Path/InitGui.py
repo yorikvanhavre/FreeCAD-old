@@ -63,9 +63,25 @@ class PathWorkbench ( Workbench ):
         import Path
         import PathGui
         # load python modules
+        from PathScripts import PathProfile
+        
+        # build commands list
+        commands = ["Path_Profile","Path_Shape","Path_Compound"]
+        
+        # Add commands to menu and toolbar
+        def QT_TRANSLATE_NOOP(scope, text): return text
+        self.appendToolbar(QT_TRANSLATE_NOOP("PathWorkbench","Path"),commands)
+        self.appendMenu(QT_TRANSLATE_NOOP("PathWorkbench","Path"),commands)
+        Log ('Loading Path workbench... done\n')
 
     def GetClassName(self):
-        return "PathGui::Workbench"
+        return "Gui::PythonWorkbench"
+        
+    def Activated(self):
+        Msg("Path workbench activated\n")
+                
+    def Deactivated(self):
+        Msg("Path workbench deactivated\n")
 
 Gui.addWorkbench(PathWorkbench())
 
