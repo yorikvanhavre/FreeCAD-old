@@ -37,7 +37,7 @@
 #include "ViewProviderPathShape.h"
 
 // use a different name to CreateCommand()
-//void CreatePathCommands(void);
+void CreatePathCommands(void);
 
 void loadPathResource()
 {
@@ -69,8 +69,7 @@ void PathGuiExport initPathGui()
     Base::Console().Log("Loading GUI of Path module... done\n");
 
     // instantiating the commands
-    // Reenable once this fuction is implemented in Commands.cpp
-    //CreatePathCommands();
+    CreatePathCommands();
 
     // addition objects
     PathGui::ViewProviderPath               ::init();
