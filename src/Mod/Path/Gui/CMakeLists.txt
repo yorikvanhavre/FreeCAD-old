@@ -46,6 +46,7 @@ set(PathGui_UIC_SRCS
 qt4_wrap_ui(PathGui_UIC_HDRS ${PathGui_UIC_SRCS})
 
 SET(PathGui_SRCS_Module
+    Command.cpp
     AppPathGui.cpp
     AppPathGuiPy.cpp
     Resources/Path.qrc
