@@ -39,6 +39,8 @@
 #include <Gui/BitmapFactory.h>
 #include <Gui/Command.h>
 
+#include <Mod/Path/App/Tooltable.h>
+
 
 using namespace PathGui;
 using namespace Gui;
@@ -66,6 +68,15 @@ TaskWidgetPathCompound::TaskWidgetPathCompound(ViewProviderPathCompound *Compoun
     for (std::vector<App::DocumentObject*>::const_iterator it= Paths.begin();it!=Paths.end();++it) {
         QString name = QString::fromAscii((*it)->getNameInDocument());
         ui->PathsList->addItem(name);
+        
+    Path::Tooltable pcTooltable = static_cast<Path::Tooltable>(pcCompound->Tooltable.getValue());
+    if (pcTooltable.getSize() == 0) {
+        ui->LabelTooltable->setText(tr("Tooltable (empty)"));
+    } else if (pcTooltable.getSize() == 1) {
+        ui->LabelTooltable->setText(tr("Tooltable (1 tool)"));
+    } else {
+        ui->LabelTooltable->setText(tr("Tooltable (%1 tools)").arg(pcTooltable.getSize()));
+    }
         
     connect(ui->ButtonTooltable, SIGNAL(clicked()),this, SLOT(editTooltable()));
     }
