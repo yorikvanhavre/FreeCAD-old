@@ -42,6 +42,7 @@ class ObjectProfile:
 
     def __init__(self,obj):
         obj.addProperty("App::PropertyLinkSub","Base","Path",translate("PathProfile","The base geometry of this object"))
+        obj.addProperty("App::PropertyInteger","ToolNumber","Path",translate("PathProfile","The tool number to use"))
         obj.Proxy = self
 
     def __getstate__(self):
@@ -49,11 +50,25 @@ class ObjectProfile:
 
     def __setstate__(self,state):
         return None
+        
+    def getTool(self,obj,number=0):
+        "retrieves a tool from a hosting object with a tooltable, if any"
+        for o in obj.InList:
+            if hasattr(o,"Tooltable"):
+                return o.Tooltable.getTool(number)
+        # not found? search one level up
+        for o in obj.InList:
+            return self.getTool(o,number)
+        return None
 
     def execute(self,obj):
         if obj.Base:
-            # temporary value, to be taken from the tooltable later on
-            radius = 1
+            tool = self.getTool(obj,obj.ToolNumber)
+            if tool:
+                radius = tool.Diameter/2
+            else:
+                # temporary value, to be taken from the properties later on
+                radius = 1
             
             # we only consider the outer wire if this is a Face
             shape = getattr(obj.Base[0].Shape,obj.Base[1][0])
