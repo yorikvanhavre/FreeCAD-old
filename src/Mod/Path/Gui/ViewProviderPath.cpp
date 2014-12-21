@@ -79,6 +79,7 @@ ViewProviderPath::ViewProviderPath()
     ADD_PROPERTY(NormalColor,(lr,lg,lb));
     ADD_PROPERTY(MarkerColor,(mr,mg,mb));
     ADD_PROPERTY(LineWidth,(lwidth));
+    ADD_PROPERTY(ShowFirstRapid,(true));
     
     pcPathRoot = new Gui::SoFCSelection();
 
@@ -202,6 +203,9 @@ void ViewProviderPath::onChanged(const App::Property* prop)
     } else if (prop == &MarkerColor) {
         const App::Color& c = MarkerColor.getValue();
         pcMarkerColor->rgb.setValue(c.r,c.g,c.b);
+    } else if (prop == &ShowFirstRapid) {
+        Path::Feature* pcPathObj = static_cast<Path::Feature*>(pcObject);
+        this->updateData(&pcPathObj->Path);
     } else {
         ViewProviderGeometryObject::onChanged(prop);
     }
@@ -222,10 +226,9 @@ void ViewProviderPath::updateData(const App::Property* prop)
         std::vector<Base::Vector3d> points;
         std::vector<Base::Vector3d> markers;
         Base::Vector3d last(0,0,0);
-        points.push_back(last);
-        markers.push_back(last);
         colorindex.clear();
         bool absolute = true;
+        bool first = true;
         
         for (int  i = 0; i < tp.getSize(); i++) {
             Path::Command cmd = tp.getCommand(i);
@@ -242,13 +245,28 @@ void ViewProviderPath::updateData(const App::Property* prop)
             
             if ( (name == "G0") || (name == "G00") || (name == "G1") || (name == "G01") ) {
                 // straight line
-                points.push_back(next);
-                markers.push_back(next);
-                last = next;
-                if ( (name == "G0") || (name == "G00") )
-                    colorindex.push_back(0); // rapid color
-                else
-                    colorindex.push_back(1); // std color
+
+                // don't show first G0 move if ShowRapidMove is False
+                if ( (!first) || (ShowFirstRapid.getValue() == true) || (name == "G1") || (name == "G01") ) {
+                    if (first) {
+                        points.push_back(last);
+                        markers.push_back(last);
+                    }
+                    points.push_back(next);
+                    markers.push_back(next);
+                    last = next;
+                    if ( (name == "G0") || (name == "G00") )
+                        colorindex.push_back(0); // rapid color
+                    else
+                        colorindex.push_back(1); // std color
+                } else {
+                    if (first) {
+                        last = next;
+                        points.push_back(last);
+                        markers.push_back(last);
+                    }
+                }
+                first = false;
                 
             } else if ( (name == "G2") || (name == "G02") || (name == "G3") || (name == "G03") ) {
                 // arc

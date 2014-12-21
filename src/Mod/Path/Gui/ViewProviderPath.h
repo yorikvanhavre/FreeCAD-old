@@ -51,8 +51,9 @@ public:
     
     // Display properties
     App::PropertyInteger LineWidth;
-    App::PropertyColor NormalColor;
-    App::PropertyColor MarkerColor;
+    App::PropertyColor   NormalColor;
+    App::PropertyColor   MarkerColor;
+    App::PropertyBool    ShowFirstRapid;
 
     void attach(App::DocumentObject *pcObject);
     void setDisplayMode(const char* ModeName);
