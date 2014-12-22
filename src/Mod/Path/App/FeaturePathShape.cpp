@@ -68,7 +68,6 @@ App::DocumentObjectExecReturn *FeatureShape::execute(void)
     if (!shape.IsNull()) {
         if (shape.ShapeType() == TopAbs_WIRE) {
             Path::Toolpath result;
-            Base::Vector3d base;
             bool first = true;
             
             TopExp_Explorer ExpEdges (shape,TopAbs_EDGE);
@@ -82,15 +81,18 @@ App::DocumentObjectExecReturn *FeatureShape::execute(void)
                     Base::Placement tpl;
                     tpl.setPosition(Base::Vector3d(pnt.X(),pnt.Y(),pnt.Z()));
                     if (first) {
-                        Placement.setValue(tpl);
-                        base = Base::Vector3d(pnt.X(),pnt.Y(),pnt.Z());
+                        // add first point as a G0 move
+                        Path::Command cmd;
+                        std::ostringstream ctxt;
+                        ctxt << "G0 X" << tpl.getPosition().x << " Y" << tpl.getPosition().y << " Z" << tpl.getPosition().z;
+                        cmd.setFromGCode(ctxt.str());
+                        result.addCommand(cmd);
                         first = false;
                         vfirst = false;
                     } else {
                         if (vfirst)
                             vfirst = false;
                         else {
-                            tpl.setPosition(tpl.getPosition()-base);
                             Path::Command cmd;
                             cmd.setFromPlacement(tpl);
                             result.addCommand(cmd);
