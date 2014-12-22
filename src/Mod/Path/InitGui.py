@@ -64,9 +64,10 @@ class PathWorkbench ( Workbench ):
         import PathGui
         # load python modules
         from PathScripts import PathProfile
+        from PathScripts import PathPocket
         
         # build commands list
-        commands = ["Path_Profile","Path_Shape","Path_Compound"]
+        commands = ["Path_Profile","Path_Pocket","Path_Shape","Path_Compound"]
         
         # Add commands to menu and toolbar
         def QT_TRANSLATE_NOOP(scope, text): return text
