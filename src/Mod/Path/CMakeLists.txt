@@ -25,6 +25,7 @@ INSTALL(
         PathScripts/post_editor.py
         PathScripts/TooltableEditor.py
         PathScripts/PathProfile.py
+        PathScripts/PathPocket.py
     DESTINATION
         Mod/Path/PathScripts
        )

@@ -85,16 +85,14 @@ class ObjectProfile:
             output = "G90\nG21\nG40\n"
             for edge in offset.Edges:
                 if not last:
-                    # we set the placement to our first point
+                    # we set the base GO to our first point
                     last = edge.Vertexes[0].Point
-                    placement = FreeCAD.Placement()
-                    placement.Base = last
-                    obj.Placement = placement
+                    output += "G0 X" + str(last.x) + " Y" + str(last.y) + " Z" + str(last.z) + "\n"
                 if isinstance(edge.Curve,Part.Circle):
-                    point = edge.Vertexes[-1].Point.sub(obj.Placement.Base)
+                    point = edge.Vertexes[-1].Point
                     if point == last: # edges can come flipped
-                        point = edge.Vertexes[0].Point.sub(obj.Placement.Base)
-                    center = edge.Curve.Center.sub(obj.Placement.Base)
+                        point = edge.Vertexes[0].Point
+                    center = edge.Curve.Center
                     relcenter = center.sub(last)
                     v1 = last.sub(center)
                     v2 = point.sub(center)
@@ -107,9 +105,9 @@ class ObjectProfile:
                     output += "\n"
                     last = point
                 else:
-                    point = edge.Vertexes[-1].Point.sub(obj.Placement.Base)
+                    point = edge.Vertexes[-1].Point
                     if point == last: # edges can come flipped
-                        point = edge.Vertexes[0].Point.sub(obj.Placement.Base)
+                        point = edge.Vertexes[0].Point
                     output += "G1 X" + str(point.x) + " Y" + str(point.y) + " Z" + str(point.z) + "\n"
                     last = point
             print output
