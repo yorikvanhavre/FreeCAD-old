@@ -79,6 +79,8 @@ class ObjectPocket:
                 
             # absolute coords, millimeters, cancel offsets
             output = "G90\nG21\nG40\n"
+            # save tool
+            output += "M06 T" + str(obj.ToolNumber) + "\n"
             
             # build offsets
             offsets = []
