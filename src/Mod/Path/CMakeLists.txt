@@ -26,6 +26,7 @@ INSTALL(
         PathScripts/TooltableEditor.py
         PathScripts/PathProfile.py
         PathScripts/PathPocket.py
+        PathScripts/PathDrilling.py
     DESTINATION
         Mod/Path/PathScripts
        )
