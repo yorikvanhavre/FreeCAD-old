@@ -75,6 +75,8 @@ SET(Path_SRCS
     FeaturePathCompound.h
     FeaturePathShape.cpp
     FeaturePathShape.h
+    FeaturePathProject.cpp
+    FeaturePathProject.h
     ${Mod_SRCS}
     ${Python_SRCS}
 )

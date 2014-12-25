@@ -39,7 +39,6 @@ PROPERTY_SOURCE(Path::FeatureCompound, Path::Feature)
 FeatureCompound::FeatureCompound()
 {
     ADD_PROPERTY_TYPE( Group,      (0),                "Compound",Prop_None,"ordered list of paths to combine");
-    ADD_PROPERTY_TYPE( Tooltable,  (Path::Tooltable()),"Compound",Prop_None,"The tooltable of this feature");
 }
 
 FeatureCompound::~FeatureCompound()

@@ -21,47 +21,24 @@
  ***************************************************************************/
 
 
-#ifndef PATH_FeatureCompound_H
-#define PATH_FeatureCompound_H
+#ifndef PATH_ViewProviderPathProject_H
+#define PATH_ViewProviderPathProject_H
 
-#include <App/GeoFeature.h>
-#include <App/PropertyFile.h>
-#include <App/PropertyGeo.h>
+#include "ViewProviderPathCompound.h"
 
-#include "Path.h"
-#include "FeaturePath.h"
-#include "PropertyPath.h"
-
-namespace Path
+namespace PathGui
 {
 
-class PathExport FeatureCompound : public Path::Feature
+class PathGuiExport ViewProviderPathProject: public ViewProviderPathCompound
 {
-    PROPERTY_HEADER(Path::Feature);
+    PROPERTY_HEADER(PathGui::ViewProviderPathProject);
 
 public:
-    /// Constructor
-    FeatureCompound(void);
-    virtual ~FeatureCompound();
-
-    App::PropertyLinkList     Group;
-
-    /// returns the type name of the ViewProvider
-    virtual const char* getViewProviderName(void) const {
-        return "PathGui::ViewProviderPathCompound";
-    }
-    virtual App::DocumentObjectExecReturn *execute(void);
-    
-    /// Checks whether the object \a obj is part of this group.
-    bool hasObject(const DocumentObject* obj) const;
-    /// Adds an object to this group.
-    void addObject(DocumentObject* obj);
-    /// Removes an object from this group.
-    void removeObject(DocumentObject* obj);
-
+        
+    QIcon getIcon(void) const;
 };
 
-} //namespace Path
+} //namespace PathGui
 
 
-#endif // PATH_FeatureCompound_H
+#endif // PATH_ViewProviderPathProject_H

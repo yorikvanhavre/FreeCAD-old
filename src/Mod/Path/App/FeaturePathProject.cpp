@@ -21,47 +21,26 @@
  ***************************************************************************/
 
 
-#ifndef PATH_FeatureCompound_H
-#define PATH_FeatureCompound_H
+#include "PreCompiled.h"
 
-#include <App/GeoFeature.h>
-#include <App/PropertyFile.h>
-#include <App/PropertyGeo.h>
+#ifndef _PreComp_
+#endif
 
-#include "Path.h"
-#include "FeaturePath.h"
-#include "PropertyPath.h"
+#include "FeaturePathProject.h"
+#include "FeaturePathCompound.h"
+#include "Tooltable.h"
 
-namespace Path
+using namespace Path;
+using namespace App;
+
+PROPERTY_SOURCE(Path::FeatureProject, Path::FeatureCompound)
+
+
+FeatureProject::FeatureProject()
 {
+    ADD_PROPERTY_TYPE( Tooltable,  (Path::Tooltable()),"Project",App::Prop_None,"The tooltable of this feature");
+}
 
-class PathExport FeatureCompound : public Path::Feature
+FeatureProject::~FeatureProject()
 {
-    PROPERTY_HEADER(Path::Feature);
-
-public:
-    /// Constructor
-    FeatureCompound(void);
-    virtual ~FeatureCompound();
-
-    App::PropertyLinkList     Group;
-
-    /// returns the type name of the ViewProvider
-    virtual const char* getViewProviderName(void) const {
-        return "PathGui::ViewProviderPathCompound";
-    }
-    virtual App::DocumentObjectExecReturn *execute(void);
-    
-    /// Checks whether the object \a obj is part of this group.
-    bool hasObject(const DocumentObject* obj) const;
-    /// Adds an object to this group.
-    void addObject(DocumentObject* obj);
-    /// Removes an object from this group.
-    void removeObject(DocumentObject* obj);
-
-};
-
-} //namespace Path
-
-
-#endif // PATH_FeatureCompound_H
+}

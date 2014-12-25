@@ -22,67 +22,19 @@
 
 
 #include "PreCompiled.h"
+
 #ifndef _PreComp_
-# include <Python.h>
 #endif
 
-#include <Base/Console.h>
-#include <Base/Interpreter.h>
-#include <Gui/Application.h>
-#include <Gui/WidgetFactory.h>
-#include <Gui/Language/Translator.h>
-#include "ViewProviderPath.h"
-#include "DlgSettingsPathColor.h"
-#include "ViewProviderPathCompound.h"
-#include "ViewProviderPathShape.h"
 #include "ViewProviderPathProject.h"
+#include <Gui/BitmapFactory.h>
 
-// use a different name to CreateCommand()
-void CreatePathCommands(void);
+using namespace Gui;
+using namespace PathGui;
 
-void loadPathResource()
+PROPERTY_SOURCE(PathGui::ViewProviderPathProject, PathGui::ViewProviderPathCompound)
+
+QIcon ViewProviderPathProject::getIcon() const
 {
-    // add resources and reloads the translators
-    Q_INIT_RESOURCE(Path);
-    Gui::Translator::instance()->refresh();
+    return Gui::BitmapFactory().pixmap("Path-Project");
 }
-
-/* registration table  */
-extern struct PyMethodDef PathGui_methods[];
-
-
-/* Python entry */
-extern "C" {
-void PathGuiExport initPathGui()  
-{
-     if (!Gui::Application::Instance) {
-        PyErr_SetString(PyExc_ImportError, "Cannot load Gui module in console application.");
-        return;
-    }
-    try {
-        Base::Interpreter().runString("import Path");
-    }
-    catch(const Base::Exception& e) {
-        PyErr_SetString(PyExc_ImportError, e.what());
-        return;
-    }
-    (void) Py_InitModule("PathGui", PathGui_methods);   /* mod name, table ptr */
-    Base::Console().Log("Loading GUI of Path module... done\n");
-
-    // instantiating the commands
-    CreatePathCommands();
-
-    // addition objects
-    PathGui::ViewProviderPath               ::init();
-    PathGui::ViewProviderPathCompound       ::init();
-    PathGui::ViewProviderPathShape          ::init();
-    PathGui::ViewProviderPathProject        ::init();
-
-     // add resources and reloads the translators
-    loadPathResource();
-    
-    // register preferences pages
-    new Gui::PrefPageProducer<PathGui::DlgSettingsPathColor> ("Display");
-}
-
-} // extern "C" {
