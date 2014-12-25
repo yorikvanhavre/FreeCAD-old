@@ -67,7 +67,7 @@ class PathWorkbench ( Workbench ):
         from PathScripts import PathDrilling
         
         # build commands list
-        commands = ["Path_Profile","Path_Pocket","Path_Drilling","Path_Shape","Path_Compound"]
+        commands = ["Path_Profile","Path_Pocket","Path_Drilling","Path_Shape","Path_Compound","Path_Project"]
         
         # Add commands to menu and toolbar
         def QT_TRANSLATE_NOOP(scope, text): return text

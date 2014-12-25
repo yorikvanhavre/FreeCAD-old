@@ -7,5 +7,6 @@
         <file>icons/Path-Profile.svg</file>
         <file>icons/Path-Pocket.svg</file>
         <file>icons/Path-Drilling.svg</file>
+        <file>icons/Path-Project.svg</file>
     </qresource>
 </RCC> 

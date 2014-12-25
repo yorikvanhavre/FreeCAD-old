@@ -68,17 +68,24 @@ TaskWidgetPathCompound::TaskWidgetPathCompound(ViewProviderPathCompound *Compoun
     for (std::vector<App::DocumentObject*>::const_iterator it= Paths.begin();it!=Paths.end();++it) {
         QString name = QString::fromAscii((*it)->getNameInDocument());
         ui->PathsList->addItem(name);
-        
-    Path::Tooltable pcTooltable = static_cast<Path::Tooltable>(pcCompound->Tooltable.getValue());
-    if (pcTooltable.getSize() == 0) {
-        ui->LabelTooltable->setText(tr("Tooltable (empty)"));
-    } else if (pcTooltable.getSize() == 1) {
-        ui->LabelTooltable->setText(tr("Tooltable (1 tool)"));
-    } else {
-        ui->LabelTooltable->setText(tr("Tooltable (%1 tools)").arg(pcTooltable.getSize()));
     }
-        
-    connect(ui->ButtonTooltable, SIGNAL(clicked()),this, SLOT(editTooltable()));
+    
+    // our linked compound can be a simple compound or a project. If so, show the tooltable controls
+    if (CompoundView->getObject()->getTypeId().isDerivedFrom(Path::FeatureProject::getClassTypeId())) {
+        Path::FeatureProject* pcProject = static_cast<Path::FeatureProject*>(CompoundView->getObject());
+        Path::Tooltable pcTooltable = static_cast<Path::Tooltable>(pcProject->Tooltable.getValue());
+        if (pcTooltable.getSize() == 0) {
+            ui->LabelTooltable->setText(tr("Tooltable (empty)"));
+        } else if (pcTooltable.getSize() == 1) {
+            ui->LabelTooltable->setText(tr("Tooltable (1 tool)"));
+        } else {
+            ui->LabelTooltable->setText(tr("Tooltable (%1 tools)").arg(pcTooltable.getSize()));
+        }
+            
+        connect(ui->ButtonTooltable, SIGNAL(clicked()),this, SLOT(editTooltable()));
+    } else {
+        ui->LabelTooltable->hide();
+        ui->ButtonTooltable->hide();
     }
 }
 
@@ -107,11 +114,13 @@ void TaskWidgetPathCompound::changeEvent(QEvent *e)
 
 void TaskWidgetPathCompound::editTooltable()
 {
-    Path::FeatureCompound* pcCompound = static_cast<Path::FeatureCompound*>(CompoundView->getObject());
-    std::ostringstream cmd;
-    cmd << "TooltableEditor.edit(\"" << pcCompound->getNameInDocument() << "\")";
-    Gui::Command::runCommand(Gui::Command::Gui,"from PathScripts import TooltableEditor");
-    Gui::Command::runCommand(Gui::Command::Gui,cmd.str().c_str());
+    if (CompoundView->getObject()->getTypeId().isDerivedFrom(Path::FeatureProject::getClassTypeId())) {
+        Path::FeatureProject* pcProject = static_cast<Path::FeatureProject*>(CompoundView->getObject());
+        std::ostringstream cmd;
+        cmd << "TooltableEditor.edit(\"" << pcProject->getNameInDocument() << "\")";
+        Gui::Command::runCommand(Gui::Command::Gui,"from PathScripts import TooltableEditor");
+        Gui::Command::runCommand(Gui::Command::Gui,cmd.str().c_str());
+    }
 }
 
 

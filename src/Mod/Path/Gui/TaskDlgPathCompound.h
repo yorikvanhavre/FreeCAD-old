@@ -28,6 +28,7 @@
 #include <Gui/TaskView/TaskDialog.h>
 #include <Mod/Path/App/FeaturePath.h>
 #include <Mod/Path/App/FeaturePathCompound.h>
+#include <Mod/Path/App/FeaturePathProject.h>
 
 #include "ViewProviderPathCompound.h"
 
