@@ -50,6 +50,7 @@
 #include <Base/Console.h>
 #include <Base/Parameter.h>
 #include <Gui/BitmapFactory.h>
+#include <Gui/SoFCBoundingBox.h>
 
 #ifndef M_PI
     #define M_PI 3.14159265358979323846
@@ -329,6 +330,20 @@ void ViewProviderPath::updateData(const App::Property* prop)
         //    pcMarkerCoords->point.set1Value(i,markers[i].x,markers[i].y,markers[i].z);
         
         NormalColor.touch();
+        
+        // update the boundbox
+        double MinX,MinY,MinZ = 999999999999.0;
+        double MaxX,MaxY,MaxZ = -999999999999.0;
+        for(std::vector<Base::Vector3d>::const_iterator it=points.begin();it!=points.end();it++) {
+            if ((*it).x < MinX)  MinX = (*it).x;
+            if ((*it).y < MinY)  MinY = (*it).y;
+            if ((*it).z < MinZ)  MinZ = (*it).z;
+            if ((*it).x > MaxX)  MaxX = (*it).x;
+            if ((*it).y > MaxY)  MaxY = (*it).y;
+            if ((*it).z > MaxZ)  MaxZ = (*it).z;
+        }
+        pcBoundingBox->minBounds.setValue(MinX, MinY, MinZ);
+        pcBoundingBox->maxBounds.setValue(MaxX, MaxY, MaxZ);
         
     } else if ( prop == &pcPathObj->Placement) {
         Base::Placement pl = *(&pcPathObj->Placement.getValue());
