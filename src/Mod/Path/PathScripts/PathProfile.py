@@ -113,7 +113,7 @@ class ObjectProfile:
                         point = edge.Vertexes[0].Point
                     output += "G1 X" + str(point.x) + " Y" + str(point.y) + " Z" + str(point.z) + "\n"
                     last = point
-            print output
+            #print output
             path = Path.Path(output)
             obj.Path = path
 
@@ -150,6 +150,7 @@ class CommandPathProfile:
         FreeCADGui.doCommand('obj = FreeCAD.ActiveDocument.addObject("Path::FeaturePython","Profile")')
         FreeCADGui.doCommand('PathScripts.PathProfile.ObjectProfile(obj)')
         FreeCADGui.doCommand('obj.Base = (FreeCAD.ActiveDocument.'+selection[0].ObjectName+',"'+selection[0].SubElementNames[0]+'")')
+        FreeCADGui.doCommand('obj.ViewObject.Proxy = 0')
         FreeCAD.ActiveDocument.commitTransaction()
         FreeCAD.ActiveDocument.recompute()
 

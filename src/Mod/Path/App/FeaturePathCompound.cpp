@@ -38,7 +38,7 @@ PROPERTY_SOURCE(Path::FeatureCompound, Path::Feature)
 
 FeatureCompound::FeatureCompound()
 {
-    ADD_PROPERTY_TYPE( Group,      (0),                "Compound",Prop_None,"ordered list of paths to combine");
+    ADD_PROPERTY_TYPE( Group,      (0),                "Base",Prop_None,"ordered list of paths to combine");
 }
 
 FeatureCompound::~FeatureCompound()
