@@ -77,6 +77,7 @@ void PathGuiExport initPathGui()
     PathGui::ViewProviderPathCompound       ::init();
     PathGui::ViewProviderPathShape          ::init();
     PathGui::ViewProviderPathProject        ::init();
+    PathGui::ViewProviderPathPython         ::init();
 
      // add resources and reloads the translators
     loadPathResource();

@@ -26,6 +26,7 @@
 
 #include <Gui/ViewProviderGeometryObject.h>
 #include <Gui/SoFCSelection.h>
+#include <Gui/ViewProviderPythonFeature.h>
 
 class SoCoordinate3;
 class SoDrawStyle;  
@@ -59,6 +60,7 @@ public:
     void setDisplayMode(const char* ModeName);
     std::vector<std::string> getDisplayModes() const;
     void updateData(const App::Property*);
+    void recomputeBoundingBox();
     virtual QIcon getIcon() const;
 
 protected:
@@ -77,6 +79,8 @@ protected:
     std::vector<int>        colorindex;
 
  };
+ 
+ typedef Gui::ViewProviderPythonFeatureT<ViewProviderPath> ViewProviderPathPython;
 
 } //namespace PathGui
 

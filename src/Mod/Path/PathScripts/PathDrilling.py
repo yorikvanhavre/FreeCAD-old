@@ -77,7 +77,7 @@ class ObjectDrilling:
         # rapid move back to the start position
         output += "G0 Z" + str(obj.StartPoint.z) + "\n"
         
-        print output
+        #print output
         path = Path.Path(output)
         obj.Path = path
 
@@ -99,6 +99,7 @@ class CommandPathDrilling:
         FreeCADGui.addModule("PathScripts.PathDrilling")
         FreeCADGui.doCommand('obj = FreeCAD.ActiveDocument.addObject("Path::FeaturePython","Drilling")')
         FreeCADGui.doCommand('PathScripts.PathDrilling.ObjectDrilling(obj)')
+        FreeCADGui.doCommand('obj.ViewObject.Proxy = 0')
         FreeCAD.ActiveDocument.commitTransaction()
         FreeCAD.ActiveDocument.recompute()
 
