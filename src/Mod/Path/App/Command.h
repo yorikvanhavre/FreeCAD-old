@@ -55,6 +55,7 @@ namespace Path
         void setFromGCode (std::string); // sets the parameters from the contents of the given GCode string
         void setFromPlacement (const Base::Placement&); // sets the parameters from the contents of the given placement
         const bool has(const std::string); // returns true if the given string exists in the parameters
+        Command transform(const Base::Placement); // returns a transformed copy of this command
 
         // attributes
         std::string Name;
