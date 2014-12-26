@@ -81,7 +81,7 @@ class ObjectDressup:
                         if t != None:
                             oldtool = t
                     
-                newpath = obj.Modification
+                newpath = Path.Path(obj.Modification.Commands)
                 # insert tool change at the beginning
                 cmd = Path.Command("M06 T" + str(obj.ToolNumber))
                 newpath.insertCommand(cmd,0)
@@ -145,7 +145,7 @@ class CommandPathDressup:
         FreeCADGui.doCommand('obj = FreeCAD.ActiveDocument.addObject("Path::FeaturePython","Dressup")')
         FreeCADGui.doCommand('PathScripts.PathDressup.ObjectDressup(obj)')
         FreeCADGui.doCommand('obj.Base = FreeCAD.ActiveDocument.' + selection[0].Name)
-        FreeCADGui.doCommand('PathScripts.ViewProviderDressup(obj.ViewObject')
+        FreeCADGui.doCommand('PathScripts.PathDressup.ViewProviderDressup(obj.ViewObject)')
         FreeCAD.ActiveDocument.commitTransaction()
         FreeCAD.ActiveDocument.recompute()
 
