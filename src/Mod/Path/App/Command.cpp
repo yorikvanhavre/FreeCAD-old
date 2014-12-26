@@ -210,6 +210,37 @@ void Command::setFromPlacement (const Base::Placement &plac)
         Parameters[c] = cval;
 }
 
+Command Command::transform(const Base::Placement other)
+{
+    Base::Placement plac = getPlacement();
+    plac *= other;
+    double xval, yval, zval, aval, bval, cval;
+    xval = plac.getPosition().x;
+    yval = plac.getPosition().y;
+    zval = plac.getPosition().z;
+    plac.getRotation().getYawPitchRoll(aval,bval,cval);
+    Command c = Command();
+    c.Name = Name;
+    for(std::map<std::string,double>::const_iterator i = Parameters.begin(); i != Parameters.end(); ++i) {
+        std::string k = i->first;
+        double v = i->second;
+        if (k == "X")
+            v = xval;
+        if (k == "Y")
+            v = yval;
+        if (k == "Z")
+            v = zval;
+        if (k == "A")
+            v = aval;
+        if (k == "B")
+            v = bval;
+        if (k == "C")
+            v = cval;
+        c.Parameters[k] = v;
+    }
+    return c;
+}
+
 // Reimplemented from base class
 
 unsigned int Command::getMemSize (void) const
