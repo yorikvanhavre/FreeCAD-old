@@ -43,7 +43,7 @@ class ObjectDrilling:
     def __init__(self,obj):
         obj.addProperty("App::PropertyInteger","ToolNumber","Path",translate("PathProfile","The tool number to use"))
         obj.addProperty("App::PropertyVector","StartPoint","Path",translate("PathProfile","The start position of the drilling"))
-        obj.addProperty("App::PropertyLength","DrillingHeight","Path",translate("PathProfile","The Z position of the end of the drilling"))
+        obj.addProperty("App::PropertyDistance","DrillingHeight","Path",translate("PathProfile","The Z position of the end of the drilling"))
         obj.Proxy = self
 
     def __getstate__(self):
