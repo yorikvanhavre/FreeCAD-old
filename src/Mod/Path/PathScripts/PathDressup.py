@@ -42,7 +42,6 @@ class ObjectDressup:
 
     def __init__(self,obj):
         obj.addProperty("App::PropertyLink","Base","Path",translate("PathDressup","The base path to modify"))
-        obj.addProperty("App::PropertyInteger","ToolNumber","Path",translate("PathDressup","The tool number to use"))
         obj.addProperty("App::PropertyInteger","Position","Path",translate("PathDressup","The position of this dressup in the base path"))
         obj.addProperty("Path::PropertyPath","Modification","Path",translate("PathDressup","The modification to be added"))
         obj.Proxy = self
@@ -51,16 +50,6 @@ class ObjectDressup:
         return None
 
     def __setstate__(self,state):
-        return None
-        
-    def getTool(self,obj,number=0):
-        "retrieves a tool from a hosting object with a tooltable, if any"
-        for o in obj.InList:
-            if hasattr(o,"Tooltable"):
-                return o.Tooltable.getTool(number)
-        # not found? search one level up
-        for o in obj.InList:
-            return self.getTool(o,number)
         return None
 
     def execute(self,obj):
@@ -75,23 +64,8 @@ class ObjectDressup:
                         # split the base path
                         before = obj.Base.Path.Commands[:obj.Position]
                         after = obj.Base.Path.Commands[obj.Position:]
-                    # search for last used tool number before position
-                    for cmd in before:
-                        t = getattr(cmd,"T")
-                        if t != None:
-                            oldtool = t
-                    
-                newpath = Path.Path(obj.Modification.Commands)
-                # insert tool change at the beginning
-                cmd = Path.Command("M06 T" + str(obj.ToolNumber))
-                newpath.insertCommand(cmd,0)
-                # restore old tool at the end
-                if oldtool != None:
-                    cmd = Path.Command("M06 T" + str(oldtool))
-                    newpath.addCommands(cmd)
-                    
                 # join everything
-                commands = before + newpath.Commands + after
+                commands = before + obj.Modification.Commands + after
                 path = Path.Path(commands)
                 obj.Path = path
                 
