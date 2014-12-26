@@ -246,8 +246,6 @@ void ViewProviderPath::updateData(const App::Property* prop)
             
             if ( (name == "G0") || (name == "G00") || (name == "G1") || (name == "G01") ) {
                 // straight line
-
-                // don't show first G0 move if ShowRapidMove is False
                 if ( (!first) || (ShowFirstRapid.getValue() == true) || (name == "G1") || (name == "G01") ) {
                     if (first) {
                         points.push_back(last);
@@ -261,11 +259,10 @@ void ViewProviderPath::updateData(const App::Property* prop)
                     else
                         colorindex.push_back(1); // std color
                 } else {
-                    if (first) {
-                        last = next;
-                        points.push_back(last);
-                        markers.push_back(last);
-                    }
+                    // don't show first G0 move if ShowFirstRapid is False
+                    last = next;
+                    points.push_back(last);
+                    markers.push_back(last);
                 }
                 first = false;
                 
@@ -317,11 +314,12 @@ void ViewProviderPath::updateData(const App::Property* prop)
             ei.push_back(i);
         }
         int* segs = &ei[0];
+        pcLines->coordIndex.setNum(points.size());
         pcLines->coordIndex.setValues(0,points.size(),(const int32_t*)segs);
 
         pcMarkerCoords->point.deleteValues(0);
         
-        // putting one market at each node makes the display awfully slow
+        // putting one marker at each node makes the display awfully slow
         // leaving just one at the origin for now:
         pcMarkerCoords->point.setNum(1);
         pcMarkerCoords->point.set1Value(0,markers[0].x,markers[0].y,markers[0].z);
@@ -329,34 +327,65 @@ void ViewProviderPath::updateData(const App::Property* prop)
         //for(unsigned int i=0;i<markers.size();i++)
         //    pcMarkerCoords->point.set1Value(i,markers[i].x,markers[i].y,markers[i].z);
         
+        // update the coloring after we changed the color vector
         NormalColor.touch();
-        
-        // update the boundbox
-        double MinX,MinY,MinZ = 999999999999.0;
-        double MaxX,MaxY,MaxZ = -999999999999.0;
-        for(std::vector<Base::Vector3d>::const_iterator it=points.begin();it!=points.end();it++) {
-            if ((*it).x < MinX)  MinX = (*it).x;
-            if ((*it).y < MinY)  MinY = (*it).y;
-            if ((*it).z < MinZ)  MinZ = (*it).z;
-            if ((*it).x > MaxX)  MaxX = (*it).x;
-            if ((*it).y > MaxY)  MaxY = (*it).y;
-            if ((*it).z > MaxZ)  MaxZ = (*it).z;
-        }
-        pcBoundingBox->minBounds.setValue(MinX, MinY, MinZ);
-        pcBoundingBox->maxBounds.setValue(MaxX, MaxY, MaxZ);
+        //recomputeBoundingBox();
         
     } else if ( prop == &pcPathObj->Placement) {
+        
         Base::Placement pl = *(&pcPathObj->Placement.getValue());
         Base::Vector3d pos = pl.getPosition();
         double q1, q2, q3, q4;
         pl.getRotation().getValue(q1,q2,q3,q4);
         pcTransform->translation.setValue(pos.x,pos.y,pos.z);
         pcTransform->rotation.setValue(q1,q2,q3,q4);
+        //recomputeBoundingBox();
     }
+}
+
+void ViewProviderPath::recomputeBoundingBox()
+{
+    // update the boundbox
+    double MinX,MinY,MinZ,MaxX,MaxY,MaxZ;
+    MinX = 999999999.0;
+    MinY = 999999999.0;
+    MinZ = 999999999.0;
+    MaxX = -999999999.0;
+    MaxY = -999999999.0;
+    MaxZ = -999999999.0;
+    Path::Feature* pcPathObj = static_cast<Path::Feature*>(pcObject);
+    Base::Placement pl = *(&pcPathObj->Placement.getValue());
+    Base::Vector3d pt;
+    for (unsigned int i=0;i<pcLineCoords->point.getNum();i++) {
+        std::cout << i << std::endl;
+        pt.x = pcLineCoords->point[i].getValue()[0];
+        pt.y = pcLineCoords->point[i].getValue()[1];
+        pt.z = pcLineCoords->point[i].getValue()[2];
+        pl.multVec(pt,pt);
+        if (pt.x < MinX)  MinX = pt.x;
+        if (pt.y < MinY)  MinY = pt.y;
+        if (pt.z < MinZ)  MinZ = pt.z;
+        if (pt.x > MaxX)  MaxX = pt.x;
+        if (pt.y > MaxY)  MaxY = pt.y;
+        if (pt.z > MaxZ)  MaxZ = pt.z;
+    }
+    pcBoundingBox->minBounds.setValue(MinX, MinY, MinZ);
+    pcBoundingBox->maxBounds.setValue(MaxX, MaxY, MaxZ);
 }
 
 QIcon ViewProviderPath::getIcon() const
 {
     return Gui::BitmapFactory().pixmap("Path-Toolpath");
+}
+
+// Python object -----------------------------------------------------------------------
+
+namespace Gui {
+/// @cond DOXERR
+PROPERTY_SOURCE_TEMPLATE(PathGui::ViewProviderPathPython, PathGui::ViewProviderPath)
+/// @endcond
+
+// explicit template instantiation
+template class PathGuiExport ViewProviderPythonFeatureT<PathGui::ViewProviderPath>;
 }
 

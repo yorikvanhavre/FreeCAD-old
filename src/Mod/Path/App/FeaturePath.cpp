@@ -37,7 +37,7 @@ PROPERTY_SOURCE(Path::Feature, App::GeoFeature)
 
 Feature::Feature()
 {
-    ADD_PROPERTY_TYPE(Path,(Path::Toolpath()),"Path",App::Prop_None,"The path data of this feature");
+    ADD_PROPERTY_TYPE(Path,(Path::Toolpath()),"Base",App::Prop_None,"The path data of this feature");
 }
 
 Feature::~Feature()
@@ -69,7 +69,7 @@ namespace App {
 /// @cond DOXERR
 PROPERTY_SOURCE_TEMPLATE(Path::FeaturePython, Path::Feature)
 template<> const char* Path::FeaturePython::getViewProviderName(void) const {
-    return "PathGui::ViewProviderPath";
+    return "PathGui::ViewProviderPathPython";
 }
 /// @endcond
 
