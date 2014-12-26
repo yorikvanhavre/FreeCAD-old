@@ -45,6 +45,7 @@ public:
     virtual ~FeatureCompound();
 
     App::PropertyLinkList     Group;
+    App::PropertyBool         UsePlacements;
 
     /// returns the type name of the ViewProvider
     virtual const char* getViewProviderName(void) const {
