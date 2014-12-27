@@ -41,6 +41,7 @@ def check_clockwise(poly):
     return clockwise
 
     '''
+    # example useage:
     poly = [(2,2),(6,2),(6,6),(2,6)]
     check_clockwise(poly)
     False
@@ -168,5 +169,12 @@ def multiSelect():
 
     return selItems
 
-#selection = multiSelect()
+'''
+# possible useage:
+selection = multiSelect()
+selection
 
+for k in selection.keys():
+    print k,", ", selection[k]
+    
+'''

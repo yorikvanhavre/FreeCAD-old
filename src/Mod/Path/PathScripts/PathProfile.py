@@ -61,8 +61,8 @@ class ObjectProfile:
         obj.addProperty("App::PropertyFloat", "ExtendAtEnd", "Profile Parameters", translate("extend at end","extra length of tool path after end of part edge"))
         obj.addProperty("App::PropertyFloat", "LeadInLineLen", "Profile Parameters", translate("lead in length","length of straight segment of toolpath that comes in at angle to first part edge"))
         obj.addProperty("App::PropertyFloat", "LeadOutLineLen", "Profile Parameters", translate("lead_out_line_len","length of straight segment of toolpath that comes in at angle to last part edge"))
-        obj.Side = ['Left','Right','On']
         obj.Proxy = self
+        obj.Side = ['Left','Right','On']
 
     def __getstate__(self):
         return None
@@ -122,14 +122,14 @@ class ObjectProfile:
                 offset = wire.makeOffset(radius)
 
             elif obj.Side == 'Right':
-                wire.reverse()
+                #wire.reverse()
                 offset = wire.makeOffset(-radius)
 
             else:
                 offset = wire #tool is on the original profile ie engraving
 
             # we create the path from the offset shape
-            
+
             import Part
             last = None
             # absolute coords, millimeters, cancel offsets
@@ -150,7 +150,7 @@ class ObjectProfile:
                     relcenter = center.sub(last)
                     v1 = last.sub(center)
                     v2 = point.sub(center)
-                    if v1.cross(v2).z <= 0:
+                    if v1.cross(v2).z < 0:
                         output += "G2"
                     else:
                         output += "G3"
@@ -210,7 +210,7 @@ class CommandPathProfile:
             FreeCADGui.doCommand('obj.Side = "Left" ')
         elif selection['clockwise'] == False: 
             FreeCADGui.doCommand('obj.Side = "Right" ')
-
+        FreeCADGui.doCommand('obj.ViewObject.Proxy = 0')
         FreeCAD.ActiveDocument.commitTransaction()
         FreeCAD.ActiveDocument.recompute()
 
