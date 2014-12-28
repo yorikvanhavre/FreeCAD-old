@@ -24,7 +24,7 @@
 
 import FreeCAD,FreeCADGui,Path,PathGui
 from PySide import QtCore,QtGui
-import PathSelection
+import PathSelection,ConvGcode
 
 """Path Profile object and FreeCAD command"""
 
@@ -48,13 +48,17 @@ class ObjectProfile:
         obj.addProperty("App::PropertyInteger","ToolNumber","Tool",translate("PathProfile","The tool number to use"))
         obj.addProperty("App::PropertyFloat", "ClearanceHeight", "Depth Parameters", translate("Clearance Height","The height needed to clear clamps and obstructions"))
         obj.addProperty("App::PropertyFloat", "StepDown", "Depth Parameters", translate("StepDown","Incremental Step Down of Tool"))
+        obj.addProperty("App::PropertyFloat", "StartDepth", "Depth Parameters", translate("Start Depth","Starting Depth of Tool- first cut depth in Z"))
         obj.addProperty("App::PropertyFloat", "FinalDepth", "Depth Parameters", translate("Final Depth","Final Depth of Tool- lowest value in Z"))
         obj.addProperty("App::PropertyFloat", "RetractHeight", "Depth Parameters", translate("Retract Height","The height desired to retract tool when path is finished"))
         obj.addProperty("App::PropertyVector","StartPoint","Profile Parameters",translate("Start Point","The start point of this path"))
         obj.addProperty("App::PropertyBool","UseStartPoint","Profile Parameters",translate("Use Start Point","make True, if specifying a Start Point"))
+        obj.addProperty("App::PropertyEnumeration", "Direction", "Profile Parameters",translate("Direction", "The direction that the toolpath should go around the part ClockWise CW or CounterClockWise CCW"))
+        obj.Direction = ['CW','CCW']
         obj.addProperty("App::PropertyVector","EndPoint","Profile Parameters",translate("End Point","The end point of this path"))
         obj.addProperty("App::PropertyBool","UseEndPoint","Profile Parameters",translate("Use End Point","make True, if specifying an End Point"))
         obj.addProperty("App::PropertyEnumeration", "Side", "Profile Parameters", translate("Side","Side of edge that tool should cut"))
+        obj.Side = ['Left','Right','On']
         obj.addProperty("App::PropertyFloat", "RollRadius", "Profile Parameters", translate("Roll Radius","Radius at start and end"))
         obj.addProperty("App::PropertyFloat", "OffsetExtra", "Profile Parameters",translate("OffsetExtra","Extra value to stay away from final profile- good for roughing toolpath"))
         obj.addProperty("App::PropertyFloat", "ExtendAtStart", "Profile Parameters", translate("extend at start", "extra length of tool path before start of part edge"))
@@ -62,7 +66,7 @@ class ObjectProfile:
         obj.addProperty("App::PropertyFloat", "LeadInLineLen", "Profile Parameters", translate("lead in length","length of straight segment of toolpath that comes in at angle to first part edge"))
         obj.addProperty("App::PropertyFloat", "LeadOutLineLen", "Profile Parameters", translate("lead_out_line_len","length of straight segment of toolpath that comes in at angle to last part edge"))
         obj.Proxy = self
-        obj.Side = ['Left','Right','On']
+
 
     def __getstate__(self):
         return None
@@ -116,55 +120,22 @@ class ObjectProfile:
                     shape = getattr(obj.Base[0].Shape,obj.Base[1][0])
                     # we only consider the outer wire if this is a Face
                     wire = shape.OuterWire
-            # now we need to apply logic related to side of wire to cut
-            if obj.Side == 'Left':
-            # we use the OCC offset feature
-                offset = wire.makeOffset(radius)
-
-            elif obj.Side == 'Right':
-                #wire.reverse()
-                offset = wire.makeOffset(-radius)
-
+            if obj.Direction == 'CCW':
+                revpts=False
             else:
-                offset = wire #tool is on the original profile ie engraving
-
-            # we create the path from the offset shape
-
-            import Part
-            last = None
-            # absolute coords, millimeters, cancel offsets
-            output = "G90\nG21\nG40\n"
-            # save tool
-            output += "M06 T" + str(obj.ToolNumber) + "\n"
+                revpts=True
+            output = ""
             
-            for edge in offset.Edges:
-                if not last:
-                    # we set the base GO to our first point
-                    last = edge.Vertexes[0].Point
-                    output += "G0 X" + str(last.x) + " Y" + str(last.y) + " Z" + str(last.z) + "\n"
-                if isinstance(edge.Curve,Part.Circle):
-                    point = edge.Vertexes[-1].Point
-                    if point == last: # edges can come flipped
-                        point = edge.Vertexes[0].Point
-                    center = edge.Curve.Center
-                    relcenter = center.sub(last)
-                    v1 = last.sub(center)
-                    v2 = point.sub(center)
-                    if v1.cross(v2).z < 0:
-                        output += "G2"
-                    else:
-                        output += "G3"
-                    output += " X" + str(point.x) + " Y" + str(point.y) + " Z" + str(point.z)
-                    output += " I" + str(relcenter.x) + " J" + str(relcenter.y) + " K" + str(relcenter.z)
-                    output += "\n"
-                    last = point
-                else:
-                    point = edge.Vertexes[-1].Point
-                    if point == last: # edges can come flipped
-                        point = edge.Vertexes[0].Point
-                    output += "G1 X" + str(point.x) + " Y" + str(point.y) + " Z" + str(point.z) + "\n"
-                    last = point
-            print output
+            
+            #ZMax = obj.Base[0].Shape.BoundBox.ZMax
+            #ZCurrent = ZMax- obj.StepDown
+            ZCurrent = obj.StartDepth
+            while ZCurrent >= obj.FinalDepth:
+                output += ConvGcode.convert(wire,obj.Side,obj.ToolNumber,radius,revpts,ZCurrent)
+                ZCurrent = ZCurrent-obj.StepDown
+            
+            #ZCurrent = ZCurrent -obj.FinalDepth
+            #output += ConvGcode.convert(wire,obj.Side,obj.ToolNumber,radius,revpts,obj.FinalDepth)
             path = Path.Path(output)
             obj.Path = path
 
@@ -210,6 +181,10 @@ class CommandPathProfile:
             FreeCADGui.doCommand('obj.Side = "Left" ')
         elif selection['clockwise'] == False: 
             FreeCADGui.doCommand('obj.Side = "Right" ')
+        FreeCADGui.doCommand('ZMax = obj.Base[0].Shape.BoundBox.ZMax')
+        FreeCADGui.doCommand('obj.StepDown = 1.0')
+        FreeCADGui.doCommand('obj.StartDepth = ZMax- obj.StepDown')
+        FreeCADGui.doCommand('obj.FinalDepth = -10.0')
         FreeCADGui.doCommand('obj.ViewObject.Proxy = 0')
         FreeCAD.ActiveDocument.commitTransaction()
         FreeCAD.ActiveDocument.recompute()
