@@ -25,7 +25,7 @@
 import FreeCAD,FreeCADGui,Path,PathGui
 from PySide import QtCore,QtGui
 
-"""Path Dressup object and FreeCAD command"""
+"""Path Hop object and FreeCAD command"""
 
 # Qt tanslation handling
 try:
@@ -37,13 +37,12 @@ except AttributeError:
         return QtGui.QApplication.translate(context, text, disambig)
 
 
-class ObjectDressup:
+class ObjectHop:
     
 
     def __init__(self,obj):
-        obj.addProperty("App::PropertyLink","Base","Path",translate("PathDressup","The base path to modify"))
-        obj.addProperty("App::PropertyInteger","Position","Path",translate("PathDressup","The position of this dressup in the base path"))
-        obj.addProperty("Path::PropertyPath","Modification","Path",translate("PathDressup","The modification to be added"))
+        obj.addProperty("App::PropertyLink","NextObject","Path",translate("PathHop","The object to be reached by this hop"))
+        obj.addProperty("App::PropertyDistance","HopHeight","Path",translate("PathHop","The Z height of the hop"))
         obj.Proxy = self
 
     def __getstate__(self):
@@ -51,53 +50,39 @@ class ObjectDressup:
 
     def __setstate__(self,state):
         return None
-
-    def execute(self,obj):
         
-        if obj.Base:
-            if obj.Base.isDerivedFrom("Path::Feature"):
-                before = []
-                after = []
-                oldtool = None
-                if obj.Base.Path:
-                    if obj.Base.Path.Commands:
-                        # split the base path
-                        before = obj.Base.Path.Commands[:obj.Position]
-                        after = obj.Base.Path.Commands[obj.Position:]
-                # join everything
-                commands = before + obj.Modification.Commands + after
-                path = Path.Path(commands)
-                obj.Path = path
+    def execute(self,obj):
+        nextpoint = FreeCAD.Vector()
+        if obj.NextObject:
+            if obj.NextObject.isDerivedFrom("Path::Feature"):
+                # look for the first position of the next path
+                for c in obj.NextObject.Path.Commands:
+                    if c.Name in ["G0","G00","G1","G01","G2","G02","G3","G03"]:
+                        nextpoint = c.Placement.Base
+                        break
+        
+        # absolute coords, millimeters, cancel offsets
+        output = "G90\nG21\nG40\n"
+        
+        # go up to the given height
+        output += "G0 Z" + str(obj.HopHeight.Value) + "\n"
+        
+        # go horizontally to the position of nextpoint
+        output += "G0 X" + str(nextpoint.x) + " Y" + str(nextpoint.y) + "\n"
                 
-                
-class ViewProviderDressup:
+        #print output
+        path = Path.Path(output)
+        obj.Path = path
 
 
-    def __init__(self,vobj):
-        vobj.Proxy = self
-
-    def attach(self,vobj):
-        self.Object = vobj.Object
-        return    
-    
-    def claimChildren(self):
-        return [self.Object.Base]
-
-    def __getstate__(self):
-        return None
-
-    def __setstate__(self,state):
-        return None
-
-
-class CommandPathDressup:
+class CommandPathHop:
 
 
     def GetResources(self):
-        return {'Pixmap'  : 'Path-Dressup',
-                'MenuText': QtCore.QT_TRANSLATE_NOOP("PathDressup","Dress-up"),
-                'Accel': "P, S",
-                'ToolTip': QtCore.QT_TRANSLATE_NOOP("PathDressup","Creates a Path Dess-up object from a selected path")}
+        return {'Pixmap'  : 'Path-Hop',
+                'MenuText': QtCore.QT_TRANSLATE_NOOP("PathHop","Hop"),
+                'Accel': "P, H",
+                'ToolTip': QtCore.QT_TRANSLATE_NOOP("PathHop","Creates a Path Hop object")}
 
     def IsActive(self):
         return not FreeCAD.ActiveDocument is None
@@ -107,29 +92,24 @@ class CommandPathDressup:
         # check that the selection contains exactly what we want
         selection = FreeCADGui.Selection.getSelection()
         if len(selection) != 1:
-            FreeCAD.Console.PrintError(translate("PathDressup","Please select one path object\n"))
+            FreeCAD.Console.PrintError(translate("PathHop","Please select one path object\n"))
             return
         if not selection[0].isDerivedFrom("Path::Feature"):
-<<<<<<< HEAD
-            FreeCAD.Console.PrintError(translate("PathDresup","The selected object is not a path\n"))
-=======
-            FreeCAD.Console.PrintError(translate("PathDressup","The selected object is not a path\n"))
->>>>>>> cf04c3a307f063099a20f6e7cefc33bb5a6a106e
+            FreeCAD.Console.PrintError(translate("PathHop","The selected object is not a path\n"))
             return
-            
-        # everything ok!
-        FreeCAD.ActiveDocument.openTransaction(translate("PathDressup","Create Dress-up"))
-        FreeCADGui.addModule("PathScripts.PathDressup")
-        FreeCADGui.doCommand('obj = FreeCAD.ActiveDocument.addObject("Path::FeaturePython","Dressup")')
-        FreeCADGui.doCommand('PathScripts.PathDressup.ObjectDressup(obj)')
-        FreeCADGui.doCommand('obj.Base = FreeCAD.ActiveDocument.' + selection[0].Name)
-        FreeCADGui.doCommand('PathScripts.PathDressup.ViewProviderDressup(obj.ViewObject)')
+        
+        FreeCAD.ActiveDocument.openTransaction(translate("PathHop","Create Hop"))
+        FreeCADGui.addModule("PathScripts.PathHop")
+        FreeCADGui.doCommand('obj = FreeCAD.ActiveDocument.addObject("Path::FeaturePython","Hop")')
+        FreeCADGui.doCommand('PathScripts.PathHop.ObjectHop(obj)')
+        FreeCADGui.doCommand('obj.NextObject = FreeCAD.ActiveDocument.' + selection[0].Name)
+        FreeCADGui.doCommand('obj.ViewObject.Proxy = 0')
         FreeCAD.ActiveDocument.commitTransaction()
         FreeCAD.ActiveDocument.recompute()
 
 
 if FreeCAD.GuiUp: 
     # register the FreeCAD command
-    FreeCADGui.addCommand('Path_Dressup',CommandPathDressup())
+    FreeCADGui.addCommand('Path_Hop',CommandPathHop())
 
-FreeCAD.Console.PrintLog("Loading PathDressup... done\n")
+FreeCAD.Console.PrintLog("Loading PathHop... done\n")

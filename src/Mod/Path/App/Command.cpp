@@ -210,6 +210,25 @@ void Command::setFromPlacement (const Base::Placement &plac)
         Parameters[c] = cval;
 }
 
+void Command::setCenter(const Base::Vector3d &pos, bool clockwise)
+{
+    if (clockwise) {
+        Name = "G2";
+    } else {
+        Name = "G3";
+    }
+    std::string i = "I";
+    std::string j = "J";
+    std::string k = "K";
+    double ival, jval, kval;
+    ival = pos.x;
+    jval = pos.y;
+    kval = pos.z;
+    Parameters[i] = ival;
+    Parameters[j] = jval;
+    Parameters[k] = kval;
+}
+
 Command Command::transform(const Base::Placement other)
 {
     Base::Placement plac = getPlacement();
