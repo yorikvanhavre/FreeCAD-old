@@ -71,6 +71,22 @@ void FileDialog::onSelectedFilter(const QString& filter)
 
 void FileDialog::accept()
 {
+    // When saving to a file make sure that the entered filename ends with the selected
+    // file filter
+    if (acceptMode() == QFileDialog::AcceptSave) {
+        QStringList files = selectedFiles();
+        if (!files.isEmpty()) {
+            QString ext = this->defaultSuffix();
+            QString file = files.front();
+            if (!ext.isEmpty() && !file.endsWith(ext, Qt::CaseInsensitive)) {
+                file = QString::fromLatin1("%1.%2").arg(file).arg(ext);
+                // That's the built-in line edit
+                QLineEdit* fileNameEdit = this->findChild<QLineEdit*>(QString::fromLatin1("fileNameEdit"));
+                if (fileNameEdit)
+                    fileNameEdit->setText(file);
+            }
+        }
+    }
     QFileDialog::accept();
 }
 
@@ -453,6 +469,18 @@ QIcon FileIconProvider::icon(IconType type) const
 
 QIcon FileIconProvider::icon(const QFileInfo & info) const
 {
+    if (info.suffix().toLower() == QLatin1String("fcstd")) {
+        // return QApplication::windowIcon();
+        return QIcon(QString::fromLatin1(":/icons/freecad-doc.png"));
+    }
+    else if (info.suffix().toLower().startsWith(QLatin1String("fcstd"))) {
+        QIcon icon(QString::fromLatin1(":/icons/freecad-doc.png"));
+        QIcon darkIcon;
+        int w = QApplication::style()->pixelMetric(QStyle::PM_ListViewIconSize);
+        darkIcon.addPixmap(icon.pixmap(w, w, QIcon::Disabled, QIcon::Off), QIcon::Normal, QIcon::Off);
+        darkIcon.addPixmap(icon.pixmap(w, w, QIcon::Disabled, QIcon::On ), QIcon::Normal, QIcon::On );
+        return darkIcon;
+    }
     return QFileIconProvider::icon(info);
 }
 

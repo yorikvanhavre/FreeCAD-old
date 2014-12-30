@@ -2160,6 +2160,112 @@ void SketchObject::appendRedundantMsg(const std::vector<int> &redundant, std::st
     msg = ss.str();
 }
 
+bool SketchObject::evaluateConstraint(const Constraint *constraint) const
+{
+    int intGeoCount = getHighestCurveIndex() + 1;
+    int extGeoCount = getExternalGeometryCount();
+
+    switch (constraint->Type) {
+        case Radius:
+            if (constraint->First < -extGeoCount || constraint->First >= intGeoCount)
+                return false;
+            break;
+        case Horizontal:
+        case Vertical:
+            if (constraint->First < -extGeoCount || constraint->First >= intGeoCount)
+                return false;
+            if (constraint->Second != Constraint::GeoUndef) {
+                if (constraint->Second < -extGeoCount || constraint->Second >= intGeoCount)
+                    return false;
+            }
+            break;
+        case Distance:
+        case DistanceX:
+        case DistanceY:
+            if (constraint->First < -extGeoCount || constraint->First >= intGeoCount)
+                return false;
+            if (constraint->Second != Constraint::GeoUndef) {
+                if (constraint->Second < -extGeoCount || constraint->Second >= intGeoCount)
+                    return false;
+            }
+            break;
+        case Coincident:
+        case Perpendicular:
+        case Parallel:
+        case Equal:
+        case PointOnObject:
+        case Tangent:
+            if (constraint->First < -extGeoCount || constraint->First >= intGeoCount)
+                return false;
+            if (constraint->Second < -extGeoCount || constraint->Second >= intGeoCount)
+                return false;
+            break;
+        case Symmetric:
+            if (constraint->First < -extGeoCount || constraint->First >= intGeoCount)
+                return false;
+            if (constraint->Second < -extGeoCount || constraint->Second >= intGeoCount)
+                return false;
+            if (constraint->Third < -extGeoCount || constraint->Third >= intGeoCount)
+                return false;
+            break;
+        case Angle:
+            if (constraint->First < -extGeoCount || constraint->First >= intGeoCount)
+                return false;
+            if (constraint->Second != Constraint::GeoUndef) {
+                if (constraint->Second < -extGeoCount || constraint->Second >= intGeoCount)
+                    return false;
+            }
+            break;
+        default:
+            break;
+    }
+
+    return true;
+}
+
+bool SketchObject::evaluateConstraints() const
+{
+    int intGeoCount = getHighestCurveIndex() + 1;
+    int extGeoCount = getExternalGeometryCount();
+
+    std::vector<Part::Geometry *> geometry = getCompleteGeometry();
+    const std::vector<Sketcher::Constraint *>& constraints = Constraints.getValues();
+    if (static_cast<int>(geometry.size()) != extGeoCount + intGeoCount)
+        return false;
+    if (geometry.size() < 2)
+        return false;
+
+    std::vector<Sketcher::Constraint *>::const_iterator it;
+    for (it = constraints.begin(); it != constraints.end(); ++it) {
+        if (!evaluateConstraint(*it))
+            return false;
+    }
+
+    return true;
+}
+
+void SketchObject::validateConstraints()
+{
+    int intGeoCount = getHighestCurveIndex() + 1;
+    int extGeoCount = getExternalGeometryCount();
+
+    std::vector<Part::Geometry *> geometry = getCompleteGeometry();
+    const std::vector<Sketcher::Constraint *>& constraints = Constraints.getValues();
+
+    std::vector<Sketcher::Constraint *> newConstraints;
+    std::vector<Sketcher::Constraint *>::const_iterator it;
+    for (it = constraints.begin(); it != constraints.end(); ++it) {
+        bool valid = evaluateConstraint(*it);
+        if (valid)
+            newConstraints.push_back(*it);
+    }
+
+    if (newConstraints.size() != constraints.size()) {
+        Constraints.setValues(newConstraints);
+        acceptGeometry();
+    }
+}
+
 PyObject *SketchObject::getPyObject(void)
 {
     if (PythonObject.is(Py::_None())) {
