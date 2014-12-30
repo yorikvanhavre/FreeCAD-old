@@ -141,7 +141,8 @@ def multiSelect():
             if s.Object.Shape.ShapeType == 'Wire':
                 wireobj = True
             if s.Object.Shape.ShapeType == 'Vertex':
-                ptlist.append((s.ObjectName,s.Object))
+                #ptlist.append((s.ObjectName,s.Object))
+                ptlist.append(s.Object)
                 points = True
         for sub in s.SubObjects:
             if sub.ShapeType =='Face':
@@ -334,6 +335,8 @@ def approach(wire,Side,radius,clockwise,ZClearance,StepDown,ZStart, ZFinalDepth)
     while ZCurrent >= ZFinalDepth:
         paths += convert(wire,Side,radius,clockwise,ZCurrent)
         ZCurrent = ZCurrent-abs(StepDown)
+    if ZCurrent <> ZFinalDepth:
+        paths += convert(wire,Side,radius,clockwise,ZFinalDepth)
     paths += "G0 Z" + str(ZClearance)
     return paths
 
