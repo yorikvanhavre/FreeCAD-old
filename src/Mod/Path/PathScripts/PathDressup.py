@@ -110,11 +110,7 @@ class CommandPathDressup:
             FreeCAD.Console.PrintError(translate("PathDressup","Please select one path object\n"))
             return
         if not selection[0].isDerivedFrom("Path::Feature"):
-<<<<<<< HEAD
             FreeCAD.Console.PrintError(translate("PathDresup","The selected object is not a path\n"))
-=======
-            FreeCAD.Console.PrintError(translate("PathDressup","The selected object is not a path\n"))
->>>>>>> cf04c3a307f063099a20f6e7cefc33bb5a6a106e
             return
             
         # everything ok!

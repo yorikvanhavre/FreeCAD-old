@@ -24,8 +24,7 @@
 
 import FreeCAD,FreeCADGui,Path,PathGui
 from PySide import QtCore,QtGui
-import PathSelection,ConvGcode
-
+import PathUtils
 """Path Profile object and FreeCAD command"""
 
 # Qt tanslation handling
@@ -134,7 +133,7 @@ class ObjectProfile:
             ZCurrent = obj.ClearanceHeight
             #while ZCurrent >= obj.FinalDepth:
             #                   approach(wire,Side,radius,clockwise,ZClearance,StepDown,ZFinalDepth)
-            output += ConvGcode.approach(wire,obj.Side,radius,clockwise,obj.ClearanceHeight,obj.StepDown,ZMax, obj.FinalDepth)
+            output += PathUtils.approach(wire,obj.Side,radius,clockwise,obj.ClearanceHeight,obj.StepDown,ZMax, obj.FinalDepth)
                 #ZCurrent = ZCurrent-abs(obj.StepDown)
 
             path = Path.Path(output)
@@ -152,7 +151,7 @@ class CommandPathProfile:
         
     def Activated(self):
         # check that the selection contains exactly what we want
-        selection = PathSelection.multiSelect()
+        selection = PathUtils.multiSelect()
         if not selection:
             return
 
