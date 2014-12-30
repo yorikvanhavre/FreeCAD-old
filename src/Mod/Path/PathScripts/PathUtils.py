@@ -286,22 +286,28 @@ def convert(wire,Side,radius,clockwise=False,Z=0.0):
 
             arc_cw = check_clockwise([(startpt.x,startpt.y),(midpt.x,midpt.y),(endpt.x,endpt.y)])
 
-            if arc_cw:
-                output += "G2"
+            if clockwise:
+                if edge.Orientation == 'Forward':
+                    if arc_cw:
+                        output += "G2"
+                    else:
+                        output += "G3"
+                else:
+                    if arc_cw:
+                        output += "G3"
+                    else:
+                        output += "G2"
             else:
-                output += "G3"
-
-#            path_cw = clockwise
-#            if (path_cw):
-#                if arc_cw:
-#                    output += "G2"
-#                else:
-#                    output += "G3"
-#            else:
-#                if arc_cw:
-#                    output += "G3"
-#                else:
-#                    output += "G2"
+                if edge.Orientation == 'Forward':
+                    if arc_cw:
+                        output += "G3"
+                    else:
+                        output += "G2"
+                else:
+                    if arc_cw:
+                        output += "G2"
+                    else:
+                        output += "G3"
 
             output += " X" + str(fmt(point.x)) + " Y" + str(fmt(point.y)) + " Z" + str(fmt(Z))
             output += " I" + str(fmt(relcenter.x)) + " J" + str(fmt(relcenter.y)) + " K" + str(fmt(relcenter.z))
