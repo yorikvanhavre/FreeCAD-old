@@ -43,8 +43,8 @@ class ObjectProfile:
     def __init__(self,obj):
         obj.addProperty("App::PropertyLinkSub","Base","Path",translate("Parent Object","The base geometry of this toolpath"))
         #obj.addProperty("App::PropertyString", "ObjName", "Path",translate("Part Name", "The name of the part being processed"))
-        obj.addProperty("App::PropertyLinkSub","Edge1","Path",translate("Edge","First Selected Edge to help determine which geometry to make a toolpath around"))
-#        obj.addProperty("Part::PropertyPartShape","Edge2","Path",translate("Edge","Second Selected Edge to help determine which geometry to make a toolpath around"))
+        obj.addProperty("App::PropertyLinkSub","Edge1","Path",translate("Edge 1","First Selected Edge to help determine which geometry to make a toolpath around"))
+        obj.addProperty("App::PropertyLinkSub","Edge2","Path",translate("Edge 2","Second Selected Edge to help determine which geometry to make a toolpath around"))
         obj.addProperty("App::PropertyInteger","ToolNumber","Tool",translate("PathProfile","The tool number to use"))
         obj.addProperty("App::PropertyFloat", "ClearanceHeight", "Depth Parameters", translate("Clearance Height","The height needed to clear clamps and obstructions"))
         obj.addProperty("App::PropertyFloat", "StepDown", "Depth Parameters", translate("StepDown","Incremental Step Down of Tool"))
@@ -106,14 +106,14 @@ class ObjectProfile:
                     if obj.Base[0].Shape.ShapeType =='Wire':
                         wire = obj.Base[0].Shape
 
-                    if obj.Base[0].Shape.ShapeType =='Solid':
+                    if obj.Base[0].Shape.ShapeType =='Solid' or obj.Base[0].Shape.ShapeType =='Compound':
                         shape = obj.Base[0].Shape
                         for fw in shape.Wires:
                             if (fw.BoundBox.ZMax == e1.BoundBox.ZMax) and (fw.BoundBox.ZMin == e1.BoundBox.ZMin):
 
                                 for e in fw.Edges:
                                     if e.isSame(e1):
-                                        FreeCAD.Console.PrintMessage('found the same objects\n')
+                                        #FreeCAD.Console.PrintMessage('found the same objects\n')
                                         wire = fw
 
                 else: # we are only dealing with a face
@@ -121,21 +121,22 @@ class ObjectProfile:
                     # we only consider the outer wire if this is a Face
                     wire = shape.OuterWire
             if obj.Direction == 'CCW':
-                revpts=False
+                clockwise=False
             else:
-                revpts=True
-            output = ""
+                clockwise=True
+            output = "G0Z"
+            output += str(obj.ClearanceHeight)
+            output += "\n"
             
             
-            #ZMax = obj.Base[0].Shape.BoundBox.ZMax
+            ZMax = obj.Base[0].Shape.BoundBox.ZMax
             #ZCurrent = ZMax- obj.StepDown
-            ZCurrent = obj.StartDepth
-            while ZCurrent >= obj.FinalDepth:
-                output += ConvGcode.convert(wire,obj.Side,obj.ToolNumber,radius,revpts,ZCurrent)
-                ZCurrent = ZCurrent-obj.StepDown
-            
-            #ZCurrent = ZCurrent -obj.FinalDepth
-            #output += ConvGcode.convert(wire,obj.Side,obj.ToolNumber,radius,revpts,obj.FinalDepth)
+            ZCurrent = obj.ClearanceHeight
+            #while ZCurrent >= obj.FinalDepth:
+            #                   approach(wire,Side,radius,clockwise,ZClearance,StepDown,ZFinalDepth)
+            output += ConvGcode.approach(wire,obj.Side,radius,clockwise,obj.ClearanceHeight,obj.StepDown,ZMax, obj.FinalDepth)
+                #ZCurrent = ZCurrent-abs(obj.StepDown)
+
             path = Path.Path(output)
             obj.Path = path
 
@@ -165,7 +166,7 @@ class CommandPathProfile:
             FreeCAD.Console.PrintMessage('There are edges selected\n')
             FreeCADGui.doCommand('obj.Base = (FreeCAD.ActiveDocument.'+selection['objname']+',"'+selection['edgenames'][0]+'")')
             FreeCADGui.doCommand('obj.Edge1 =(FreeCAD.ActiveDocument.getObject("'+(selection['objname'])+'"),["'  +str(selection['edgenames'][0]+'"])'))
-
+            FreeCADGui.doCommand('obj.Edge2 =(FreeCAD.ActiveDocument.getObject("'+(selection['objname'])+'"),["'  +str(selection['edgenames'][1]+'"])'))
         else:
             FreeCADGui.doCommand('obj.Base = (FreeCAD.ActiveDocument.'+selection['objname']+',"'+selection['facename']+'")')
 
@@ -179,12 +180,15 @@ class CommandPathProfile:
                 FreeCADGui.doCommand('obj.EndPoint = Vector('+str(endptX)+',' +str(endptY)+',' +str(endptZ)+')')
         if selection['clockwise']:
             FreeCADGui.doCommand('obj.Side = "Left" ')
+            FreeCADGui.doCommand('obj.Direction = "CW" ')
         elif selection['clockwise'] == False: 
             FreeCADGui.doCommand('obj.Side = "Right" ')
+            FreeCADGui.doCommand('obj.Direction = "CCW" ')
         FreeCADGui.doCommand('ZMax = obj.Base[0].Shape.BoundBox.ZMax')
         FreeCADGui.doCommand('obj.StepDown = 1.0')
         FreeCADGui.doCommand('obj.StartDepth = ZMax- obj.StepDown')
-        FreeCADGui.doCommand('obj.FinalDepth = -10.0')
+        FreeCADGui.doCommand('obj.FinalDepth = ZMax-1.0')
+        FreeCADGui.doCommand('obj.ClearanceHeight = 1.0')
         FreeCADGui.doCommand('obj.ViewObject.Proxy = 0')
         FreeCAD.ActiveDocument.commitTransaction()
         FreeCAD.ActiveDocument.recompute()

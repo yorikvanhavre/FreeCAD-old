@@ -21,9 +21,8 @@
 #*                                                                         *
 #***************************************************************************
 import FreeCAD
+from FreeCAD import Vector
 import FreeCADGui
-
-
 
 def segments(poly):
     """A sequence of (x,y) numeric coordinates pairs """
@@ -55,6 +54,41 @@ def check_clockwise(poly):
     check_clockwise(vlist)
     '''
 
+def Sort2Edges(edgelist=[]):
+    '''simple function to reorder the start and end pts of two edges based on their selection order '''
+    if len(edgelist)>=2:
+        vlist = []
+        e0 = edgelist[0]
+        e1=edgelist[1]
+        a0 = e0.Vertexes[0]
+        a1 = e0.Vertexes[1]
+        b0 = e1.Vertexes[0]
+        b1 = e1.Vertexes[1]
+        # comparison routine to order two edges:
+        if a1.isSame(b0):
+            vlist.append((a0.Point.x,a0.Point.y))
+            vlist.append((a1.Point.x,a1.Point.y))
+            vlist.append((b1.Point.x,b1.Point.y))
+
+        elif a0.isSame(b0):
+            vlist.append((a1.Point.x,a1.Point.y))
+            vlist.append((a0.Point.x,a0.Point.y))
+            vlist.append((b1.Point.x,b1.Point.y))
+
+        elif a0.isSame(b1):
+            vlist.append((a1.Point.x,a1.Point.y))
+            vlist.append((a0.Point.x,a0.Point.y))
+            vlist.append((b0.Point.x,b0.Point.y))
+
+        elif a1.isSame(b1):
+            vlist.append((a0.Point.x,a0.Point.y))
+            vlist.append((a1.Point.x,a1.Point.y))
+            vlist.append((b0.Point.x,b0.Point.y))
+
+        edgestart = Vector(vlist[0][0],vlist[0][1],e0.Vertexes[1].Z)
+        edgecommon = Vector(vlist[1][0],vlist[1][1],e0.Vertexes[1].Z)
+
+    return vlist,edgestart,edgecommon
 
 def multiSelect():
     '''
@@ -94,17 +128,21 @@ def multiSelect():
     face = False
     edges = False
     points = False
+    wireobj = False
     for s in sel:
-        if (s.Object.Shape.ShapeType=='Solid') or (s.Object.Shape.ShapeType=='Wire'):
-            objname = s.ObjectName 
-            selItems['objname']   =objname
-#        if s.Object.Shape.ShapeType == 'Vertex':
-#            ptlist.append((s.ObjectName,s.Object))
-#            points = True
+        if s.Object.Shape.ShapeType in ['Solid','Compound','Wire','Vertex']:
+            if not (s.Object.Shape.ShapeType =='Vertex'):
+                objname = s.ObjectName 
+                selItems['objname']   =objname
+            if s.Object.Shape.ShapeType == 'Wire':
+                wireobj = True
+            if s.Object.Shape.ShapeType == 'Vertex':
+                ptlist.append((s.ObjectName,s.Object))
+                points = True
         for sub in s.SubObjects:
             if sub.ShapeType =='Face':
                 face = sub
-                selItems['face']     =face
+                selItems['face']=face
             if sub.ShapeType =='Edge':
                 edge = sub
                 edgelist.append(edge)
@@ -128,34 +166,29 @@ def multiSelect():
                     if e.isSame(edge):
                         pathwire = fw
                         selItems['pathwire']  =pathwire
+        elif wireobj:
+            selItems['pathwire'] =s.Object.Shape
+            selItems['edgelist'] =edgelist
         else:
+            for w in s.Object.Shape.Wires:
+                for e in  w.Edges:
+                    if e.isSame(edge):
+                        pathwire = w
+                        selItems['pathwire']  =pathwire
             selItems['edgelist'] =edgelist
 
+    if not edges:
+        if face:
+            selItems['pathwire']  =face.OuterWire
+
+
     if edges and (len(edgelist)>=2):
-        vlist = []
-        e0 = edgelist[0]
-        e1=edgelist[1]
-        a0 = e0.Vertexes[0]
-        a1 = e0.Vertexes[1]
-        b0 = e1.Vertexes[0]
-        b1 = e1.Vertexes[1]
-        # my crazy and crude comparison routine:
-        if a1.isSame(b0):
-            vlist.append((a0.Point.x,a0.Point.y))
-            vlist.append((a1.Point.x,a1.Point.y))
-            vlist.append((b1.Point.x,b1.Point.y))
-        elif a0.isSame(b0):
-            vlist.append((a1.Point.x,a1.Point.y))
-            vlist.append((a0.Point.x,a0.Point.y))
-            vlist.append((b1.Point.x,b1.Point.y))
-        elif a0.isSame(b1):
-            vlist.append((a1.Point.x,a1.Point.y))
-            vlist.append((a0.Point.x,a0.Point.y))
-            vlist.append((b0.Point.x,b0.Point.y))
-        elif a1.isSame(b1):
-            vlist.append((a0.Point.x,a0.Point.y))
-            vlist.append((a1.Point.x,a1.Point.y))
-            vlist.append((b0.Point.x,b0.Point.y))
+        vlist,edgestart,edgecommon=Sort2Edges(edgelist)
+        edgepts ={}
+        edgepts['vlist'] = vlist
+        edgepts['edgestart']=edgestart # start point of edges selected
+        edgepts['edgecommon']=edgecommon # point where two edges join- will be last point in in first gcode line
+        selItems['edgepts']=edgepts
 
         if check_clockwise(vlist):
             selItems['clockwise']=True
@@ -170,11 +203,8 @@ def multiSelect():
     return selItems
 
 '''
-# possible useage:
 selection = multiSelect()
 selection
-
-for k in selection.keys():
-    print k,", ", selection[k]
-    
+wire = selection['pathwire']
+edelist = selection['edgelist']
 '''
