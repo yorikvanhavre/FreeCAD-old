@@ -28,7 +28,6 @@ from FreeCAD import Vector
 import FreeCADGui
 import math
 import DraftGeomUtils,DraftVecUtils
-import ArcDirection
 
 def segments(poly):
     ''' A sequence of (x,y) numeric coordinates pairs '''
@@ -203,7 +202,12 @@ def convert(wire,Side,radius,clockwise=False,Z=0.0):
     elif Side == 'Right':
         offset = wire.makeOffset(-radius)
     else:
-        offset = wire.makeOffset(0.0) #tool is on the original profile ie engraving
+        edgelist =[]
+        for edge in wire.Edges:
+            edgelist.append(edge)
+#        offset = wire.makeOffset(0.0) #tool is on the original profile ie engraving
+        nlist = DraftGeomUtils.sortEdgesOld(edgelist)
+        offset = Part.Wire(nlist)
 
     if clockwise:
         revlist = []
@@ -229,6 +233,7 @@ def convert(wire,Side,radius,clockwise=False,Z=0.0):
             FreeCAD.Console.PrintMessage("last pt= " + str(last)+ "\n")
             output += "G1 X" + str(fmt(last.x)) + " Y" + str(fmt(last.y)) + " Z" + str(fmt(Z)) + "\n"
         if isinstance(edge.Curve,Part.Circle):
+            FreeCAD.Console.PrintMessage("arc\n")
             arcstartpt = edge.valueAt(edge.FirstParameter)
             midpt = edge.valueAt((edge.FirstParameter+edge.LastParameter)*0.5)
             arcendpt = edge.valueAt(edge.LastParameter)
@@ -263,6 +268,7 @@ def convert(wire,Side,radius,clockwise=False,Z=0.0):
                 point = edge.Vertexes[0].Point
             output += "G1 X" + str(fmt(point.x)) + " Y" + str(fmt(point.y)) + " Z" + str(fmt(Z)) + "\n"
             last = point
+            FreeCAD.Console.PrintMessage("line\n")
             FreeCAD.Console.PrintMessage("last pt line= " + str(last)+ "\n")
 
     return output
