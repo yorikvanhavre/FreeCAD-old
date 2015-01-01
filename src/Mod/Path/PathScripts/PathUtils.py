@@ -289,6 +289,7 @@ def convert(toolpath,Side,radius,clockwise=False,Z=0.0,firstedge=None):
 
 
 def SortPath(wire,Side,radius,clockwise,ZClearance,StepDown,ZStart, ZFinalDepth,firstedge=None):
+
     edgelist =[]
     for edge in wire.Edges:
         edgelist.append(edge)
@@ -306,8 +307,8 @@ def SortPath(wire,Side,radius,clockwise,ZClearance,StepDown,ZStart, ZFinalDepth,
     newedgelist = l2+l1
     nlist = DraftGeomUtils.sortEdgesOld(newedgelist)
     newwire = Part.Wire(nlist)
-    
-    '''sorts the wire path for forward/reverse (CW/CCW) and start of path '''
+
+
     if Side == 'Left':
     # we use the OCC offset feature
         offset = newwire.makeOffset(radius)#tool is outside line
@@ -317,9 +318,34 @@ def SortPath(wire,Side,radius,clockwise,ZClearance,StepDown,ZStart, ZFinalDepth,
         offset = newwire.makeOffset(0.0) #tool is on the original profile ie engraving
     # resort the edges in the wire
 
+    # need to split arcs that are over 180 degrees here
+    splitlist =[]
+    for s in offset.Edges:
+        if isinstance(s.Curve,Part.Circle):
+            FreeCAD.Console.PrintMessage("arc\n")
+            if abs(s.parameterAt(s.Vertexes[0])-s.parameterAt(s.Vertexes[1])) > math.pi:
+                arcstpt  = s.valueAt(s.FirstParameter)
+                arcmid   = s.valueAt((s.LastParameter-s.FirstParameter)*0.5+s.FirstParameter)
+                arcquad1 = s.valueAt((s.LastParameter-s.FirstParameter)*0.25+s.FirstParameter)#future midpt for arc1
+                arcquad2 = s.valueAt((s.LastParameter-s.FirstParameter)*0.75+s.FirstParameter) #future midpt for arc2
+                arcendpt = s.valueAt(s.LastParameter)
+                FreeCAD.Console.PrintError('The arc is over 180 degrees!\n')
+                # reconstruct with 2 arcs
+                arcseg1 = Part.ArcOfCircle(arcstpt,arcquad1,arcmid)
+                arcseg2 = Part.ArcOfCircle(arcmid,arcquad2,arcendpt)
 
-#    nlist = DraftGeomUtils.sortEdgesOld(edgelist)
-#    offset = Part.Wire(nlist)
+                eseg1 = arcseg1.toShape()
+                eseg2 = arcseg2.toShape()
+                splitlist.append(eseg1)
+                splitlist.append(eseg2)
+            else:
+                splitlist.append(s)
+        elif isinstance(s.Curve,Part.Line):
+            splitlist.append(s)
+
+    # reconsitute offset.Wire
+    offset = Part.Wire(splitlist)
+
 
     if clockwise:
         revlist = []
