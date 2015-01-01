@@ -27,7 +27,41 @@ import Part
 from FreeCAD import Vector
 import FreeCADGui
 import math
-import DraftGeomUtils,DraftVecUtils
+import DraftGeomUtils
+import DraftVecUtils
+
+def isSameEdge(e1,e2):
+    """isSameEdge(e1,e2): return True if the 2 edges are both lines or arcs/circles and have the same
+    points - inspired by Yorik's function isSameLine"""
+    if not (isinstance(e1.Curve,Part.Line) or isinstance(e1.Curve,Part.Circle)):
+        return False
+    if not (isinstance(e2.Curve,Part.Line) or isinstance(e2.Curve,Part.Circle)):
+        return False
+    if type(e1.Curve) <> type(e2.Curve):
+        return False
+    if isinstance(e1.Curve,Part.Line):
+        if (DraftVecUtils.equals(e1.Vertexes[0].Point,e2.Vertexes[0].Point)) and \
+           (DraftVecUtils.equals(e1.Vertexes[-1].Point,e2.Vertexes[-1].Point)):
+            return True
+        elif (DraftVecUtils.equals(e1.Vertexes[-1].Point,e2.Vertexes[0].Point)) and \
+           (DraftVecUtils.equals(e1.Vertexes[0].Point,e2.Vertexes[-1].Point)):
+            return True
+    if isinstance(e1.Curve,Part.Circle):
+        center = False; radius= False; endpts=False
+        if e1.Curve.Center == e2.Curve.Center:
+            center = True
+        if e1.Curve.Radius == e2.Curve.Radius:
+            radius = True
+        if (DraftVecUtils.equals(e1.Vertexes[0].Point,e2.Vertexes[0].Point)) and \
+           (DraftVecUtils.equals(e1.Vertexes[-1].Point,e2.Vertexes[-1].Point)):
+            endpts = True
+        elif (DraftVecUtils.equals(e1.Vertexes[-1].Point,e2.Vertexes[0].Point)) and \
+           (DraftVecUtils.equals(e1.Vertexes[0].Point,e2.Vertexes[-1].Point)):
+            endpts = True
+        if (center and radius and endpts):
+            return True
+    return False
+
 
 def segments(poly):
     ''' A sequence of (x,y) numeric coordinates pairs '''
@@ -107,6 +141,7 @@ def multiSelect():
     selItems['pointlist']=None #start and end points
     selItems['facename']=None # the selected face name
     selItems['face']=None # the actual face shape
+    selItems['facelist']=None #list of faces selected
     selItems['edgelist']=None #some edges that could be selected along with points and faces
     selItems['edgenames']=None
     selItems['pathwire']=None #the whole wire around edges of the face
@@ -118,6 +153,7 @@ def multiSelect():
     edges = False
     points = False
     wireobj = False
+    facelist= []
     for s in sel:
         if s.Object.Shape.ShapeType in ['Solid','Compound','Wire','Vertex']:
             if not (s.Object.Shape.ShapeType =='Vertex'):
@@ -131,8 +167,9 @@ def multiSelect():
                 points = True
         for sub in s.SubObjects:
             if sub.ShapeType =='Face':
-                face = sub
-                selItems['face']=face
+                #face = sub
+                #selItems['face']=face
+                facelist.append(sub)
             if sub.ShapeType =='Edge':
                 edge = sub
                 edgelist.append(edge)
@@ -148,6 +185,9 @@ def multiSelect():
             if 'Edge' in sub:
                 edgenames.append(sub)
 # now indicate which wire is going to be processed, based on which edges are selected
+    if facelist:
+        selItems['facelist']=facelist
+
     if edges:
         if face:
             selItems['edgelist'] =edgelist
@@ -195,34 +235,8 @@ def multiSelect():
 
 def fmt(val): return format(val, '.4f') #set at 4 decimal places for testing
 
-def convert(wire,Side,radius,clockwise=False,Z=0.0):
-    if Side == 'Left':
-    # we use the OCC offset feature
-        offset = wire.makeOffset(radius)
-    elif Side == 'Right':
-        offset = wire.makeOffset(-radius)
-    else:
-        edgelist =[]
-        for edge in wire.Edges:
-            edgelist.append(edge)
-#        offset = wire.makeOffset(0.0) #tool is on the original profile ie engraving
-        nlist = DraftGeomUtils.sortEdgesOld(edgelist)
-        offset = Part.Wire(nlist)
-
-    if clockwise:
-        revlist = []
-        for edge in offset.Edges:
-            revlist.append(edge)
-        revlist.reverse()
-
-        toolpath = DraftGeomUtils.sortEdgesOld(revlist)
-
-    else:
-        newlist =[]
-        for edge in offset.Edges:
-            newlist.append(edge)
-        FreeCAD.Console.PrintMessage('counter clockwise toolpath\n')
-        toolpath = newlist
+def convert(toolpath,Side,radius,clockwise=False,Z=0.0,firstedge=None):
+    '''converts lines and arcs to G1,G2,G3 moves'''
     last = None
     output = ""
     # create the path from the offset shape
@@ -230,10 +244,10 @@ def convert(wire,Side,radius,clockwise=False,Z=0.0):
         if not last:
             #set the first point
             last = edge.Vertexes[0].Point
-            FreeCAD.Console.PrintMessage("last pt= " + str(last)+ "\n")
+            #FreeCAD.Console.PrintMessage("last pt= " + str(last)+ "\n")
             output += "G1 X" + str(fmt(last.x)) + " Y" + str(fmt(last.y)) + " Z" + str(fmt(Z)) + "\n"
         if isinstance(edge.Curve,Part.Circle):
-            FreeCAD.Console.PrintMessage("arc\n")
+            #FreeCAD.Console.PrintMessage("arc\n")
             arcstartpt = edge.valueAt(edge.FirstParameter)
             midpt = edge.valueAt((edge.FirstParameter+edge.LastParameter)*0.5)
             arcendpt = edge.valueAt(edge.LastParameter)
@@ -247,11 +261,11 @@ def convert(wire,Side,radius,clockwise=False,Z=0.0):
                 endpt = arcstartpt
             center = edge.Curve.Center
             relcenter = center.sub(last)
-            FreeCAD.Console.PrintMessage("arc  startpt= " + str(startpt)+ "\n")
-            FreeCAD.Console.PrintMessage("arc  midpt= " + str(midpt)+ "\n")
-            FreeCAD.Console.PrintMessage("arc  endpt= " + str(endpt)+ "\n")
+            #FreeCAD.Console.PrintMessage("arc  startpt= " + str(startpt)+ "\n")
+            #FreeCAD.Console.PrintMessage("arc  midpt= " + str(midpt)+ "\n")
+            #FreeCAD.Console.PrintMessage("arc  endpt= " + str(endpt)+ "\n")
             arc_cw = check_clockwise([(startpt.x,startpt.y),(midpt.x,midpt.y),(endpt.x,endpt.y)])
-            FreeCAD.Console.PrintMessage("arc_cw="+ str(arc_cw)+"\n")
+            #FreeCAD.Console.PrintMessage("arc_cw="+ str(arc_cw)+"\n")
             if arc_cw:
                 output += "G2"
             else:
@@ -261,38 +275,74 @@ def convert(wire,Side,radius,clockwise=False,Z=0.0):
             output += " I" + str(fmt(relcenter.x)) + " J" + str(fmt(relcenter.y)) + " K" + str(fmt(relcenter.z))
             output += "\n"
             last = endpt
-            FreeCAD.Console.PrintMessage("last pt arc= " + str(last)+ "\n")
+            #FreeCAD.Console.PrintMessage("last pt arc= " + str(last)+ "\n")
         else:
             point = edge.Vertexes[-1].Point
             if DraftVecUtils.equals(point , last): # edges can come flipped
                 point = edge.Vertexes[0].Point
             output += "G1 X" + str(fmt(point.x)) + " Y" + str(fmt(point.y)) + " Z" + str(fmt(Z)) + "\n"
             last = point
-            FreeCAD.Console.PrintMessage("line\n")
-            FreeCAD.Console.PrintMessage("last pt line= " + str(last)+ "\n")
+            #FreeCAD.Console.PrintMessage("line\n")
+            #FreeCAD.Console.PrintMessage("last pt line= " + str(last)+ "\n")
 
     return output
 
 
-def approach(wire,Side,radius,clockwise,ZClearance,StepDown,ZStart, ZFinalDepth):
+def SortPath(wire,Side,radius,clockwise,ZClearance,StepDown,ZStart, ZFinalDepth,firstedge=None):
+    edgelist =[]
+    for edge in wire.Edges:
+        edgelist.append(edge)
+
+    elindex = None
+    n=0
+    for e in edgelist:
+        if isSameEdge(e,firstedge):
+            FreeCAD.Console.PrintMessage('found first edge\n')
+            elindex = n
+        n+=1
+
+    l1 = edgelist[:elindex]
+    l2 = edgelist[elindex:]
+    newedgelist = l2+l1
+    nlist = DraftGeomUtils.sortEdgesOld(newedgelist)
+    newwire = Part.Wire(nlist)
+    
+    '''sorts the wire path for forward/reverse (CW/CCW) and start of path '''
     if Side == 'Left':
     # we use the OCC offset feature
-        offset = wire.makeOffset(radius)
+        offset = newwire.makeOffset(radius)#tool is outside line
     elif Side == 'Right':
-        #wire.reverse()
-        offset = wire.makeOffset(-radius)
+        offset = newwire.makeOffset(-radius)#tool is inside line
     else:
-#        offset = wire.makeOffset(0.0) #tool is on the original profile ie engraving
-        offset = wire
+        offset = newwire.makeOffset(0.0) #tool is on the original profile ie engraving
+    # resort the edges in the wire
+
+
+#    nlist = DraftGeomUtils.sortEdgesOld(edgelist)
+#    offset = Part.Wire(nlist)
+
+    if clockwise:
+        revlist = []
+        for edge in offset.Edges:
+            revlist.append(edge)
+        revlist.reverse()
+        toolpath = DraftGeomUtils.sortEdgesOld(revlist)
+
+    else:
+        newlist =[]
+        for edge in offset.Edges:
+            newlist.append(edge)
+        FreeCAD.Console.PrintMessage('counter clockwise toolpath\n')
+        toolpath = newlist
 
     paths =""
-    first = offset.Edges[0].Vertexes[0].Point
+    first = toolpath[0].Vertexes[0].Point
     paths += "G0 X"+str(fmt(first.x))+"Y"+str(fmt(first.y))+"\n"
     ZCurrent = ZStart- StepDown
     while ZCurrent > ZFinalDepth:
-        paths += convert(wire,Side,radius,clockwise,ZCurrent)
+        paths += convert(toolpath,Side,radius,clockwise,ZCurrent,firstedge)
         ZCurrent = ZCurrent-abs(StepDown)
-    paths += convert(wire,Side,radius,clockwise,ZFinalDepth)
+    paths += convert(toolpath,Side,radius,clockwise,ZFinalDepth,firstedge)
     paths += "G0 Z" + str(ZClearance)
     return paths
 

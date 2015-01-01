@@ -42,12 +42,17 @@ class ObjectProfile:
     def __init__(self,obj):
         obj.addProperty("App::PropertyLinkSub","Base","Path",translate("Parent Object","The base geometry of this toolpath"))
         #obj.addProperty("App::PropertyString", "ObjName", "Path",translate("Part Name", "The name of the part being processed"))
+        obj.addProperty("Part::PropertyPartShape","Face1","Shape",translate("Face1","First Selected Face to help determine where final depth of tool path is"))
+        obj.addProperty("Part::PropertyPartShape","Face2","Shape",translate("Face2","Second Selected Face to help determine where the upper level of tool path is"))
         obj.addProperty("App::PropertyLinkSub","Edge1","Path",translate("Edge 1","First Selected Edge to help determine which geometry to make a toolpath around"))
+        obj.addProperty("Part::PropertyPartShape","FirstEdge","Shape",translate("FirstEdge","First Selected Edge to help determine where to start the toolpath"))
         obj.addProperty("App::PropertyLinkSub","Edge2","Path",translate("Edge 2","Second Selected Edge to help determine which geometry to make a toolpath around"))
+        obj.addProperty("Part::PropertyPartShape","SecondEdge","Shape",translate("SecondEdge","Second Selected Edge to help determine where to start the toolpath"))
         obj.addProperty("App::PropertyInteger","ToolNumber","Tool",translate("PathProfile","The tool number to use"))
         obj.addProperty("App::PropertyFloat", "ClearanceHeight", "Depth Parameters", translate("Clearance Height","The height needed to clear clamps and obstructions"))
         obj.addProperty("App::PropertyFloat", "StepDown", "Depth Parameters", translate("StepDown","Incremental Step Down of Tool"))
         obj.addProperty("App::PropertyFloat", "StartDepth", "Depth Parameters", translate("Start Depth","Starting Depth of Tool- first cut depth in Z"))
+        obj.addProperty("App::PropertyBool","UseStartDepth","Depth Parameters",translate("Use Start Depth","make True, if manually specifying a Start Start Depth"))
         obj.addProperty("App::PropertyFloat", "FinalDepth", "Depth Parameters", translate("Final Depth","Final Depth of Tool- lowest value in Z"))
         obj.addProperty("App::PropertyFloat", "RetractHeight", "Depth Parameters", translate("Retract Height","The height desired to retract tool when path is finished"))
         obj.addProperty("App::PropertyVector","StartPoint","Profile Parameters",translate("Start Point","The start point of this path"))
@@ -91,34 +96,28 @@ class ObjectProfile:
             else:
                 # temporary value, to be taken from the properties later on
                 radius = 1
-
             if obj.Base[0].Shape.ShapeType == "Wire": #a pure wire was picked
                 wire = obj.Base[0].Shape
-            else: #we are dealing with a face and it's wires or a wire
+            else: #we are dealing with a face and it's edges or just a face
                 if obj.Edge1:
-
                     e1 = FreeCAD.ActiveDocument.getObject(obj.Base[0].Name).Shape.Edges[eval(obj.Edge1[1][0].lstrip('Edge'))-1]
                     if e1.BoundBox.ZMax <> e1.BoundBox.ZMin:
                         FreeCAD.Console.PrintError('vertical edges not valid yet\n')
                         return
-
                     if obj.Base[0].Shape.ShapeType =='Wire':
                         wire = obj.Base[0].Shape
-
                     if obj.Base[0].Shape.ShapeType =='Solid' or obj.Base[0].Shape.ShapeType =='Compound':
                         shape = obj.Base[0].Shape
                         for fw in shape.Wires:
                             if (fw.BoundBox.ZMax == e1.BoundBox.ZMax) and (fw.BoundBox.ZMin == e1.BoundBox.ZMin):
-
                                 for e in fw.Edges:
                                     if e.isSame(e1):
                                         #FreeCAD.Console.PrintMessage('found the same objects\n')
                                         wire = fw
-
-                else: # we are only dealing with a face
-                    shape = getattr(obj.Base[0].Shape,obj.Base[1][0])
+                else: # we are only dealing with a face or faces
+                    #shape = getattr(obj.Base[0].Shape,obj.Base[1][0])
                     # we only consider the outer wire if this is a Face
-                    wire = shape.OuterWire
+                    wire = obj.Face1.OuterWire
             if obj.Direction == 'CCW':
                 clockwise=False
             else:
@@ -133,7 +132,10 @@ class ObjectProfile:
             ZCurrent = obj.ClearanceHeight
             #while ZCurrent >= obj.FinalDepth:
             #                   approach(wire,Side,radius,clockwise,ZClearance,StepDown,ZFinalDepth)
-            output += PathUtils.approach(wire,obj.Side,radius,clockwise,obj.ClearanceHeight,obj.StepDown,ZMax, obj.FinalDepth)
+            if obj.UseStartDepth:
+                output += PathUtils.SortPath(wire,obj.Side,radius,clockwise,obj.ClearanceHeight,obj.StepDown,obj.StartDepth, obj.FinalDepth,obj.FirstEdge)
+            else:
+                output += PathUtils.SortPath(wire,obj.Side,radius,clockwise,obj.ClearanceHeight,obj.StepDown,ZMax, obj.FinalDepth,obj.FirstEdge)
                 #ZCurrent = ZCurrent-abs(obj.StepDown)
 
             path = Path.Path(output)
@@ -150,45 +152,58 @@ class CommandPathProfile:
         return not FreeCAD.ActiveDocument is None
         
     def Activated(self):
-        # check that the selection contains exactly what we want
+        import Path
+        from PathScripts import PathUtils,PathProfile
         selection = PathUtils.multiSelect()
+
         if not selection:
             return
 
         # if everything is ok, execute and register the transaction in the undo/redo stack
         FreeCAD.ActiveDocument.openTransaction(translate("PathProfile","Create Profile"))
         FreeCADGui.addModule("PathScripts.PathProfile")
-        FreeCADGui.doCommand('obj = FreeCAD.ActiveDocument.addObject("Path::FeaturePython","Profile")')
-        FreeCADGui.doCommand('PathScripts.PathProfile.ObjectProfile(obj)')
+
+        obj = FreeCAD.ActiveDocument.addObject("Path::FeaturePython","Profile")
+        PathProfile.ObjectProfile(obj)
+
+        if selection['facelist']:
+            obj.Face1 = selection['facelist'][0]
+            if len(selection['facelist'])>1:
+                obj.Face2 = selection['facelist'][1]
+
+        obj.Base = (FreeCAD.ActiveDocument.getObject(selection['objname']))
 
         if selection['edgenames']:
             FreeCAD.Console.PrintMessage('There are edges selected\n')
-            FreeCADGui.doCommand('obj.Base = (FreeCAD.ActiveDocument.'+selection['objname']+',"'+selection['edgenames'][0]+'")')
-            FreeCADGui.doCommand('obj.Edge1 =(FreeCAD.ActiveDocument.getObject("'+(selection['objname'])+'"),["'  +str(selection['edgenames'][0]+'"])'))
-            FreeCADGui.doCommand('obj.Edge2 =(FreeCAD.ActiveDocument.getObject("'+(selection['objname'])+'"),["'  +str(selection['edgenames'][1]+'"])'))
-        else:
-            FreeCADGui.doCommand('obj.Base = (FreeCAD.ActiveDocument.'+selection['objname']+',"'+selection['facename']+'")')
+            
+            obj.Edge1 =(FreeCAD.ActiveDocument.getObject(selection['objname']),(selection['edgenames'][0]))
+            obj.Edge2 =(FreeCAD.ActiveDocument.getObject(selection['objname']),(selection['edgenames'][1]))
+            obj.FirstEdge =selection["edgelist"][0]
+            obj.SecondEdge =selection["edgelist"][1]
+
 
         if selection['pointlist']:
-            # we should at least have a start point
             FreeCADGui.doCommand('from FreeCAD import Vector')
             stptX, stptY, stptZ = selection['pointlist'][0].X, selection['pointlist'][0].Y, selection['pointlist'][0].Z
-            FreeCADGui.doCommand('obj.StartPoint = Vector('+str(stptX)+',' +str(stptY)+',' +str(stptZ)+')')
+            obj.StartPoint = Vector((stptX),(stptY),(stptZ))
             if len(selection['pointlist'])>1: # we have more than one point so we have an end point
                 endptX, endptY, endptZ = selection['pointlist'][-1].X, selection['pointlist'][-1].Y, selection['pointlist'][-1].Z
-                FreeCADGui.doCommand('obj.EndPoint = Vector('+str(endptX)+',' +str(endptY)+',' +str(endptZ)+')')
+                obj.EndPoint = Vector(endptX,endptY,endptZ)
         if selection['clockwise']:
-            FreeCADGui.doCommand('obj.Side = "Left" ')
-            FreeCADGui.doCommand('obj.Direction = "CW" ')
+            obj.Side = "Left"
+            obj.Direction = "CW"
         elif selection['clockwise'] == False: 
-            FreeCADGui.doCommand('obj.Side = "Right" ')
-            FreeCADGui.doCommand('obj.Direction = "CCW" ')
-        FreeCADGui.doCommand('ZMax = obj.Base[0].Shape.BoundBox.ZMax')
-        FreeCADGui.doCommand('obj.StepDown = 1.0')
-        FreeCADGui.doCommand('obj.StartDepth = ZMax- obj.StepDown')
-        FreeCADGui.doCommand('obj.FinalDepth = ZMax-1.0')
-        FreeCADGui.doCommand('obj.ClearanceHeight = 1.0')
-        FreeCADGui.doCommand('obj.ViewObject.Proxy = 0')
+            obj.Side = "Right"
+            obj.Direction = "CCW" 
+            
+        ZMax = obj.Base[0].Shape.BoundBox.ZMax
+        ZMin = obj.Base[0].Shape.BoundBox.ZMin
+        obj.StepDown = 1.0
+        obj.StartDepth = ZMax- obj.StepDown
+        obj.FinalDepth = ZMin-1.0
+        obj.ClearanceHeight =  ZMax + 5.0
+        obj.ViewObject.Proxy = 0
+
         FreeCAD.ActiveDocument.commitTransaction()
         FreeCAD.ActiveDocument.recompute()
 
