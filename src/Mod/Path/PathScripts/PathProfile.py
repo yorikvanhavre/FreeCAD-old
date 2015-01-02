@@ -70,6 +70,7 @@ class ObjectProfile:
         obj.addProperty("App::PropertyFloat", "ExtendAtEnd", "Profile Parameters", translate("extend at end","extra length of tool path after end of part edge"))
         obj.addProperty("App::PropertyFloat", "LeadInLineLen", "Profile Parameters", translate("lead in length","length of straight segment of toolpath that comes in at angle to first part edge"))
         obj.addProperty("App::PropertyFloat", "LeadOutLineLen", "Profile Parameters", translate("lead_out_line_len","length of straight segment of toolpath that comes in at angle to last part edge"))
+        obj.addProperty("App::PropertyFloat", "SegLen", "Profile Parameters",translate("Seg Len","Tesselation  value for tool paths made from beziers, bsplines, and ellipses"))
         obj.Proxy = self
 #        obj.Closed = True
 
@@ -137,9 +138,9 @@ class ObjectProfile:
             #while ZCurrent >= obj.FinalDepth:
             #                   approach(wire,Side,radius,clockwise,ZClearance,StepDown,ZFinalDepth)
             if obj.UseStartDepth:
-                output += PathUtils.SortPath(wire,obj.Side,radius,clockwise,obj.ClearanceHeight,obj.StepDown,obj.StartDepth, obj.FinalDepth,FirstEdge,obj.PathClosed)
+                output += PathUtils.SortPath(wire,obj.Side,radius,clockwise,obj.ClearanceHeight,obj.StepDown,obj.StartDepth, obj.FinalDepth,FirstEdge,obj.PathClosed,obj.SegLen)
             else:
-                output += PathUtils.SortPath(wire,obj.Side,radius,clockwise,obj.ClearanceHeight,obj.StepDown,ZMax, obj.FinalDepth,FirstEdge,obj.PathClosed)
+                output += PathUtils.SortPath(wire,obj.Side,radius,clockwise,obj.ClearanceHeight,obj.StepDown,ZMax, obj.FinalDepth,FirstEdge,obj.PathClosed,obj.SegLen)
                 #ZCurrent = ZCurrent-abs(obj.StepDown)
 
             path = Path.Path(output)
@@ -212,6 +213,7 @@ class CommandPathProfile:
         obj.StartDepth = ZMax- obj.StepDown
         obj.FinalDepth = ZMin-1.0
         obj.ClearanceHeight =  ZMax + 5.0
+        obj.SegLen = 0.5
         obj.ViewObject.Proxy = 0
 
         FreeCAD.ActiveDocument.commitTransaction()
