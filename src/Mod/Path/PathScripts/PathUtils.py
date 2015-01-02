@@ -28,10 +28,22 @@ from FreeCAD import Vector
 import FreeCADGui
 import math
 import DraftGeomUtils
-from DraftGeomUtils import geomType, curvetowire
+from DraftGeomUtils import geomType
 import DraftVecUtils
 
 def fmt(val): return format(val, '.4f') #set at 4 decimal places for testing
+
+def curvetowire(obj,steps):
+    '''adapted from DraftGeomUtils, because the discretize function changed a bit '''
+    points = obj.copy().discretize(Distance = eval('steps'))
+    p0 = points[0]
+    edgelist = []
+    for p in points[1:]:
+        edge = Part.makeLine((p0.x,p0.y,p0.z),(p.x,p.y,p.z))
+        edgelist.append(edge)
+        p0 = p
+    return edgelist
+
 
 def isSameEdge(e1,e2):
     """isSameEdge(e1,e2): return True if the 2 edges are both lines or arcs/circles and have the same
@@ -318,7 +330,7 @@ def convert(toolpath,Side,radius,clockwise=False,Z=0.0,firstedge=None):
             #FreeCAD.Console.PrintMessage("last pt line= " + str(last)+ "\n")
     return output
 
-def SortPath(wire,Side,radius,clockwise,ZClearance,StepDown,ZStart,ZFinalDepth,firstedge=None,PathClosed=True):
+def SortPath(wire,Side,radius,clockwise,ZClearance,StepDown,ZStart,ZFinalDepth,firstedge=None,PathClosed=True, SegLen=1.0):
     '''SortPath(wire,Side,radius,clockwise,ZClearance,StepDown,ZStart, ZFinalDepth,firstedge=None) Sorts the wire and reverses it, if needed. Splits arcs over 180 degrees in two. '''
 
 # need to rework firstedge use with beginning of toolpath
@@ -343,18 +355,19 @@ def SortPath(wire,Side,radius,clockwise,ZClearance,StepDown,ZStart,ZFinalDepth,f
             newedgelist = l2+l1
         nlist = DraftGeomUtils.sortEdgesOld(newedgelist)
         wire = Part.Wire(nlist)
-    seglength = 0.25 #hard coded for now- will tie into Draft Preferences later
+
     edgelist =[]
     for e in wire.Edges:
-        if isinstance(e.Curve,Part.Circle):
+        if geomType(e) == "Circle":
             arclist = filterArcs(edge)
             for a in arclist:
                 edgelist.append(a)
-        elif isinstance(e.Curve,Part.Line):
+        elif geomType(e) == "Line":
             edgelist.append(e)
         elif geomType(e) == "BSplineCurve" or \
-                 geomType(e) == "BezierCurve":
-                 edgelist.append(Part.Wire(curvetowire(e,seglength)))
+                 geomType(e) == "BezierCurve" or \
+                 geomType(e) == "Ellipse":
+                 edgelist.append(Part.Wire(curvetowire(e,(SegLen))))
 
     newwire = Part.Wire(edgelist)
     if Side == 'Left':

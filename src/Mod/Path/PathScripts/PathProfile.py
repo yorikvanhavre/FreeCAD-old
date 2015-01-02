@@ -71,7 +71,7 @@ class ObjectProfile:
         obj.addProperty("App::PropertyFloat", "LeadInLineLen", "Profile Parameters", translate("lead in length","length of straight segment of toolpath that comes in at angle to first part edge"))
         obj.addProperty("App::PropertyFloat", "LeadOutLineLen", "Profile Parameters", translate("lead_out_line_len","length of straight segment of toolpath that comes in at angle to last part edge"))
         obj.Proxy = self
-#        obj.Closed = True
+        obj.SegLen =0.25
 
     def __getstate__(self):
         return None
@@ -137,9 +137,9 @@ class ObjectProfile:
             #while ZCurrent >= obj.FinalDepth:
             #                   approach(wire,Side,radius,clockwise,ZClearance,StepDown,ZFinalDepth)
             if obj.UseStartDepth:
-                output += PathUtils.SortPath(wire,obj.Side,radius,clockwise,obj.ClearanceHeight,obj.StepDown,obj.StartDepth, obj.FinalDepth,FirstEdge,obj.PathClosed)
+                output += PathUtils.SortPath(wire,obj.Side,radius,clockwise,obj.ClearanceHeight,obj.StepDown,obj.StartDepth, obj.FinalDepth,FirstEdge,obj.PathClosed. obj.SegLen)
             else:
-                output += PathUtils.SortPath(wire,obj.Side,radius,clockwise,obj.ClearanceHeight,obj.StepDown,ZMax, obj.FinalDepth,FirstEdge,obj.PathClosed)
+                output += PathUtils.SortPath(wire,obj.Side,radius,clockwise,obj.ClearanceHeight,obj.StepDown,ZMax, obj.FinalDepth,FirstEdge,obj.PathClosed, obj.SegLen)
                 #ZCurrent = ZCurrent-abs(obj.StepDown)
 
             path = Path.Path(output)
@@ -181,7 +181,8 @@ class CommandPathProfile:
             FreeCAD.Console.PrintMessage('There are edges selected\n')
             
             obj.Edge1 =(FreeCAD.ActiveDocument.getObject(selection['objname']),(selection['edgenames'][0]))
-            obj.Edge2 =(FreeCAD.ActiveDocument.getObject(selection['objname']),(selection['edgenames'][1]))
+            if selection['edgelist']>1:
+                obj.Edge2 =(FreeCAD.ActiveDocument.getObject(selection['objname']),(selection['edgenames'][-1]))
             #obj.FirstEdge =selection["edgelist"][0]
             #obj.SecondEdge =selection["edgelist"][1]
 
