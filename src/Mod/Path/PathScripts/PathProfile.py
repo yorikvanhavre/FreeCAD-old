@@ -116,10 +116,14 @@ class ObjectProfile:
                                     if e.isSame(e1):
                                         #FreeCAD.Console.PrintMessage('found the same objects\n')
                                         wire = fw
-                else: # we are only dealing with a face or faces
-                    #shape = getattr(obj.Base[0].Shape,obj.Base[1][0])
-                    # we only consider the outer wire if this is a Face
-                    wire = obj.Face1.OuterWire
+                elif obj.Face1: # we are only dealing with a face or faces
+                    f1 = FreeCAD.ActiveDocument.getObject(obj.Base[0].Name).Shape.Faces[eval(obj.Face1[1][0].lstrip('Face'))-1]
+                    # make the side Left and direction CW for normal cnc milling
+                    obj.Direction = 'CW'
+                    obj.Side = "Left"
+                    # we only consider the outer wire if this is a single Face
+                    wire = f1.OuterWire
+
             if obj.Direction == 'CCW':
                 clockwise=False
             else:
@@ -171,21 +175,20 @@ class CommandPathProfile:
         obj = FreeCAD.ActiveDocument.addObject("Path::FeaturePython","Profile")
         PathProfile.ObjectProfile(obj)
 
-        if selection['facelist']:
-            obj.Face1 = selection['facelist'][0]
-            if len(selection['facelist'])>1:
-                obj.Face2 = selection['facelist'][1]
-
         obj.Base = (FreeCAD.ActiveDocument.getObject(selection['objname']))
+
+        if selection['facenames']:
+            FreeCAD.Console.PrintMessage('There are edges selected\n')
+            obj.Face1 = (FreeCAD.ActiveDocument.getObject(selection['objname']),selection['facenames'][0])
+            if len(selection['facenames'])>1:
+                obj.Face2 = (FreeCAD.ActiveDocument.getObject(selection['objname']),selection['facenames'][-1])
 
         if selection['edgenames']:
             FreeCAD.Console.PrintMessage('There are edges selected\n')
             
             obj.Edge1 =(FreeCAD.ActiveDocument.getObject(selection['objname']),(selection['edgenames'][0]))
-            obj.Edge2 =(FreeCAD.ActiveDocument.getObject(selection['objname']),(selection['edgenames'][1]))
-            #obj.FirstEdge =selection["edgelist"][0]
-            #obj.SecondEdge =selection["edgelist"][1]
-
+            if len(selection['edgenames'])>1:
+                obj.Edge2 =(FreeCAD.ActiveDocument.getObject(selection['objname']),(selection['edgenames'][-1]))
 
         if selection['pointlist']:
             FreeCADGui.doCommand('from FreeCAD import Vector')

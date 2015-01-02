@@ -185,13 +185,13 @@ def multiSelect():
     selItems = {}
     selItems['objname']=None #the parent object name - a 3D solid
     selItems['pointlist']=None #start and end points
-    selItems['facename']=None # the selected face name
-    selItems['face']=None # the actual face shape
+    selItems['facenames']=None # the selected face name
     selItems['facelist']=None #list of faces selected
     selItems['edgelist']=None #some edges that could be selected along with points and faces
     selItems['edgenames']=None
     selItems['pathwire']=None #the whole wire around edges of the face
     selItems['clockwise']=None
+    facenames = []
     edgelist =[]
     edgenames=[]
     ptlist=[]
@@ -213,9 +213,8 @@ def multiSelect():
                 points = True
         for sub in s.SubObjects:
             if sub.ShapeType =='Face':
-                #face = sub
-                #selItems['face']=face
                 facelist.append(sub)
+                face = True
             if sub.ShapeType =='Edge':
                 edge = sub
                 edgelist.append(edge)
@@ -227,7 +226,7 @@ def multiSelect():
         for sub in s.SubElementNames:
             if 'Face' in sub:
                 facename = sub
-                selItems['facename']  =facename  ; 
+                facenames.append(facename) 
             if 'Edge' in sub:
                 edgenames.append(sub)
     # now indicate which wire is going to be processed, based on which edges are selected
@@ -237,7 +236,7 @@ def multiSelect():
     if edges:
         if face:
             selItems['edgelist'] =edgelist
-            for fw in face.Wires:
+            for fw in facelist[0].Wires:
                 for e in  fw.Edges:
                     if e.isSame(edge):
                         pathwire = fw
@@ -256,7 +255,7 @@ def multiSelect():
 
     if not edges:
         if face:
-            selItems['pathwire']  =face.OuterWire
+            selItems['pathwire']  =facelist[0].OuterWire
 
     if edges and (len(edgelist)>=2):
         vlist,edgestart,edgecommon=Sort2Edges(edgelist)
@@ -275,6 +274,8 @@ def multiSelect():
         selItems['pointlist']  = ptlist
     if edges:
         selItems['edgenames']=edgenames
+    if face:
+        selItems['facenames'] = facenames
 
     return selItems
 
@@ -377,8 +378,10 @@ def SortPath(wire,Side,radius,clockwise,ZClearance,StepDown,ZStart,ZFinalDepth,f
     elif Side == 'Right':
         offset = newwire.makeOffset(-radius)#tool is inside line
     else:
-#        if wire.isClosed():
-        offset = wire
+        if wire.isClosed():
+            offset = newwire.makeOffset(0)
+        else:
+            offset = wire
         
     if clockwise:
         revlist = []
