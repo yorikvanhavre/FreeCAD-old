@@ -28,6 +28,7 @@ from FreeCAD import Vector
 import FreeCADGui
 import math
 import DraftGeomUtils
+from DraftGeomUtils import geomType, curvetowire
 import DraftVecUtils
 
 def fmt(val): return format(val, '.4f') #set at 4 decimal places for testing
@@ -342,16 +343,18 @@ def SortPath(wire,Side,radius,clockwise,ZClearance,StepDown,ZStart,ZFinalDepth,f
             newedgelist = l2+l1
         nlist = DraftGeomUtils.sortEdgesOld(newedgelist)
         wire = Part.Wire(nlist)
-
+    seglength = 0.25 #hard coded for now- will tie into Draft Preferences later
     edgelist =[]
-    for edge in wire.Edges:
-        if isinstance(edge.Curve,Part.Circle):
+    for e in wire.Edges:
+        if isinstance(e.Curve,Part.Circle):
             arclist = filterArcs(edge)
             for a in arclist:
                 edgelist.append(a)
-        elif isinstance(edge.Curve,Part.Line):
-            edgelist.append(edge)
-
+        elif isinstance(e.Curve,Part.Line):
+            edgelist.append(e)
+        elif geomType(e) == "BSplineCurve" or \
+                 geomType(e) == "BezierCurve":
+                 edgelist.append(Part.Wire(curvetowire(e,seglength)))
 
     newwire = Part.Wire(edgelist)
     if Side == 'Left':
