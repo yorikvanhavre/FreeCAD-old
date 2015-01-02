@@ -42,12 +42,13 @@ class ObjectProfile:
     def __init__(self,obj):
         obj.addProperty("App::PropertyLinkSub","Base","Path",translate("Parent Object","The base geometry of this toolpath"))
         #obj.addProperty("App::PropertyString", "ObjName", "Path",translate("Part Name", "The name of the part being processed"))
-        obj.addProperty("Part::PropertyPartShape","Face1","Shape",translate("Face1","First Selected Face to help determine where final depth of tool path is"))
-        obj.addProperty("Part::PropertyPartShape","Face2","Shape",translate("Face2","Second Selected Face to help determine where the upper level of tool path is"))
+        obj.addProperty("App::PropertyLinkSub","Face1","Path",translate("Face1","First Selected Face to help determine where final depth of tool path is"))
+        obj.addProperty("App::PropertyLinkSub","Face2","Path",translate("Face2","Second Selected Face to help determine where the upper level of tool path is"))
+        obj.addProperty("App::PropertyBool","PathClosed","Path",translate("Path Closed","If the toolpath is a closed polyline this is True"))
         obj.addProperty("App::PropertyLinkSub","Edge1","Path",translate("Edge 1","First Selected Edge to help determine which geometry to make a toolpath around"))
-        obj.addProperty("Part::PropertyPartShape","FirstEdge","Shape",translate("FirstEdge","First Selected Edge to help determine where to start the toolpath"))
+#        obj.addProperty("Part::PropertyPartShape","FirstEdge","Shape",translate("FirstEdge","First Selected Edge to help determine where to start the toolpath"))
         obj.addProperty("App::PropertyLinkSub","Edge2","Path",translate("Edge 2","Second Selected Edge to help determine which geometry to make a toolpath around"))
-        obj.addProperty("Part::PropertyPartShape","SecondEdge","Shape",translate("SecondEdge","Second Selected Edge to help determine where to start the toolpath"))
+#        obj.addProperty("Part::PropertyPartShape","SecondEdge","Shape",translate("SecondEdge","Second Selected Edge to help determine where to start the toolpath"))
         obj.addProperty("App::PropertyInteger","ToolNumber","Tool",translate("PathProfile","The tool number to use"))
         obj.addProperty("App::PropertyFloat", "ClearanceHeight", "Depth Parameters", translate("Clearance Height","The height needed to clear clamps and obstructions"))
         obj.addProperty("App::PropertyFloat", "StepDown", "Depth Parameters", translate("StepDown","Incremental Step Down of Tool"))
@@ -70,7 +71,7 @@ class ObjectProfile:
         obj.addProperty("App::PropertyFloat", "LeadInLineLen", "Profile Parameters", translate("lead in length","length of straight segment of toolpath that comes in at angle to first part edge"))
         obj.addProperty("App::PropertyFloat", "LeadOutLineLen", "Profile Parameters", translate("lead_out_line_len","length of straight segment of toolpath that comes in at angle to last part edge"))
         obj.Proxy = self
-
+#        obj.Closed = True
 
     def __getstate__(self):
         return None
@@ -125,17 +126,20 @@ class ObjectProfile:
             output = "G0Z"
             output += str(obj.ClearanceHeight)
             output += "\n"
-            
-            
+            FirstEdge= None
+            if obj.Edge1:
+                ename = obj.Edge1[1][0]
+                edgeNumber = int(ename[4:])-1
+                FirstEdge = obj.Base[0].Shape.Edges[edgeNumber]
             ZMax = obj.Base[0].Shape.BoundBox.ZMax
             #ZCurrent = ZMax- obj.StepDown
             ZCurrent = obj.ClearanceHeight
             #while ZCurrent >= obj.FinalDepth:
             #                   approach(wire,Side,radius,clockwise,ZClearance,StepDown,ZFinalDepth)
             if obj.UseStartDepth:
-                output += PathUtils.SortPath(wire,obj.Side,radius,clockwise,obj.ClearanceHeight,obj.StepDown,obj.StartDepth, obj.FinalDepth,obj.FirstEdge)
+                output += PathUtils.SortPath(wire,obj.Side,radius,clockwise,obj.ClearanceHeight,obj.StepDown,obj.StartDepth, obj.FinalDepth,FirstEdge,obj.PathClosed)
             else:
-                output += PathUtils.SortPath(wire,obj.Side,radius,clockwise,obj.ClearanceHeight,obj.StepDown,ZMax, obj.FinalDepth,obj.FirstEdge)
+                output += PathUtils.SortPath(wire,obj.Side,radius,clockwise,obj.ClearanceHeight,obj.StepDown,ZMax, obj.FinalDepth,FirstEdge,obj.PathClosed)
                 #ZCurrent = ZCurrent-abs(obj.StepDown)
 
             path = Path.Path(output)
@@ -178,8 +182,8 @@ class CommandPathProfile:
             
             obj.Edge1 =(FreeCAD.ActiveDocument.getObject(selection['objname']),(selection['edgenames'][0]))
             obj.Edge2 =(FreeCAD.ActiveDocument.getObject(selection['objname']),(selection['edgenames'][1]))
-            obj.FirstEdge =selection["edgelist"][0]
-            obj.SecondEdge =selection["edgelist"][1]
+            #obj.FirstEdge =selection["edgelist"][0]
+            #obj.SecondEdge =selection["edgelist"][1]
 
 
         if selection['pointlist']:
@@ -189,13 +193,19 @@ class CommandPathProfile:
             if len(selection['pointlist'])>1: # we have more than one point so we have an end point
                 endptX, endptY, endptZ = selection['pointlist'][-1].X, selection['pointlist'][-1].Y, selection['pointlist'][-1].Z
                 obj.EndPoint = Vector(endptX,endptY,endptZ)
-        if selection['clockwise']:
-            obj.Side = "Left"
-            obj.Direction = "CW"
-        elif selection['clockwise'] == False: 
-            obj.Side = "Right"
-            obj.Direction = "CCW" 
-            
+        if selection['pathwire'].isClosed():
+            obj.PathClosed = True
+            if selection['clockwise']:
+                obj.Side = "Left"
+                obj.Direction = "CW"
+            elif selection['clockwise'] == False: 
+                obj.Side = "Right"
+                obj.Direction = "CCW"
+        else:
+            obj.Side = "On"
+            obj.Direction = "CCW"
+            obj.PathClosed = False
+
         ZMax = obj.Base[0].Shape.BoundBox.ZMax
         ZMin = obj.Base[0].Shape.BoundBox.ZMin
         obj.StepDown = 1.0

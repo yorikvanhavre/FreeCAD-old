@@ -21,7 +21,7 @@
 #*   USA                                                                   *
 #*                                                                         *
 #***************************************************************************
-
+'''PathUtils -common functions used in PathScripts for filterig, sorting, and generating gcode toolpath data '''
 import FreeCAD
 import Part
 from FreeCAD import Vector
@@ -29,6 +29,8 @@ import FreeCADGui
 import math
 import DraftGeomUtils
 import DraftVecUtils
+
+def fmt(val): return format(val, '.4f') #set at 4 decimal places for testing
 
 def isSameEdge(e1,e2):
     """isSameEdge(e1,e2): return True if the 2 edges are both lines or arcs/circles and have the same
@@ -61,7 +63,6 @@ def isSameEdge(e1,e2):
         if (center and radius and endpts):
             return True
     return False
-
 
 def segments(poly):
     ''' A sequence of (x,y) numeric coordinates pairs '''
@@ -113,9 +114,41 @@ def Sort2Edges(edgelist=[]):
 
     return vlist,edgestart,edgecommon
 
+def filterArcs(arcEdge):
+    '''filterArcs(Edge) -used to split arcs that over 180 degrees. Returns list '''
+    s = arcEdge
+    if isinstance(s.Curve,Part.Circle):
+        splitlist =[]
+        angle = abs(s.LastParameter-s.FirstParameter)
+        overhalfcircle = False
+        goodarc = False
+        if (angle > math.pi):
+            overhalfcircle = True
+        else:
+            goodarc = True
+        if not goodarc:
+            arcstpt  = s.valueAt(s.FirstParameter)
+            arcmid   = s.valueAt((s.LastParameter-s.FirstParameter)*0.5+s.FirstParameter)
+            arcquad1 = s.valueAt((s.LastParameter-s.FirstParameter)*0.25+s.FirstParameter)#future midpt for arc1
+            arcquad2 = s.valueAt((s.LastParameter-s.FirstParameter)*0.75+s.FirstParameter) #future midpt for arc2
+            arcendpt = s.valueAt(s.LastParameter)
+            # reconstruct with 2 arcs
+            arcseg1 = Part.ArcOfCircle(arcstpt,arcquad1,arcmid)
+            arcseg2 = Part.ArcOfCircle(arcmid,arcquad2,arcendpt)
+
+            eseg1 = arcseg1.toShape()
+            eseg2 = arcseg2.toShape()
+            splitlist.append(eseg1)
+            splitlist.append(eseg2)
+        else:
+            splitlist.append(s)
+    elif isinstance(s.Curve,Part.Line):
+        pass
+    return splitlist
+
 def multiSelect():
     '''
-    A function for selecting elements of an object for CNC path operations.
+    multiSelect() A function for selecting elements of an object for CNC path operations.
     Select just a face, an edge,or two edges to indicate direction, a vertex on the object, a point not on the object,
     or some combination. Returns a dictionary.
     '''
@@ -131,7 +164,8 @@ def multiSelect():
                 goodselect = True
             if i.ShapeType == 'Edge':
                 goodselect = True
-
+            if i.ShapeType == 'Vertex':
+                goodselect = True
     if not goodselect:
         FreeCAD.Console.PrintError('Please select a face and/or edges along with points (optional) and try again.\n')
         return
@@ -184,7 +218,7 @@ def multiSelect():
                 selItems['facename']  =facename  ; 
             if 'Edge' in sub:
                 edgenames.append(sub)
-# now indicate which wire is going to be processed, based on which edges are selected
+    # now indicate which wire is going to be processed, based on which edges are selected
     if facelist:
         selItems['facelist']=facelist
 
@@ -212,7 +246,6 @@ def multiSelect():
         if face:
             selItems['pathwire']  =face.OuterWire
 
-
     if edges and (len(edgelist)>=2):
         vlist,edgestart,edgecommon=Sort2Edges(edgelist)
         edgepts ={}
@@ -233,10 +266,8 @@ def multiSelect():
 
     return selItems
 
-def fmt(val): return format(val, '.4f') #set at 4 decimal places for testing
-
 def convert(toolpath,Side,radius,clockwise=False,Z=0.0,firstedge=None):
-    '''converts lines and arcs to G1,G2,G3 moves'''
+    '''convert(toolpath,Side,radius,clockwise=False,Z=0.0,firstedge=None) Converts lines and arcs to G1,G2,G3 moves. Returns a string.'''
     last = None
     output = ""
     # create the path from the offset shape
@@ -284,69 +315,54 @@ def convert(toolpath,Side,radius,clockwise=False,Z=0.0,firstedge=None):
             last = point
             #FreeCAD.Console.PrintMessage("line\n")
             #FreeCAD.Console.PrintMessage("last pt line= " + str(last)+ "\n")
-
     return output
 
+def SortPath(wire,Side,radius,clockwise,ZClearance,StepDown,ZStart,ZFinalDepth,firstedge=None,PathClosed=True):
+    '''SortPath(wire,Side,radius,clockwise,ZClearance,StepDown,ZStart, ZFinalDepth,firstedge=None) Sorts the wire and reverses it, if needed. Splits arcs over 180 degrees in two. '''
 
-def SortPath(wire,Side,radius,clockwise,ZClearance,StepDown,ZStart, ZFinalDepth,firstedge=None):
+# need to rework firstedge use with beginning of toolpath
+# right now it gets the toolpath started near the picked edge
+# but not near enough
+    if firstedge:
+        edgelist =[]
+        for edge in wire.Edges:
+            edgelist.append(edge)
+        elindex = None
+        n=0
+        for e in edgelist:
+            if isSameEdge(e,firstedge):
+                FreeCAD.Console.PrintMessage('found first edge\n')
+                elindex = n
+            n+=1
+        l1 = edgelist[:elindex]
+        l2 = edgelist[elindex:]
+        if clockwise:
+            newedgelist = l1+l2
+        else:
+            newedgelist = l2+l1
+        nlist = DraftGeomUtils.sortEdgesOld(newedgelist)
+        wire = Part.Wire(nlist)
 
     edgelist =[]
     for edge in wire.Edges:
-        edgelist.append(edge)
-
-    elindex = None
-    n=0
-    for e in edgelist:
-        if isSameEdge(e,firstedge):
-            FreeCAD.Console.PrintMessage('found first edge\n')
-            elindex = n
-        n+=1
-
-    l1 = edgelist[:elindex]
-    l2 = edgelist[elindex:]
-    newedgelist = l2+l1
-    nlist = DraftGeomUtils.sortEdgesOld(newedgelist)
-    newwire = Part.Wire(nlist)
+        if isinstance(edge.Curve,Part.Circle):
+            arclist = filterArcs(edge)
+            for a in arclist:
+                edgelist.append(a)
+        elif isinstance(edge.Curve,Part.Line):
+            edgelist.append(edge)
 
 
+    newwire = Part.Wire(edgelist)
     if Side == 'Left':
     # we use the OCC offset feature
         offset = newwire.makeOffset(radius)#tool is outside line
     elif Side == 'Right':
         offset = newwire.makeOffset(-radius)#tool is inside line
     else:
-        offset = newwire.makeOffset(0.0) #tool is on the original profile ie engraving
-    # resort the edges in the wire
-
-    # need to split arcs that are over 180 degrees here
-    splitlist =[]
-    for s in offset.Edges:
-        if isinstance(s.Curve,Part.Circle):
-            FreeCAD.Console.PrintMessage("arc\n")
-            if abs(s.parameterAt(s.Vertexes[0])-s.parameterAt(s.Vertexes[1])) > math.pi:
-                arcstpt  = s.valueAt(s.FirstParameter)
-                arcmid   = s.valueAt((s.LastParameter-s.FirstParameter)*0.5+s.FirstParameter)
-                arcquad1 = s.valueAt((s.LastParameter-s.FirstParameter)*0.25+s.FirstParameter)#future midpt for arc1
-                arcquad2 = s.valueAt((s.LastParameter-s.FirstParameter)*0.75+s.FirstParameter) #future midpt for arc2
-                arcendpt = s.valueAt(s.LastParameter)
-                FreeCAD.Console.PrintError('The arc is over 180 degrees!\n')
-                # reconstruct with 2 arcs
-                arcseg1 = Part.ArcOfCircle(arcstpt,arcquad1,arcmid)
-                arcseg2 = Part.ArcOfCircle(arcmid,arcquad2,arcendpt)
-
-                eseg1 = arcseg1.toShape()
-                eseg2 = arcseg2.toShape()
-                splitlist.append(eseg1)
-                splitlist.append(eseg2)
-            else:
-                splitlist.append(s)
-        elif isinstance(s.Curve,Part.Line):
-            splitlist.append(s)
-
-    # reconsitute offset.Wire
-    offset = Part.Wire(splitlist)
-
-
+#        if wire.isClosed():
+        offset = wire
+        
     if clockwise:
         revlist = []
         for edge in offset.Edges:
@@ -365,11 +381,20 @@ def SortPath(wire,Side,radius,clockwise,ZClearance,StepDown,ZStart, ZFinalDepth,
     first = toolpath[0].Vertexes[0].Point
     paths += "G0 X"+str(fmt(first.x))+"Y"+str(fmt(first.y))+"\n"
     ZCurrent = ZStart- StepDown
-    while ZCurrent > ZFinalDepth:
-        paths += convert(toolpath,Side,radius,clockwise,ZCurrent,firstedge)
-        ZCurrent = ZCurrent-abs(StepDown)
-    paths += convert(toolpath,Side,radius,clockwise,ZFinalDepth,firstedge)
-    paths += "G0 Z" + str(ZClearance)
+    if PathClosed:
+        while ZCurrent > ZFinalDepth:
+            paths += convert(toolpath,Side,radius,clockwise,ZCurrent,firstedge)
+            ZCurrent = ZCurrent-abs(StepDown)
+        paths += convert(toolpath,Side,radius,clockwise,ZFinalDepth,firstedge)
+        paths += "G0 Z" + str(ZClearance)
+    else:
+        while ZCurrent > ZFinalDepth:
+            paths += convert(toolpath,Side,radius,clockwise,ZCurrent,firstedge)
+            paths += "G0 Z" + str(ZClearance)
+            paths += "G0 X"+str(fmt(first.x))+"Y"+str(fmt(first.y))+"\n"
+            ZCurrent = ZCurrent-abs(StepDown)
+        paths += convert(toolpath,Side,radius,clockwise,ZFinalDepth,firstedge)
+        paths += "G0 Z" + str(ZClearance)
     return paths
 
 
