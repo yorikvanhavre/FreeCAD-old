@@ -237,15 +237,18 @@ def get3DView():
             return v[0]
     return None
 
-def isClone(obj,objtype):
-    """isClone(obj,objtype): returns True if the given object is 
-    a clone of an object of the given type"""
+def isClone(obj,objtype,recursive=False):
+    """isClone(obj,objtype,[recursive]): returns True if the given object is 
+    a clone of an object of the given type. If recursive is True, also check if
+    the clone is a clone of clone (of clone...)  of the given type."""
     if getType(obj) == "Clone":
         if len(obj.Objects) == 1:
             if getType(obj.Objects[0]) == objtype:
                 return True
+            elif recursive and (getType(obj.Objects[0]) == "Clone"):
+                return isClone(obj.Objects[0],objtype,recursive)
     return False
-
+    
 def getGroupNames():
     "returns a list of existing groups in the document"
     glist = []
@@ -574,6 +577,27 @@ def loadTexture(filename,size=None):
         else:
             return img
     return None
+    
+def getMovableChildren(objectslist,recursive=False):
+    '''getMovableChildren(objectslist,[recursive]): extends the given list of objects
+    with all child objects that have a "MoveWithHost" property set to True. If
+    recursive is True, all descendents are considered, otherwise only direct children.'''
+    added = []
+    for obj in objectslist:
+        if getType(obj) != "Clone":
+            # clones should never move their children
+            children = obj.OutList
+            if  hasattr(obj,"Proxy"):
+                if obj.Proxy:
+                    if hasattr(obj.Proxy,"getSiblings"):
+                        children.extend(obj.Proxy.getSiblings(obj))
+            for child in children:
+                if hasattr(child,"MoveWithHost"):
+                    if child.MoveWithHost:
+                        added.append(child)
+            if recursive:
+                added.extend(getMovableChildren(children))
+    return added
 
 def makeCircle(radius, placement=None, face=True, startangle=None, endangle=None, support=None):
     '''makeCircle(radius,[placement,face,startangle,endangle])
@@ -591,7 +615,7 @@ def makeCircle(radius, placement=None, face=True, startangle=None, endangle=None
         n = "Circle"
     obj = FreeCAD.ActiveDocument.addObject("Part::Part2DObjectPython",n)
     _Circle(obj)
-    obj.MakeFace = face
+    #obj.MakeFace = face
     if isinstance(radius,Part.Edge):
         edge = radius
         if DraftGeomUtils.geomType(edge) == "Circle":
@@ -634,7 +658,7 @@ def makeRectangle(length, height, placement=None, face=True, support=None):
     obj.Length = length
     obj.Height = height
     obj.Support = support
-    obj.MakeFace = face
+    #obj.MakeFace = face
     if placement: obj.Placement = placement
     if gui:
         _ViewProviderRectangle(obj.ViewObject)
@@ -770,7 +794,7 @@ def makeWire(pointslist,closed=False,placement=None,face=True,support=None):
     obj.Points = pointslist
     obj.Closed = closed
     obj.Support = support
-    obj.MakeFace = face
+    #obj.MakeFace = face
     if placement: obj.Placement = placement
     if gui:
         _ViewProviderWire(obj.ViewObject)
@@ -791,7 +815,7 @@ def makePolygon(nfaces,radius=1,inscribed=True,placement=None,face=True,support=
     _Polygon(obj)
     obj.FacesNumber = nfaces
     obj.Radius = radius
-    obj.MakeFace = face
+    #obj.MakeFace = face
     if inscribed:
         obj.DrawMode = "inscribed"
     else:
@@ -842,7 +866,7 @@ def makeBSpline(pointslist,closed=False,placement=None,face=True,support=None):
     obj.Closed = closed
     obj.Points = pointslist
     obj.Support = support
-    obj.MakeFace = face
+    #obj.MakeFace = face
     if placement: obj.Placement = placement
     if gui:
         _ViewProviderWire(obj.ViewObject)
@@ -873,7 +897,7 @@ def makeBezCurve(pointslist,closed=False,placement=None,face=True,support=None,D
             Part.BezierCurve().MaxDegree)
     obj.Closed = closed
     obj.Support = support
-    obj.MakeFace = face
+    #obj.MakeFace = face
     obj.Proxy.resetcontinuity(obj)
     if placement: obj.Placement = placement
     if gui:
@@ -1176,15 +1200,15 @@ def cut(object1,object2):
     FreeCAD.ActiveDocument.recompute()
     return obj
 
-def move(objectslist,vector,copy=False,arch=True):
-    '''move(objects,vector,[copy,arch]): Moves the objects contained
+def move(objectslist,vector,copy=False):
+    '''move(objects,vector,[copy]): Moves the objects contained
     in objects (that can be an object or a list of objects)
     in the direction and distance indicated by the given
     vector. If copy is True, the actual objects are not moved, but copies
-    are created instead.he objects (or their copies) are returned. If arch
-    is True (default), included windows and siblings are moved too'''
+    are created instead.he objects (or their copies) are returned.'''
     typecheck([(vector,Vector), (copy,bool)], "move")
     if not isinstance(objectslist,list): objectslist = [objectslist]
+    objectslist.extend(getMovableChildren(objectslist))
     newobjlist = []
     for obj in objectslist:
         if hasattr(obj,"Placement"):
@@ -1209,14 +1233,6 @@ def move(objectslist,vector,copy=False,arch=True):
                 newobj = obj
             pla = newobj.Placement
             pla.move(vector)
-            if arch and hasattr(obj,"Proxy"):
-                if hasattr(obj,"Additions") and hasattr(obj,"Subtractions"):
-                    for o in obj.Additions+obj.Subtractions:
-                        if (getType(o) == "Window") or isClone(o,"Window"):
-                            o.Placement.move(vector)
-                if hasattr(obj.Proxy,"getSiblings"):
-                    for o in obj.Proxy.getSiblings(obj):
-                        o.Placement.move(vector)
         elif getType(obj) == "Annotation":
             if copy:
                 newobj = FreeCAD.ActiveDocument.addObject("App::Annotation",getRealName(obj.Name))
@@ -1286,17 +1302,17 @@ def array(objectslist,arg1,arg2,arg3,arg4=None):
     else:
         polarArray(objectslist,arg1,arg2,arg3)
                 
-def rotate(objectslist,angle,center=Vector(0,0,0),axis=Vector(0,0,1),copy=False,arch=True):
+def rotate(objectslist,angle,center=Vector(0,0,0),axis=Vector(0,0,1),copy=False):
     '''rotate(objects,angle,[center,axis,copy]): Rotates the objects contained
     in objects (that can be a list of objects or an object) of the given angle
     (in degrees) around the center, using axis as a rotation axis. If axis is
     omitted, the rotation will be around the vertical Z axis.
     If copy is True, the actual objects are not moved, but copies
-    are created instead. The objects (or their copies) are returned.
-    If arch is True, inserted windows and siblings are rotated too'''
+    are created instead. The objects (or their copies) are returned.'''
     import Part
     typecheck([(copy,bool)], "rotate")
     if not isinstance(objectslist,list): objectslist = [objectslist]
+    objectslist.extend(getMovableChildren(objectslist))
     newobjlist = []
     for obj in objectslist:
         if hasattr(obj,"Placement"):
@@ -1312,18 +1328,6 @@ def rotate(objectslist,angle,center=Vector(0,0,0),axis=Vector(0,0,1),copy=False,
             shape = obj.Shape.copy()
             shape.rotate(DraftVecUtils.tup(center), DraftVecUtils.tup(axis), angle)
             newobj.Shape = shape
-            if arch and hasattr(obj,"Proxy"):
-                if hasattr(obj,"Additions") and hasattr(obj,"Subtractions"):
-                    for o in obj.Additions+obj.Subtractions:
-                        if (getType(o) == "Window") or isClone(o,"Window"):
-                            shape = o.Shape.copy()
-                            shape.rotate(DraftVecUtils.tup(center), DraftVecUtils.tup(axis), angle)
-                            o.Shape = shape
-                if hasattr(obj.Proxy,"getSiblings"):
-                    for o in obj.Proxy.getSiblings(obj):
-                        shape = o.Shape.copy()
-                        shape.rotate(DraftVecUtils.tup(center), DraftVecUtils.tup(axis), angle)
-                        o.Shape = shape
         elif (obj.isDerivedFrom("App::Annotation")):
             if axis.normalize() == Vector(1,0,0):
                 newobj.ViewObject.RotationAxis = "X"
@@ -2245,10 +2249,12 @@ def makeSketch(objectslist,autoconstraints=False,addTo=None,delete=False,name="S
     creating a new one. If delete is True, the original object will be deleted'''
     import Part, DraftGeomUtils
     from Sketcher import Constraint
+    from DraftTools import translate
 
     StartPoint = 1
     EndPoint = 2
     MiddlePoint = 3
+    deletable = None
     
     if not isinstance(objectslist,list):
         objectslist = [objectslist]
@@ -2256,12 +2262,15 @@ def makeSketch(objectslist,autoconstraints=False,addTo=None,delete=False,name="S
         nobj = addTo
     else:
         nobj = FreeCAD.ActiveDocument.addObject("Sketcher::SketchObject",name)
+        deletable = nobj
         nobj.ViewObject.Autoconstraints = False
     for obj in objectslist:
         ok = False
         tp = getType(obj)
-        if tp == "BSpline":
-            print("makeSketch: BSplines not supported")
+        if tp in ["BSpline","BezCurve"]:
+            FreeCAD.Console.PrintError(translate("draft","BSplines and Bezier curves are not supported by this tool"))
+            if deletable: FreeCAD.ActiveDocument.removeObject(deletable.Name)
+            return None
         elif tp == "Circle":
             g = (DraftGeomUtils.geom(obj.Shape.Edges[0],nobj.Placement))
             nobj.addGeometry(g)
@@ -2307,11 +2316,11 @@ def makeSketch(objectslist,autoconstraints=False,addTo=None,delete=False,name="S
                 ok = True
         if (not ok) and obj.isDerivedFrom("Part::Feature"):
             if not DraftGeomUtils.isPlanar(obj.Shape):
-                print("Error: The given object is not planar and cannot be converted into a sketch.")
+                FreeCAD.Console.PrintError(translate("draft","The given object is not planar and cannot be converted into a sketch."))
                 return None
             for e in obj.Shape.Edges:
-                if DraftGeomUtils.geomType(e) == "BSplineCurve":
-                    print("Error: One of the selected object contains BSplines, unable to convert")
+                if DraftGeomUtils.geomType(e) in ["BSplineCurve","BezierCurve"]:
+                    FreeCAD.Console.PrintError(translate("draft","BSplines and Bezier curves are not supported by this tool"))
                     return None
             if not addTo:
                 nobj.Placement.Rotation = DraftGeomUtils.calculatePlacement(obj.Shape).Rotation
@@ -3937,7 +3946,7 @@ class _Rectangle(_DraftObject):
         obj.addProperty("App::PropertyLength","FilletRadius","Draft","Radius to use to fillet the corners")
         obj.addProperty("App::PropertyLength","ChamferSize","Draft","Size of the chamfer to give to the corners")
         obj.addProperty("App::PropertyBool","MakeFace","Draft","Create a face")
-        obj.MakeFace = True
+        obj.MakeFace = getParam("fillmode",True) 
         obj.Length=1
         obj.Height=1
 
@@ -3983,7 +3992,7 @@ class _Circle(_DraftObject):
         obj.addProperty("App::PropertyAngle","LastAngle","Draft","End angle of the arc (for a full circle, give it same value as First Angle)")
         obj.addProperty("App::PropertyLength","Radius","Draft","Radius of the circle")
         obj.addProperty("App::PropertyBool","MakeFace","Draft","Create a face")
-        obj.MakeFace = True
+        obj.MakeFace = getParam("fillmode",True)
 
     def execute(self, obj):
         import Part
@@ -4007,7 +4016,7 @@ class _Ellipse(_DraftObject):
         obj.addProperty("App::PropertyLength","MinorRadius","Draft","The minor radius of the ellipse")
         obj.addProperty("App::PropertyLength","MajorRadius","Draft","The major radius of the ellipse")
         obj.addProperty("App::PropertyBool","MakeFace","Draft","Create a face")
-        obj.MakeFace = True
+        obj.MakeFace = getParam("fillmode",True)
 
     def execute(self, obj):
         import Part
@@ -4040,7 +4049,7 @@ class _Wire(_DraftObject):
         obj.addProperty("App::PropertyLength","FilletRadius","Draft","Radius to use to fillet the corners")
         obj.addProperty("App::PropertyLength","ChamferSize","Draft","Size of the chamfer to give to the corners")
         obj.addProperty("App::PropertyBool","MakeFace","Draft","Create a face if this object is closed")
-        obj.MakeFace = True
+        obj.MakeFace = getParam("fillmode",True)
         obj.Closed = False
 
     def execute(self, obj):
@@ -4196,7 +4205,7 @@ class _Polygon(_DraftObject):
         obj.addProperty("App::PropertyLength","FilletRadius","Draft","Radius to use to fillet the corners")
         obj.addProperty("App::PropertyLength","ChamferSize","Draft","Size of the chamfer to give to the corners")
         obj.addProperty("App::PropertyBool","MakeFace","Draft","Create a face")
-        obj.MakeFace = True
+        obj.MakeFace = getParam("fillmode",True)
         obj.DrawMode = ['inscribed','circumscribed']
         obj.FacesNumber = 0
         obj.Radius = 1
@@ -4300,7 +4309,7 @@ class _BSpline(_DraftObject):
         obj.addProperty("App::PropertyVectorList","Points","Draft", "The points of the b-spline")
         obj.addProperty("App::PropertyBool","Closed","Draft","If the b-spline is closed or not")
         obj.addProperty("App::PropertyBool","MakeFace","Draft","Create a face if this spline is closed")
-        obj.MakeFace = True
+        obj.MakeFace = getParam("fillmode",True)
         obj.Closed = False
         obj.Points = []
 
@@ -4351,7 +4360,7 @@ class _BezCurve(_DraftObject):
         obj.addProperty("App::PropertyBool","Closed","Draft",
                         "If the Bezier curve should be closed or not")
         obj.addProperty("App::PropertyBool","MakeFace","Draft","Create a face if this curve is closed")
-        obj.MakeFace = True
+        obj.MakeFace = getParam("fillmode",True)
         obj.Closed = False
         obj.Degree = 3
         obj.Continuity = []
@@ -4635,6 +4644,7 @@ class _Array(_DraftObject):
         obj.addProperty("App::PropertyVector","IntervalAxis","Draft","Distance and orientation of intervals in Axis direction")
         obj.addProperty("App::PropertyVector","Center","Draft","Center point")
         obj.addProperty("App::PropertyAngle","Angle","Draft","Angle to cover with copies")
+        obj.addProperty("App::PropertyBool","Fuse","Draft","Specifies if copies must be fused (slower)")
         obj.ArrayType = ['ortho','polar']
         obj.NumberX = 1
         obj.NumberY = 1
@@ -4646,22 +4656,27 @@ class _Array(_DraftObject):
         obj.IntervalZ = Vector(0,0,0)
         obj.Angle = 360
         obj.Axis = Vector(0,0,1)
+        obj.Fuse = False
 
     def execute(self,obj):
         import DraftGeomUtils
+        if hasattr(obj,"Fuse"):
+            fuse = obj.Fuse
+        else:
+            fuse = False
         if obj.Base:
             pl = obj.Placement
             if obj.ArrayType == "ortho":
                 sh = self.rectArray(obj.Base.Shape,obj.IntervalX,obj.IntervalY,
-                                    obj.IntervalZ,obj.NumberX,obj.NumberY,obj.NumberZ)
+                                    obj.IntervalZ,obj.NumberX,obj.NumberY,obj.NumberZ,fuse)
             else:
                 av = obj.IntervalAxis if hasattr(obj,"IntervalAxis") else None
-                sh = self.polarArray(obj.Base.Shape,obj.Center,obj.Angle.Value,obj.NumberPolar,obj.Axis,av)
+                sh = self.polarArray(obj.Base.Shape,obj.Center,obj.Angle.Value,obj.NumberPolar,obj.Axis,av,fuse)
             obj.Shape = sh
             if not DraftGeomUtils.isNull(pl):
                 obj.Placement = pl
 
-    def rectArray(self,shape,xvector,yvector,zvector,xnum,ynum,znum):
+    def rectArray(self,shape,xvector,yvector,zvector,xnum,ynum,znum,fuse=False):
         import Part
         base = [shape.copy()]
         for xcount in range(xnum):
@@ -4684,9 +4699,15 @@ class _Array(_DraftObject):
                         nshape = shape.copy()
                         nshape.translate(currentzvector)
                         base.append(nshape)
-        return Part.makeCompound(base)
+        if fuse:
+            fshape = base.pop()
+            for s in base:
+                fshape = fshape.fuse(s)
+            return fshape.removeSplitter()
+        else:
+            return Part.makeCompound(base)
 
-    def polarArray(self,shape,center,angle,num,axis,axisvector):
+    def polarArray(self,shape,center,angle,num,axis,axisvector,fuse=False):
         #print("angle ",angle," num ",num)
         import Part
         if angle == 360:
@@ -4704,7 +4725,14 @@ class _Array(_DraftObject):
                 if not DraftVecUtils.isNull(axisvector):
                     nshape.translate(FreeCAD.Vector(axisvector).multiply(i+1))
             base.append(nshape)
-        return Part.makeCompound(base)
+        if fuse:
+            fshape = base.pop()
+            for s in base:
+                fshape = fshape.fuse(s)
+            return fshape.removeSplitter()
+        else:
+            return Part.makeCompound(base)
+
 
 class _PathArray(_DraftObject):
     "The Draft Path Array object"
@@ -4945,6 +4973,17 @@ class _Clone(_DraftObject):
                 obj.Shape = Part.makeCompound(shapes)
         if not DraftGeomUtils.isNull(pl):
             obj.Placement = pl
+            
+    def getSubVolume(self,obj,placement=None):
+        # this allows clones of arch windows to return a subvolume too
+        if obj.Objects:
+            if hasattr(obj.Objects[0],"Proxy"):
+                if hasattr(obj.Objects[0].Proxy,"getSubVolume"):
+                    if not placement:
+                        # clones must displace the original subvolume too
+                        placement = obj.Placement
+                    return obj.Objects[0].Proxy.getSubVolume(obj.Objects[0],placement)
+        return None
 
 class _ViewProviderClone(_ViewProviderDraftAlt):
     "a view provider that displays a Clone icon instead of a Draft icon"

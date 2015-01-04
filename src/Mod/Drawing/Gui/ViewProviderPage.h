@@ -56,11 +56,16 @@ public:
     virtual bool useNewSelectionModel(void) const {return false;}
     /// returns a list of all possible modes
     virtual std::vector<std::string> getDisplayModes(void) const;
+    /// Hides the view provider
+    virtual void hide(void);
+    /// Shows the view provider
+    virtual void show(void);
 
     /// Is called by the tree if the user double click on the object
     virtual bool doubleClicked(void);
     void setupContextMenu(QMenu*, QObject*, const char*);
     virtual void updateData(const App::Property*);
+    virtual bool onDelete(const std::vector<std::string> &);
 
     Drawing::FeaturePage* getPageObject() const;
 

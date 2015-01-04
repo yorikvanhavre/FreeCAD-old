@@ -609,7 +609,8 @@ class _Window(ArchComponent.Component):
         ArchComponent.Component.__init__(self,obj)
         obj.addProperty("App::PropertyStringList","WindowParts","Arch",translate("Arch","the components of this window"))
         obj.addProperty("App::PropertyLength","HoleDepth","Arch",translate("Arch","The depth of the hole that this window makes in its host object. Keep 0 for automatic."))
-        obj.addProperty("Part::PropertyPartShape","Subvolume","Arch",translate("Arch","an optional volume to be subtracted from hosts of this window"))
+        # the following line creates problem when restoring saved files (wrongly attributes it to the window shape). Disabling for now...
+        #obj.addProperty("Part::PropertyPartShape","Subvolume","Arch",translate("Arch","an optional volume to be subtracted from hosts of this window"))
         obj.addProperty("App::PropertyLength","Width","Arch",translate("Arch","The width of this window (for preset windows only)"))
         obj.addProperty("App::PropertyLength","Height","Arch",translate("Arch","The height of this window (for preset windows only)"))
         obj.addProperty("App::PropertyVector","Normal","Arch",translate("Arch","The normal direction of this window"))
@@ -619,6 +620,7 @@ class _Window(ArchComponent.Component):
         self.Type = "Window"
         obj.Role = Roles
         obj.Proxy = self
+        obj.MoveWithHost = True
 
     def onChanged(self,obj,prop):
         self.hideSubobjects(obj,prop)
@@ -698,7 +700,10 @@ class _Window(ArchComponent.Component):
                         print "Arch: Bad formatting of window parts definitions"
 
         base = self.processSubShapes(obj,base)
-        self.applyShape(obj,base,pl)
+        if base:
+            if not base.isNull():
+                if base.Solids:
+                    self.applyShape(obj,base,pl)
 
     def getSubVolume(self,obj,plac=None):
         "returns a subvolume for cutting in a base object"

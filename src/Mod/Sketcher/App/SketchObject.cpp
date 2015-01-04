@@ -194,7 +194,10 @@ int SketchObject::setDatum(int ConstrId, double Datum)
         type != DistanceX &&
         type != DistanceY &&
         type != Radius &&
-        type != Angle)
+        type != Angle &&
+        type != Tangent && //for tangent, value==0 is autodecide, value==Pi/2 is external and value==-Pi/2 is internal
+        type != Perpendicular &&
+        type != SnellsLaw)
         return -1;
 
     if ((type == Distance || type == Radius) && Datum <= 0)
@@ -435,13 +438,32 @@ int SketchObject::setConstruction(int GeoId, bool on)
     return 0;
 }
 
+//ConstraintList is used only to make copies.
 int SketchObject::addConstraints(const std::vector<Constraint *> &ConstraintList)
 {
     const std::vector< Constraint * > &vals = this->Constraints.getValues();
 
     std::vector< Constraint * > newVals(vals);
     newVals.insert(newVals.end(), ConstraintList.begin(), ConstraintList.end());
+
+    //test if tangent constraints have been added; AutoLockTangency.
+    std::vector< Constraint * > tbd;//list of temporary copies that need to be deleted
+    for(int i = newVals.size()-ConstraintList.size(); i<newVals.size(); i++){
+        if( newVals[i]->Type == Tangent || newVals[i]->Type == Perpendicular ){
+            Constraint *constNew = newVals[i]->clone();
+            AutoLockTangencyAndPerpty(constNew);
+            tbd.push_back(constNew);
+            newVals[i] = constNew;
+        }
+    }
+
     this->Constraints.setValues(newVals);
+
+    //clean up - delete temporary copies of constraints that were made to affect the constraints
+    for(int i=0; i<tbd.size(); i++){
+        delete (tbd[i]);
+    }
+
     return this->Constraints.getSize()-1;
 }
 
@@ -451,6 +473,10 @@ int SketchObject::addConstraint(const Constraint *constraint)
 
     std::vector< Constraint * > newVals(vals);
     Constraint *constNew = constraint->clone();
+
+    if (constNew->Type == Tangent || constNew->Type == Perpendicular)
+        AutoLockTangencyAndPerpty(constNew);
+
     newVals.push_back(constNew);
     this->Constraints.setValues(newVals);
     delete constNew;
@@ -969,19 +995,16 @@ int SketchObject::trim(int GeoId, const Base::Vector3d& point)
     } else if (geo->getTypeId() == Part::GeomEllipse::getClassTypeId()) {
         const Part::GeomEllipse *ellipse = dynamic_cast<const Part::GeomEllipse*>(geo);
         Base::Vector3d center = ellipse->getCenter();
-        double theta0 = Base::fmod(
-                atan2(-ellipse->getMajorRadius()*((point.x-center.x)*sin(ellipse->getAngleXU())-(point.y-center.y)*cos(ellipse->getAngleXU())),
-                     ellipse->getMinorRadius()*((point.x-center.x)*cos(ellipse->getAngleXU())+(point.y-center.y)*sin(ellipse->getAngleXU()))
-                                  ), 2.f*M_PI);
+        double theta0;
+        ellipse->closestParameter(point,theta0);
+        theta0 = Base::fmod(theta0, 2.f*M_PI);
         if (GeoId1 >= 0 && GeoId2 >= 0) {
-            double theta1 = Base::fmod(
-                atan2(-ellipse->getMajorRadius()*((point1.x-center.x)*sin(ellipse->getAngleXU())-(point1.y-center.y)*cos(ellipse->getAngleXU())),
-                     ellipse->getMinorRadius()*((point1.x-center.x)*cos(ellipse->getAngleXU())+(point1.y-center.y)*sin(ellipse->getAngleXU()))
-                                       ), 2.f*M_PI);
-            double theta2 = Base::fmod(
-                atan2(-ellipse->getMajorRadius()*((point2.x-center.x)*sin(ellipse->getAngleXU())-(point2.y-center.y)*cos(ellipse->getAngleXU())),
-                     ellipse->getMinorRadius()*((point2.x-center.x)*cos(ellipse->getAngleXU())+(point2.y-center.y)*sin(ellipse->getAngleXU()))
-                                       ), 2.f*M_PI);
+            double theta1;
+            ellipse->closestParameter(point1,theta1);
+            theta1 = Base::fmod(theta1, 2.f*M_PI);
+            double theta2;
+            ellipse->closestParameter(point2,theta2);
+            theta2 = Base::fmod(theta2, 2.f*M_PI);
             if (Base::fmod(theta1 - theta0, 2.f*M_PI) > Base::fmod(theta2 - theta0, 2.f*M_PI)) {
                 std::swap(GeoId1,GeoId2);
                 std::swap(point1,point2);
@@ -2162,32 +2185,24 @@ void SketchObject::appendRedundantMsg(const std::vector<int> &redundant, std::st
 
 bool SketchObject::evaluateConstraint(const Constraint *constraint) const
 {
-    int intGeoCount = getHighestCurveIndex() + 1;
-    int extGeoCount = getExternalGeometryCount();
+    //if requireXXX,  GeoUndef is treated as an error. If not requireXXX,
+    //GeoUndef is accepted. Index range checking is done on everything regardless.
+    bool requireFirst = true;
+    bool requireSecond = false;
+    bool requireThird = false;
 
     switch (constraint->Type) {
         case Radius:
-            if (constraint->First < -extGeoCount || constraint->First >= intGeoCount)
-                return false;
+            requireFirst = true;
             break;
         case Horizontal:
         case Vertical:
-            if (constraint->First < -extGeoCount || constraint->First >= intGeoCount)
-                return false;
-            if (constraint->Second != Constraint::GeoUndef) {
-                if (constraint->Second < -extGeoCount || constraint->Second >= intGeoCount)
-                    return false;
-            }
+            requireFirst = true;
             break;
         case Distance:
         case DistanceX:
         case DistanceY:
-            if (constraint->First < -extGeoCount || constraint->First >= intGeoCount)
-                return false;
-            if (constraint->Second != Constraint::GeoUndef) {
-                if (constraint->Second < -extGeoCount || constraint->Second >= intGeoCount)
-                    return false;
-            }
+            requireFirst = true;
             break;
         case Coincident:
         case Perpendicular:
@@ -2195,32 +2210,48 @@ bool SketchObject::evaluateConstraint(const Constraint *constraint) const
         case Equal:
         case PointOnObject:
         case Tangent:
-            if (constraint->First < -extGeoCount || constraint->First >= intGeoCount)
-                return false;
-            if (constraint->Second < -extGeoCount || constraint->Second >= intGeoCount)
-                return false;
+            requireFirst = true;
+            requireSecond = true;
             break;
         case Symmetric:
-            if (constraint->First < -extGeoCount || constraint->First >= intGeoCount)
-                return false;
-            if (constraint->Second < -extGeoCount || constraint->Second >= intGeoCount)
-                return false;
-            if (constraint->Third < -extGeoCount || constraint->Third >= intGeoCount)
-                return false;
+            requireFirst = true;
+            requireSecond = true;
+            requireThird = true;
             break;
         case Angle:
-            if (constraint->First < -extGeoCount || constraint->First >= intGeoCount)
-                return false;
-            if (constraint->Second != Constraint::GeoUndef) {
-                if (constraint->Second < -extGeoCount || constraint->Second >= intGeoCount)
-                    return false;
-            }
+            requireFirst = true;
+            break;
+        case SnellsLaw:
+            requireFirst = true;
+            requireSecond = true;
+            requireThird = true;
             break;
         default:
             break;
     }
 
-    return true;
+    int intGeoCount = getHighestCurveIndex() + 1;
+    int extGeoCount = getExternalGeometryCount();
+
+    //the actual checks
+    bool ret = true;
+    int geoId;
+    geoId = constraint->First;
+    ret = ret && ((geoId == Constraint::GeoUndef && !requireFirst)
+                  ||
+                  (geoId >= -extGeoCount && geoId < intGeoCount) );
+
+    geoId = constraint->Second;
+    ret = ret && ((geoId == Constraint::GeoUndef && !requireSecond)
+                  ||
+                  (geoId >= -extGeoCount && geoId < intGeoCount) );
+
+    geoId = constraint->Third;
+    ret = ret && ((geoId == Constraint::GeoUndef && !requireThird)
+                  ||
+                  (geoId >= -extGeoCount && geoId < intGeoCount) );
+
+    return ret;
 }
 
 bool SketchObject::evaluateConstraints() const
@@ -2264,6 +2295,102 @@ void SketchObject::validateConstraints()
         Constraints.setValues(newConstraints);
         acceptGeometry();
     }
+}
+
+//This function is necessary for precalculation of an angle when adding
+// an angle constraint. It is also used here, in SketchObject, to
+// lock down the type of tangency/perpendicularity.
+double SketchObject::calculateAngleViaPoint(int GeoId1, int GeoId2, double px, double py)
+{
+    // Temporary sketch based calculation. Slow, but guaranteed consistency with constraints.
+    Sketcher::Sketch sk;
+    int i1 = sk.addGeometry(this->getGeometry(GeoId1));
+    int i2 = sk.addGeometry(this->getGeometry(GeoId2));
+
+    return sk.calculateAngleViaPoint(i1,i2,px,py);
+
+
+/*
+    // OCC-based calculation. It is faster, but it was removed due to problems
+    // with reversed geometry (clockwise arcs). More info in "Sketch: how to
+    // handle reversed external arcs?" forum thread
+    // http://forum.freecadweb.org/viewtopic.php?f=10&t=9130&sid=1b994fa1236db5ac2371eeb9a53de23f
+
+    const Part::GeomCurve &g1 = *(dynamic_cast<const Part::GeomCurve*>(this->getGeometry(GeoId1)));
+    const Part::GeomCurve &g2 = *(dynamic_cast<const Part::GeomCurve*>(this->getGeometry(GeoId2)));
+    Base::Vector3d p(px, py, 0.0);
+
+    double u1 = 0.0;
+    double u2 = 0.0;
+    if (! g1.closestParameterToBasicCurve(p, u1) ) throw Base::Exception("SketchObject::calculateAngleViaPoint: closestParameter(curve1) failed!");
+    if (! g2.closestParameterToBasicCurve(p, u2) ) throw Base::Exception("SketchObject::calculateAngleViaPoint: closestParameter(curve2) failed!");
+
+    gp_Dir tan1, tan2;
+    if (! g1.tangent(u1,tan1) ) throw Base::Exception("SketchObject::calculateAngleViaPoint: tangent1 failed!");
+    if (! g2.tangent(u2,tan2) ) throw Base::Exception("SketchObject::calculateAngleViaPoint: tangent2 failed!");
+
+    assert(abs(tan1.Z())<0.0001);
+    assert(abs(tan2.Z())<0.0001);
+
+    double ang = atan2(-tan2.X()*tan1.Y()+tan2.Y()*tan1.X(), tan2.X()*tan1.X() + tan2.Y()*tan1.Y());
+    return ang;
+*/
+}
+
+//Tests if the provided point lies exactly in a curve (satisfies
+// point-on-object constraint). It is used to decide whether it is nesessary to
+// constrain a point onto curves when 3-element selection tangent-via-point-like
+// constraints are applied.
+bool SketchObject::isPointOnCurve(int geoIdCurve, double px, double py)
+{
+    //DeepSOIC: this may be slow, but I wanted to reuse the existing code
+    Sketcher::Sketch sk;
+    int icrv = sk.addGeometry(this->getGeometry(geoIdCurve));
+    Base::Vector3d pp;
+    pp.x = px; pp.y = py;
+    Part::GeomPoint p(pp);
+    int ipnt = sk.addPoint(p);
+    int icstr = sk.addPointOnObjectConstraint(ipnt, Sketcher::start, icrv);
+    double err = sk.calculateConstraintError(icstr);
+    return err*err < 10.0*sk.getSolverPrecision();
+}
+
+//This one was done just for fun to see to what precision the constraints are solved.
+double SketchObject::calculateConstraintError(int ConstrId)
+{
+    Sketcher::Sketch sk;
+    const std::vector<Constraint *> &clist = this->Constraints.getValues();
+    if (ConstrId < 0 || ConstrId >= int(clist.size()))
+        return std::numeric_limits<double>::quiet_NaN();
+
+    Constraint* cstr = clist[ConstrId]->clone();
+    double result=0.0;
+    try{
+        std::vector<int> GeoIdList;
+        int g;
+        GeoIdList.push_back(cstr->First);
+        GeoIdList.push_back(cstr->Second);
+        GeoIdList.push_back(cstr->Third);
+
+        //add only necessary geometry to the sketch
+        for(int i=0; i<GeoIdList.size(); i++){
+            g = GeoIdList[i];
+            if (g != Constraint::GeoUndef){
+                GeoIdList[i] = sk.addGeometry(this->getGeometry(g));
+            }
+        }
+
+        cstr->First = GeoIdList[0];
+        cstr->Second = GeoIdList[1];
+        cstr->Third = GeoIdList[2];
+        int icstr = sk.addConstraint(cstr);
+        result = sk.calculateConstraintError(icstr);
+    } catch(...) {//cleanup
+        delete cstr;
+        throw;
+    }
+    delete cstr;
+    return result;
 }
 
 PyObject *SketchObject::getPyObject(void)
@@ -2348,6 +2475,124 @@ int SketchObject::getVertexIndexGeoPos(int GeoId, PointPos PosId) const
     }
 
     return -1;
+}
+
+///changeConstraintsLocking locks or unlocks all tangent and perpendicular
+/// constraints. (Constraint locking prevents it from flipping to another valid
+/// configuration, when e.g. external geometry is updated from outside.) The
+/// sketch solve is not triggered by the function, but the SketchObject is
+/// touched (a recompute will be necessary). The geometry should not be affected
+/// by the function.
+///The bLock argument specifies, what to do. If true, all constraints are
+/// unlocked and locked again. If false, all tangent and perp. constraints are
+/// unlocked.
+int SketchObject::changeConstraintsLocking(bool bLock)
+{
+    int cntSuccess = 0;
+    int cntToBeAffected = 0;//==cntSuccess+cntFail
+    const std::vector< Constraint * > &vals = this->Constraints.getValues();
+
+    std::vector< Constraint * > newVals(vals);//modifiable copy of pointers array
+
+    std::vector< Constraint * > tbd;//list of temporary Constraint copies that need to be deleted later
+
+    for(int i = 0; i<newVals.size(); i++){
+        if( newVals[i]->Type == Tangent || newVals[i]->Type == Perpendicular ){
+            //create a constraint copy, affect it, replace the pointer
+            cntToBeAffected++;
+            Constraint *constNew = newVals[i]->clone();
+            bool ret = AutoLockTangencyAndPerpty(constNew, /*bForce=*/true, bLock);
+            if (ret) cntSuccess++;
+            tbd.push_back(constNew);
+            newVals[i] = constNew;
+        }
+    }
+
+    this->Constraints.setValues(newVals);
+
+    //clean up - delete temporary copies of constraints that were made to affect the constraints
+    for(int i=0; i<tbd.size(); i++){
+        delete (tbd[i]);
+    }
+
+    Base::Console().Log("ChangeConstraintsLocking: affected %i of %i tangent/perp constraints\n",
+                        cntSuccess, cntToBeAffected);
+
+    return cntSuccess;
+}
+
+///Locks tangency/perpendicularity type of such a constraint.
+///The constraint passed must be writable (i.e. the one that is not
+/// yet in the constraint list).
+///Tangency type (internal/external) is derived from current geometry
+/// the constraint refers to.
+///Same for perpendicularity type.
+///
+///This function catches exceptions, because it's not a reason to
+/// not create a constraint if tangency/perp-ty type cannot be determined.
+///
+///Arguments:
+/// cstr - pointer to a constraint to be locked/unlocked
+/// bForce - specifies whether to ignore tha already locked constraint or not.
+/// bLock - specufies whether to lock the constraint or not (if bForce is
+///  true, the constraint gets unlocked, otherwise nothing is done at all).
+///
+///Return values:
+/// true - success.
+/// false - fail (this indicates an error, or that a constraint locking isn't supported).
+bool SketchObject::AutoLockTangencyAndPerpty(Constraint *cstr, bool bForce, bool bLock)
+{
+    try{
+        assert ( cstr->Type == Tangent  ||  cstr->Type == Perpendicular);
+        if(cstr->Value != 0.0 && ! bForce) /*tangency type already set. If not bForce - don't touch.*/
+            return true;
+        if(!bLock){
+            cstr->Value=0.0;//reset
+        } else {
+            //decide on tangency type. Write the angle value into the datum field of the constraint.
+            int geoId1, geoId2, geoIdPt;
+            PointPos posPt;
+            geoId1 = cstr->First;
+            geoId2 = cstr->Second;
+            geoIdPt = cstr->Third;
+            posPt = cstr->ThirdPos;
+            if (geoIdPt == Constraint::GeoUndef){//not tangent-via-point, try endpoint-to-endpoint...
+                geoIdPt = cstr->First;
+                posPt = cstr->FirstPos;
+            }
+            if (posPt == none){//not endpoint-to-curve and not endpoint-to-endpoint tangent (is simple tangency)
+                //no tangency lockdown is implemented for simple tangency. Do nothing.
+                return false;
+            } else {
+                Base::Vector3d p = getPoint(geoIdPt, posPt);
+
+                //this piece of code is also present in Sketch.cpp, correct for offset
+                //and to do the autodecision for old sketches.
+                double angleOffset = 0.0;//the difference between the datum value and the actual angle to apply. (datum=angle+offset)
+                double angleDesire = 0.0;//the desired angle value (and we are to decide if 180* should be added to it)
+                if (cstr->Type == Tangent) {angleOffset = -M_PI/2; angleDesire = 0.0;}
+                if (cstr->Type == Perpendicular) {angleOffset = 0; angleDesire = M_PI/2;}
+
+                double angleErr = calculateAngleViaPoint(geoId1, geoId2, p.x, p.y) - angleDesire;
+
+                //bring angleErr to -pi..pi
+                if (angleErr > M_PI) angleErr -= M_PI*2;
+                if (angleErr < -M_PI) angleErr += M_PI*2;
+
+                //the autodetector
+                if(abs(angleErr) > M_PI/2 )
+                    angleDesire += M_PI;
+
+                cstr->Value = angleDesire + angleOffset; //external tangency. The angle stored is offset by Pi/2 so that a value of 0.0 is invalid and threated as "undecided".
+            }
+        }
+    } catch (Base::Exception& e){
+        //failure to determine tangency type is not a big deal, so a warning.
+        assert(0);//but it shouldn't happen (failure to determine tangency type)!
+        Base::Console().Warning("Error in AutoLockTangency. %s \n", e.what());
+        return false;
+    }
+    return true;
 }
 
 // Python Sketcher feature ---------------------------------------------------------

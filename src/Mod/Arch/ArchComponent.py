@@ -114,7 +114,7 @@ def removeFromComponent(compobject,subobject):
             l = compobject.Subtractions
             l.append(subobject)
             compobject.Subtractions = l
-            if Draft.getType(subobject) != "Window":
+            if (Draft.getType(subobject) != "Window") and (not Draft.isClone(subobject,"Window",True)):
                 subobject.ViewObject.hide()
                 
                 
@@ -288,17 +288,19 @@ class ComponentTaskPanel:
 class Component:
     "The default Arch Component object"
     def __init__(self,obj):
-        obj.addProperty("App::PropertyLink","Base","Arch","The base object this component is built upon")
-        obj.addProperty("App::PropertyLinkList","Additions","Arch","Other shapes that are appended to this object")
-        obj.addProperty("App::PropertyLinkList","Subtractions","Arch","Other shapes that are subtracted from this object")
-        obj.addProperty("App::PropertyString","Description","Arch","An optional description for this component")
-        obj.addProperty("App::PropertyString","Tag","Arch","An optional tag for this component")
-        obj.addProperty("App::PropertyMap","IfcAttributes","Arch","Custom IFC properties and attributes")
-        obj.addProperty("App::PropertyMap","Material","Arch","A material for this object")
+        obj.addProperty("App::PropertyLink","Base","Arch",translate("Arch","The base object this component is built upon"))
+        obj.addProperty("App::PropertyLinkList","Additions","Arch",translate("Arch","Other shapes that are appended to this object"))
+        obj.addProperty("App::PropertyLinkList","Subtractions","Arch",translate("Arch","Other shapes that are subtracted from this object"))
+        obj.addProperty("App::PropertyString","Description","Arch",translate("Arch","An optional description for this component"))
+        obj.addProperty("App::PropertyString","Tag","Arch",translate("Arch","An optional tag for this component"))
+        obj.addProperty("App::PropertyMap","IfcAttributes","Arch",translate("Arch","Custom IFC properties and attributes"))
+        obj.addProperty("App::PropertyMap","Material","Arch",translate("Arch","A material for this object"))
         obj.addProperty("App::PropertyEnumeration","Role","Arch",translate("Arch","The role of this object"))
+        obj.addProperty("App::PropertyBool","MoveWithHost","Arch",translate("Arch","Specifies if this object must move together when its host is moved"))
         obj.Proxy = self
         self.Type = "Component"
         self.Subvolume = None
+        self.MoveWithHost = False
 
     def execute(self,obj):
         return
@@ -509,7 +511,7 @@ class Component:
         if prop in ["Additions","Subtractions"]:
             if hasattr(obj,prop):
                 for o in getattr(obj,prop):
-                    if Draft.getType(o) != "Window":
+                    if (Draft.getType(o) != "Window") and (not Draft.isClone(o,"Window",True)):
                         if (Draft.getType(obj) == "Wall"):
                             if (Draft.getType(o) == "Roof"):
                                 continue
@@ -547,11 +549,11 @@ class Component:
                             add.Placement = add.Placement.multiply(placement)
                         base = base.fuse(add)
 
-                    elif (Draft.getType(o) == "Window") or (Draft.isClone(o,"Window")):
+                    elif (Draft.getType(o) == "Window") or (Draft.isClone(o,"Window",True)):
                         f = o.Proxy.getSubVolume(o)
                         if f:
                             if base.Solids and f.Solids:
-                                if placemen:
+                                if placement:
                                     f.Placement = f.Placement.multiply(placement)
                                 base = base.cut(f)
                                 
@@ -579,7 +581,7 @@ class Component:
                     base = None
             
             if base:
-                if (Draft.getType(o) == "Window") or (Draft.isClone(o,"Window")):
+                if (Draft.getType(o) == "Window") or (Draft.isClone(o,"Window",True)):
                         # windows can be additions or subtractions, treated the same way
                         f = o.Proxy.getSubVolume(o)
                         if f:
@@ -643,7 +645,7 @@ class ViewProviderComponent:
     def onChanged(self,vobj,prop):
         if prop == "Visibility":
             for obj in vobj.Object.Additions+vobj.Object.Subtractions:
-                if Draft.getType(obj) == "Window":
+                if (Draft.getType(obj) == "Window") or (Draft.isClone(obj,"Window",True)):
                     obj.ViewObject.Visibility = vobj.Visibility
         return
 

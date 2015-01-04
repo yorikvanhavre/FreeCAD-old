@@ -300,7 +300,7 @@ def getColor():
 
 def formatObject(obj,dxfobj=None):
     "applies color and linetype to objects"
-    if dxfGetColors and dxfobj:
+    if dxfGetColors and dxfobj and hasattr(dxfobj,"color_index"):
         if hasattr(obj.ViewObject,"TextColor"):
             if dxfobj.color_index == 256: 
                 cm = getGroupColor(dxfobj)[:3]
@@ -404,7 +404,7 @@ def drawPolyline(polyline,forceShape=False,num=None):
                     ob.Closed = polyline.closed
                     return ob
                 else:
-                    if polyline.closed:
+                    if polyline.closed and dxfFillMode:
                         w = Part.Wire(edges)
                         return(Part.Face(w))
                     else:
@@ -596,11 +596,14 @@ def drawSpline(spline,forceShape=False):
             ob.Closed = closed
             return ob
         else:
-            sp = Part.BSplineCurve()
-            # print(knots)
-            sp.interpolate(verts)
-            sh = Part.Wire(sp.toShape())
-            if closed:
+            if dxfDiscretizeCurves:
+                sh = Part.makePolygon(verts+[verts[0]])
+            else:
+                sp = Part.BSplineCurve()
+                # print(knots)
+                sp.interpolate(verts)
+                sh = Part.Wire(sp.toShape())
+            if closed and dxfFillMode:
                 return Part.Face(sh)
             else:
                 return sh                          
@@ -1808,5 +1811,6 @@ dxfImportHatches = p.GetBool("importDxfHatches",False)
 dxfUseStandardSize = p.GetBool("dxfStdSize",False)
 dxfGetColors = p.GetBool("dxfGetOriginalColors",False)
 dxfUseDraftVisGroups = p.GetBool("dxfUseDraftVisGroups",False)
+dxfFillMode = p.GetBool("fillmode",True)
 dxfBrightBackground = isBrightBackground()
 dxfDefaultColor = getColor()
