@@ -24,7 +24,7 @@
 
 import FreeCAD,FreeCADGui,Path,PathGui
 from PySide import QtCore,QtGui
-import PathUtils
+import PathUtils,PathSelection
 """Path Profile object and FreeCAD command"""
 
 # Qt tanslation handling
@@ -97,7 +97,7 @@ class ObjectProfile:
                 radius = tool.Diameter/2
             else:
                 # temporary value, to be taken from the properties later on
-                radius = 1
+                radius = 0.9999
             if obj.Base[0].Shape.ShapeType == "Wire": #a pure wire was picked
                 wire = obj.Base[0].Shape
             else: #we are dealing with a face and it's edges or just a face
@@ -128,9 +128,10 @@ class ObjectProfile:
                 clockwise=False
             else:
                 clockwise=True
-            output = "G0Z"
-            output += str(obj.ClearanceHeight)
-            output += "\n"
+            output = ""
+#            output = "G0Z"
+#            output += str(obj.ClearanceHeight)
+#            output += "\n"
             FirstEdge= None
             if obj.Edge1:
                 ename = obj.Edge1[1][0]
@@ -163,7 +164,7 @@ class CommandPathProfile:
     def Activated(self):
         import Path
         from PathScripts import PathUtils,PathProfile
-        selection = PathUtils.multiSelect()
+        selection = PathSelection.multiSelect()
 
         if not selection:
             return

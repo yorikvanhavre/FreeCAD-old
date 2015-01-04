@@ -90,42 +90,6 @@ def check_clockwise(poly):
         clockwise = not clockwise
     return clockwise
 
-def Sort2Edges(edgelist=[]):
-    '''Sort2Edges(edgelist=[]) simple function to reorder the start and end pts of two edges based on their selection order. Returns the list, the start point, and their common point, => edgelist, vertex, vertex'''
-    if len(edgelist)>=2:
-        vlist = []
-        e0 = edgelist[0]
-        e1=edgelist[1]
-        a0 = e0.Vertexes[0]
-        a1 = e0.Vertexes[1]
-        b0 = e1.Vertexes[0]
-        b1 = e1.Vertexes[1]
-        # comparison routine to order two edges:
-        if a1.isSame(b0):
-            vlist.append((a0.Point.x,a0.Point.y))
-            vlist.append((a1.Point.x,a1.Point.y))
-            vlist.append((b1.Point.x,b1.Point.y))
-
-        elif a0.isSame(b0):
-            vlist.append((a1.Point.x,a1.Point.y))
-            vlist.append((a0.Point.x,a0.Point.y))
-            vlist.append((b1.Point.x,b1.Point.y))
-
-        elif a0.isSame(b1):
-            vlist.append((a1.Point.x,a1.Point.y))
-            vlist.append((a0.Point.x,a0.Point.y))
-            vlist.append((b0.Point.x,b0.Point.y))
-
-        elif a1.isSame(b1):
-            vlist.append((a0.Point.x,a0.Point.y))
-            vlist.append((a1.Point.x,a1.Point.y))
-            vlist.append((b0.Point.x,b0.Point.y))
-
-        edgestart = Vector(vlist[0][0],vlist[0][1],e0.Vertexes[1].Z)
-        edgecommon = Vector(vlist[1][0],vlist[1][1],e0.Vertexes[1].Z)
-
-    return vlist,edgestart,edgecommon
-
 def filterArcs(arcEdge):
     '''filterArcs(Edge) -used to split arcs that over 180 degrees. Returns list '''
     s = arcEdge
@@ -158,126 +122,19 @@ def filterArcs(arcEdge):
         pass
     return splitlist
 
-def multiSelect():
-    '''
-    multiSelect() A function for selecting elements of an object for CNC path operations.
-    Select just a face, an edge,or two edges to indicate direction, a vertex on the object, a point not on the object,
-    or some combination. Returns a dictionary.
-    '''
-    sel = FreeCADGui.Selection.getSelectionEx()
-    numobjs = len([selobj.Object for selobj in sel])
-    if numobjs == 0:
-        FreeCAD.Console.PrintError('Please select some objects and try again.\n')
-        return
-    goodselect = False
-    for s in sel:
-        for i in s.SubObjects:
-            if i.ShapeType == 'Face':
-                goodselect = True
-            if i.ShapeType == 'Edge':
-                goodselect = True
-            if i.ShapeType == 'Vertex':
-                goodselect = True
-    if not goodselect:
-        FreeCAD.Console.PrintError('Please select a face and/or edges along with points (optional) and try again.\n')
-        return
+def reverseEdge(e):
+    if geomType(e) == "Circle":
+        arcstpt  = e.valueAt(e.FirstParameter)
+        arcmid   = e.valueAt((e.LastParameter-e.FirstParameter)*0.5+e.FirstParameter)
+        arcendpt = e.valueAt(e.LastParameter)
+        arcofCirc = Part.ArcOfCircle(arcendpt,arcmid,arcstpt)
+        newedge = arcofCirc.toShape()
+    elif geomType(e) == "Line":
+        stpt = e.valueAt(e.FirstParameter)
+        endpt = e.valueAt(e.LastParameter)
+        newedge = Part.makeLine(endpt,stpt)
 
-    selItems = {}
-    selItems['objname']=None #the parent object name - a 3D solid
-    selItems['pointlist']=None #start and end points
-    selItems['facenames']=None # the selected face name
-    selItems['facelist']=None #list of faces selected
-    selItems['edgelist']=None #some edges that could be selected along with points and faces
-    selItems['edgenames']=None
-    selItems['pathwire']=None #the whole wire around edges of the face
-    selItems['clockwise']=None
-    facenames = []
-    edgelist =[]
-    edgenames=[]
-    ptlist=[]
-    face = False
-    edges = False
-    points = False
-    wireobj = False
-    facelist= []
-    for s in sel:
-        if s.Object.Shape.ShapeType in ['Solid','Compound','Wire','Vertex']:
-            if not (s.Object.Shape.ShapeType =='Vertex'):
-                objname = s.ObjectName 
-                selItems['objname']   =objname
-            if s.Object.Shape.ShapeType == 'Wire':
-                wireobj = True
-            if s.Object.Shape.ShapeType == 'Vertex':
-                #ptlist.append((s.ObjectName,s.Object))
-                ptlist.append(s.Object)
-                points = True
-        for sub in s.SubObjects:
-            if sub.ShapeType =='Face':
-                facelist.append(sub)
-                face = True
-            if sub.ShapeType =='Edge':
-                edge = sub
-                edgelist.append(edge)
-                edges = True
-            if sub.ShapeType =='Vertex':
-                ptlist.append(sub)
-                points = True
-
-        for sub in s.SubElementNames:
-            if 'Face' in sub:
-                facename = sub
-                facenames.append(facename) 
-            if 'Edge' in sub:
-                edgenames.append(sub)
-    # now indicate which wire is going to be processed, based on which edges are selected
-    if facelist:
-        selItems['facelist']=facelist
-
-    if edges:
-        if face:
-            selItems['edgelist'] =edgelist
-            for fw in facelist[0].Wires:
-                for e in  fw.Edges:
-                    if e.isSame(edge):
-                        pathwire = fw
-                        selItems['pathwire']  =pathwire
-        elif wireobj:
-            selItems['pathwire'] =s.Object.Shape
-            selItems['edgelist'] =edgelist
-        else:
-            for w in s.Object.Shape.Wires:
-                for e in  w.Edges:
-                    if e.BoundBox.ZMax == e.BoundBox.ZMin: #if they are on same plane in Z as sel edge
-                        if e.isSame(edge):
-                            pathwire = w
-                            selItems['pathwire']  =pathwire
-            selItems['edgelist'] =edgelist
-
-    if not edges:
-        if face:
-            selItems['pathwire']  =facelist[0].OuterWire
-
-    if edges and (len(edgelist)>=2):
-        vlist,edgestart,edgecommon=Sort2Edges(edgelist)
-        edgepts ={}
-        edgepts['vlist'] = vlist
-        edgepts['edgestart']=edgestart # start point of edges selected
-        edgepts['edgecommon']=edgecommon # point where two edges join- will be last point in in first gcode line
-        selItems['edgepts']=edgepts
-
-        if check_clockwise(vlist):
-            selItems['clockwise']=True
-        elif check_clockwise(vlist) == False:
-            selItems['clockwise']=False
-
-    if points:
-        selItems['pointlist']  = ptlist
-    if edges:
-        selItems['edgenames']=edgenames
-    if face:
-        selItems['facenames'] = facenames
-
-    return selItems
+    return newedge
 
 def convert(toolpath,Side,radius,clockwise=False,Z=0.0,firstedge=None):
     '''convert(toolpath,Side,radius,clockwise=False,Z=0.0,firstedge=None) Converts lines and arcs to G1,G2,G3 moves. Returns a string.'''
@@ -333,28 +190,42 @@ def convert(toolpath,Side,radius,clockwise=False,Z=0.0,firstedge=None):
 def SortPath(wire,Side,radius,clockwise,ZClearance,StepDown,ZStart,ZFinalDepth,firstedge=None,PathClosed=True,SegLen =0.5):
     '''SortPath(wire,Side,radius,clockwise,ZClearance,StepDown,ZStart, ZFinalDepth,firstedge=None) Sorts the wire and reverses it, if needed. Splits arcs over 180 degrees in two. '''
 
-# need to rework firstedge use with beginning of toolpath
-# right now it gets the toolpath started near the picked edge
-# but not near enough
+
     if firstedge:
         edgelist =[]
         for edge in wire.Edges:
             edgelist.append(edge)
-        elindex = None
-        n=0
-        for e in edgelist:
-            if isSameEdge(e,firstedge):
-                FreeCAD.Console.PrintMessage('found first edge\n')
-                elindex = n
-            n+=1
-        l1 = edgelist[:elindex]
-        l2 = edgelist[elindex:]
-        if clockwise:
-            newedgelist = l1+l2
-        else:
+        if wire.isClosed():
+            elindex = None
+            n=0
+            for e in edgelist:
+                if isSameEdge(e,firstedge):
+                    FreeCAD.Console.PrintMessage('found first edge\n')
+                    elindex = n
+                n=n+1
+            l1 = edgelist[:elindex]
+            l2 = edgelist[elindex:]
             newedgelist = l2+l1
-        nlist = DraftGeomUtils.sortEdgesOld(newedgelist)
-        wire = Part.Wire(nlist)
+
+            if clockwise:
+                newedgelist.reverse()
+                last = newedgelist.pop(-1)
+                newedgelist.insert(0, last)
+
+            preoffset= []
+            for e in newedgelist:
+                if  clockwise:
+                    r = reverseEdge(e) 
+                    preoffset.append(r)
+                else:
+                    preoffset.append(e)
+
+            sortedpreoff = DraftGeomUtils.sortEdgesOld(preoffset)
+            wire = Part.Wire(sortedpreoff)
+        else:
+            sortedpreoff = DraftGeomUtils.sortEdgesOld(edgelist)
+            wire = Part.Wire(sortedpreoff)
+
 
     SegLen =0.5
     edgelist =[]
@@ -379,25 +250,17 @@ def SortPath(wire,Side,radius,clockwise,ZClearance,StepDown,ZStart,ZFinalDepth,f
         offset = newwire.makeOffset(-radius)#tool is inside line
     else:
         if wire.isClosed():
-            offset = newwire.makeOffset(0)
+            offset = newwire.makeOffset(0.0)
         else:
             offset = wire
-        
-    if clockwise:
-        revlist = []
-        for edge in offset.Edges:
-            revlist.append(edge)
-        revlist.reverse()
-        toolpath = DraftGeomUtils.sortEdgesOld(revlist)
 
-    else:
-        newlist =[]
-        for edge in offset.Edges:
-            newlist.append(edge)
-        FreeCAD.Console.PrintMessage('counter clockwise toolpath\n')
-        toolpath = newlist
+    toolpath =[]
+    for edge in offset.Edges:
+        toolpath.append(edge)
 
-    paths =""
+    paths ="G0 Z" 
+    paths = str(ZClearance)
+    paths = "\n"
     first = toolpath[0].Vertexes[0].Point
     paths += "G0 X"+str(fmt(first.x))+"Y"+str(fmt(first.y))+"\n"
     ZCurrent = ZStart- StepDown
