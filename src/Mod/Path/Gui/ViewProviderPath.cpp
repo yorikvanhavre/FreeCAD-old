@@ -235,14 +235,14 @@ void ViewProviderPath::updateData(const App::Property* prop)
             Path::Command cmd = tp.getCommand(i);
             std::string name = cmd.Name;
             Base::Vector3d next = cmd.getPlacement().getPosition();
+            if (!absolute)
+                next = last + next;
             if (!cmd.has("x"))
                 next.x = last.x;
             if (!cmd.has("y"))
                 next.y = last.y;
             if (!cmd.has("z"))
                 next.z = last.z;
-            if (!absolute)
-                next = last + next;
             
             if ( (name == "G0") || (name == "G00") || (name == "G1") || (name == "G01") ) {
                 // straight line

@@ -27,6 +27,9 @@ SET(PathScripts_SRCS
     PathScripts/PathPocket.py
     PathScripts/PathDrilling.py
     PathScripts/PathDressup.py
+    PathScripts/PathHop.py
+    PathScripts/PathUtils.py
+
 )
 
 ADD_CUSTOM_TARGET(PathScripts ALL

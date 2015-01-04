@@ -41,6 +41,11 @@
 #include <TopExp_Explorer.hxx>
 #include <gp_Lin.hxx>
 #include <BRep_Tool.hxx>
+#include <BRepAdaptor_CompCurve.hxx>
+#include <Handle_BRepAdaptor_HCompCurve.hxx>
+#include <Approx_Curve3d.hxx>
+#include <BRepAdaptor_HCurve.hxx>
+#include <Handle_BRepAdaptor_HCurve.hxx>
 
 
 using namespace Path;
@@ -69,6 +74,7 @@ App::DocumentObjectExecReturn *FeatureShape::execute(void)
         if (shape.ShapeType() == TopAbs_WIRE) {
             Path::Toolpath result;
             bool first = true;
+            Base::Placement last;
             
             TopExp_Explorer ExpEdges (shape,TopAbs_EDGE);
             while (ExpEdges.More()) {
@@ -95,10 +101,26 @@ App::DocumentObjectExecReturn *FeatureShape::execute(void)
                         else {
                             Path::Command cmd;
                             cmd.setFromPlacement(tpl);
+                
+                            // write arc data if needed
+                            BRepAdaptor_Curve adapt(edge);
+                            if (adapt.GetType() == GeomAbs_Circle) {
+                                gp_Circ circ = adapt.Circle();
+                                gp_Pnt c = circ.Location();
+                                bool clockwise = false;
+                                gp_Dir n = circ.Axis().Direction();
+                                if (n.Z() < 0)
+                                    clockwise = true;
+                                Base::Vector3d center = Base::Vector3d(c.X(),c.Y(),c.Z());
+                                // center coords must be relative to last point
+                                center -= last.getPosition();
+                                cmd.setCenter(center,clockwise);
+                            }
                             result.addCommand(cmd);
                         }
                     }
                     ExpVerts.Next();
+                    last = tpl;
                 }
                 ExpEdges.Next();
             }
