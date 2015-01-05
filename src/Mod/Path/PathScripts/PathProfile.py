@@ -50,6 +50,13 @@ class ObjectProfile:
         obj.addProperty("App::PropertyLinkSub","Edge2","Path",translate("Edge 2","Second Selected Edge to help determine which geometry to make a toolpath around"))
 #        obj.addProperty("Part::PropertyPartShape","SecondEdge","Shape",translate("SecondEdge","Second Selected Edge to help determine where to start the toolpath"))
         obj.addProperty("App::PropertyInteger","ToolNumber","Tool",translate("PathProfile","The tool number to use"))
+
+        obj.addProperty("App::PropertyFloat", "SpindleSpeed", "Tool", translate("Spindle Speed","The speed of the cutting spindle in RPM"))
+
+        obj.addProperty("App::PropertyEnumeration", "SpindleDir", "Tool", translate("Spindle Dir","Direction of spindle rotation"))
+        obj.SpindleDir = ['Forward','Reverse']
+
+
         obj.addProperty("App::PropertyFloat", "ClearanceHeight", "Depth Parameters", translate("Clearance Height","The height needed to clear clamps and obstructions"))
         obj.addProperty("App::PropertyFloat", "StepDown", "Depth Parameters", translate("StepDown","Incremental Step Down of Tool"))
         obj.addProperty("App::PropertyFloat", "StartDepth", "Depth Parameters", translate("Start Depth","Starting Depth of Tool- first cut depth in Z"))
@@ -130,9 +137,17 @@ class ObjectProfile:
                 clockwise=False
             else:
                 clockwise=True
-            output = ""
-#            output = "G0Z"
-#            output += str(obj.ClearanceHeight)
+            output =""
+            output += "M6 T"
+            output += str(obj.ToolNumber)+"\n"
+            output +="M"
+            if obj.SpindleDir =='Forward':
+                output +="3"
+            else:
+                output +="4"
+            output += " \n"
+            output +="S"+str(obj.SpindleSpeed) +"\n" #going to just use spindle forward for the moment
+
 #            output += "\n"
             FirstEdge= None
             if obj.Edge1:
@@ -219,6 +234,8 @@ class CommandPathProfile:
         obj.StartDepth = ZMax- obj.StepDown
         obj.FinalDepth = ZMin-1.0
         obj.ClearanceHeight =  ZMax + 5.0
+        obj.SpindleDir = 'Forward'
+        obj.SpindleSpeed = 2000.00
         obj.SegLen = 0.5
         obj.ViewObject.Proxy = 0
 

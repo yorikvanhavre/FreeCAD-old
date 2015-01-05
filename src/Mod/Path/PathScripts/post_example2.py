@@ -70,6 +70,8 @@ def parse(inputstring):
             command,args = line.split(" ",1)
             #wordlist.append(command)
             #split up the words in the line
+#            if command == 'M3':
+#                command.append('\n')
             words = args.split()
             for w in words:
                 if w <> ' ':
