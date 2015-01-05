@@ -26,6 +26,7 @@
 
 #include "FeaturePathCompound.h"
 #include "PropertyTooltable.h"
+#include <App/PropertyUnits.h>
 
 namespace Path
 {
@@ -40,6 +41,12 @@ public:
     virtual ~FeatureProject();
 
     Path::PropertyTooltable   Tooltable;
+    App::PropertyVectorList   Fixtures;
+    App::PropertyVector       CornerMin;
+    App::PropertyVector       CornerMax;
+    App::PropertyString       Description;
+    App::PropertySpeed        FeedRate;
+    App::PropertySpeed        SpindleSpeed;
 
     /// returns the type name of the ViewProvider
     virtual const char* getViewProviderName(void) const {
