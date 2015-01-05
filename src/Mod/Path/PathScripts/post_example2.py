@@ -39,6 +39,7 @@ another string, which is properly formatted GCode.
 
 import datetime
 now = datetime.datetime.now()
+import FreeCAD
 
 def fmt(val): 
     num = eval(val)
@@ -51,13 +52,13 @@ def ffmt(val):
 def parse(inputstring):
     "parse(inputstring): returns a parsed output string"
     print "postprocessing..."
-    
+
     output = ""
-    
     # write some stuff first
     output += "(time:"+str(now)+")\n"
-    output += "G17 G21 G80 G40 G90\n"
     output += "(Exported by FreeCAD)\n"
+    output += "G17 G21 G80 G40 G90\n"
+
     
     linenr = 100
     lastcommand = None
