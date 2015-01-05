@@ -21,6 +21,7 @@ SET(PathScripts_SRCS
     PathScripts/toolpathparams.py
     PathScripts/pre_example.py
     PathScripts/post_example.py
+    PathScripts/post_example2.py
     PathScripts/post_editor.py
     PathScripts/TooltableEditor.py
     PathScripts/PathProfile.py

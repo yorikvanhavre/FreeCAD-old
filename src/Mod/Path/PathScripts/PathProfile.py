@@ -61,6 +61,8 @@ class ObjectProfile:
         obj.addProperty("App::PropertyEnumeration", "Direction", "Profile Parameters",translate("Direction", "The direction that the toolpath should go around the part ClockWise CW or CounterClockWise CCW"))
         obj.Direction = ['CW','CCW']
         obj.addProperty("App::PropertyVector","EndPoint","Profile Parameters",translate("End Point","The end point of this path"))
+        obj.addProperty("App::PropertyFloat", "VertFeed", "Profile Parameters",translate("Vert Feed","Feed rate for vertical moves in Z"))
+        obj.addProperty("App::PropertyFloat", "HorizFeed", "Profile Parameters",translate("Horiz Feed","Feed rate for horizontal moves"))
         obj.addProperty("App::PropertyBool","UseEndPoint","Profile Parameters",translate("Use End Point","make True, if specifying an End Point"))
         obj.addProperty("App::PropertyEnumeration", "Side", "Profile Parameters", translate("Side","Side of edge that tool should cut"))
         obj.Side = ['Left','Right','On']
@@ -143,9 +145,9 @@ class ObjectProfile:
             #while ZCurrent >= obj.FinalDepth:
             #                   approach(wire,Side,radius,clockwise,ZClearance,StepDown,ZFinalDepth)
             if obj.UseStartDepth:
-                output += PathUtils.SortPath(wire,obj.Side,radius,clockwise,obj.ClearanceHeight,obj.StepDown,obj.StartDepth, obj.FinalDepth,FirstEdge,obj.PathClosed,obj.SegLen)
+                output += PathUtils.SortPath(wire,obj.Side,radius,clockwise,obj.ClearanceHeight,obj.StepDown,obj.StartDepth, obj.FinalDepth,FirstEdge,obj.PathClosed,obj.SegLen,obj.VertFeed,obj.HorizFeed)
             else:
-                output += PathUtils.SortPath(wire,obj.Side,radius,clockwise,obj.ClearanceHeight,obj.StepDown,ZMax, obj.FinalDepth,FirstEdge,obj.PathClosed,obj.SegLen)
+                output += PathUtils.SortPath(wire,obj.Side,radius,clockwise,obj.ClearanceHeight,obj.StepDown,ZMax, obj.FinalDepth,FirstEdge,obj.PathClosed,obj.SegLen,obj.VertFeed,obj.HorizFeed)
                 #ZCurrent = ZCurrent-abs(obj.StepDown)
 
             path = Path.Path(output)

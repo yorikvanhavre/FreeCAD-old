@@ -136,7 +136,7 @@ def reverseEdge(e):
 
     return newedge
 
-def convert(toolpath,Side,radius,clockwise=False,Z=0.0,firstedge=None):
+def convert(toolpath,Side,radius,clockwise=False,Z=0.0,firstedge=None,vf=1.0,hf=2.0):
     '''convert(toolpath,Side,radius,clockwise=False,Z=0.0,firstedge=None) Converts lines and arcs to G1,G2,G3 moves. Returns a string.'''
     last = None
     output = ""
@@ -146,7 +146,7 @@ def convert(toolpath,Side,radius,clockwise=False,Z=0.0,firstedge=None):
             #set the first point
             last = edge.Vertexes[0].Point
             #FreeCAD.Console.PrintMessage("last pt= " + str(last)+ "\n")
-            output += "G1 X" + str(fmt(last.x)) + " Y" + str(fmt(last.y)) + " Z" + str(fmt(Z)) + "\n"
+            output += "G1 X"+str(fmt(last.x))+" Y"+str(fmt(last.y))+" Z"+str(fmt(Z))+" F"+str(vf)+"\n"
         if isinstance(edge.Curve,Part.Circle):
             #FreeCAD.Console.PrintMessage("arc\n")
             arcstartpt = edge.valueAt(edge.FirstParameter)
@@ -171,8 +171,7 @@ def convert(toolpath,Side,radius,clockwise=False,Z=0.0,firstedge=None):
                 output += "G2"
             else:
                 output += "G3"
-
-            output += " X" + str(fmt(endpt.x)) + " Y" + str(fmt(endpt.y)) + " Z" + str(fmt(Z))
+            output += " X"+str(fmt(endpt.x))+" Y"+str(fmt(endpt.y))+" Z"+str(fmt(Z))+" F"+str(hf)
             output += " I" + str(fmt(relcenter.x)) + " J" + str(fmt(relcenter.y)) + " K" + str(fmt(relcenter.z))
             output += "\n"
             last = endpt
@@ -181,13 +180,13 @@ def convert(toolpath,Side,radius,clockwise=False,Z=0.0,firstedge=None):
             point = edge.Vertexes[-1].Point
             if DraftVecUtils.equals(point , last): # edges can come flipped
                 point = edge.Vertexes[0].Point
-            output += "G1 X" + str(fmt(point.x)) + " Y" + str(fmt(point.y)) + " Z" + str(fmt(Z)) + "\n"
+            output += "G1 X"+str(fmt(point.x))+" Y"+str(fmt(point.y))+" Z"+str(fmt(Z))+" F"+str(hf)+"\n"
             last = point
             #FreeCAD.Console.PrintMessage("line\n")
             #FreeCAD.Console.PrintMessage("last pt line= " + str(last)+ "\n")
     return output
 
-def SortPath(wire,Side,radius,clockwise,ZClearance,StepDown,ZStart,ZFinalDepth,firstedge=None,PathClosed=True,SegLen =0.5):
+def SortPath(wire,Side,radius,clockwise,ZClearance,StepDown,ZStart,ZFinalDepth,firstedge=None,PathClosed=True,SegLen =0.5,VertFeed=1.0,HorizFeed=2.0):
     '''SortPath(wire,Side,radius,clockwise,ZClearance,StepDown,ZStart, ZFinalDepth,firstedge=None) Sorts the wire and reverses it, if needed. Splits arcs over 180 degrees in two. '''
 
 
@@ -266,17 +265,17 @@ def SortPath(wire,Side,radius,clockwise,ZClearance,StepDown,ZStart,ZFinalDepth,f
     ZCurrent = ZStart- StepDown
     if PathClosed:
         while ZCurrent > ZFinalDepth:
-            paths += convert(toolpath,Side,radius,clockwise,ZCurrent,firstedge)
+            paths += convert(toolpath,Side,radius,clockwise,ZCurrent,firstedge,VertFeed,HorizFeed)
             ZCurrent = ZCurrent-abs(StepDown)
-        paths += convert(toolpath,Side,radius,clockwise,ZFinalDepth,firstedge)
+        paths += convert(toolpath,Side,radius,clockwise,ZFinalDepth,firstedge,VertFeed,HorizFeed)
         paths += "G0 Z" + str(ZClearance)
     else:
         while ZCurrent > ZFinalDepth:
-            paths += convert(toolpath,Side,radius,clockwise,ZCurrent,firstedge)
+            paths += convert(toolpath,Side,radius,clockwise,ZCurrent,firstedge,VertFeed,HorizFeed)
             paths += "G0 Z" + str(ZClearance)
             paths += "G0 X"+str(fmt(first.x))+"Y"+str(fmt(first.y))+"\n"
             ZCurrent = ZCurrent-abs(StepDown)
-        paths += convert(toolpath,Side,radius,clockwise,ZFinalDepth,firstedge)
+        paths += convert(toolpath,Side,radius,clockwise,ZFinalDepth,firstedge,VertFeed,HorizFeed)
         paths += "G0 Z" + str(ZClearance)
     return paths
 
