@@ -34,6 +34,7 @@
 #include <Gui/SoFCBoundingBox.h>
 #include <Inventor/nodes/SoSeparator.h>
 #include <Inventor/nodes/SoDrawStyle.h>
+#include <Inventor/nodes/SoBaseColor.h>
 
 using namespace Gui;
 using namespace PathGui;
@@ -69,6 +70,15 @@ void ViewProviderPathProject::showExtents(void)
     DefaultStyle->linePattern = pattern;
     parent->addChild(DefaultStyle);
     
+    // add a color
+    ParameterGrp::handle hGrp2 = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Path");
+    unsigned long col = hGrp2->GetUnsigned("DefaultExtentsColor",3418866943UL); // light grey (203,199,196)
+    float r,g,b;
+    r = ((col >> 24) & 0xff) / 255.0; g = ((col >> 16) & 0xff) / 255.0; b = ((col >> 8) & 0xff) / 255.0;
+    SoBaseColor *ecolor = new SoBaseColor;
+    ecolor->rgb.setValue(r,g,b);
+    parent->addChild(ecolor);
+
     // add a bounding box
     Gui::SoFCBoundingBox* extents = new Gui::SoFCBoundingBox();
     extents->coordsOn.setValue(false);
