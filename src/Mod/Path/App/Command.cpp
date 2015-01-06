@@ -162,14 +162,27 @@ void Command::setFromGCode (std::string str)
                 } else {
                     throw Base::Exception("Badly formatted GCode argument");
                 }
+            } else if (mode == "comment") {
+                value += str[i];
             }
             key = str[i];
+        } else if (str[i] == '(') {
+            mode = "comment";
+        } else if (str[i] == ')') {
+            key = "(";
+            value += ")";
+        } else {
+            // add non-ascii characters only if this is a comment
+            if (mode == "comment") {
+                value += str[i];
+            }
         }
     }
     if (!key.empty() && !value.empty()) {
-        if (mode == "command") {
+        if ( (mode == "command") || (mode == "comment") ) {
             std::string cmd = key + value;
-            boost::to_upper(cmd);
+            if (mode == "command")
+                boost::to_upper(cmd);
             Name = cmd;
         } else {
             double val = std::atof(value.c_str());
