@@ -26,6 +26,8 @@
 
 #include "ViewProviderPathCompound.h"
 
+class SoSeparator;
+
 namespace PathGui
 {
 
@@ -34,8 +36,20 @@ class PathGuiExport ViewProviderPathProject: public ViewProviderPathCompound
     PROPERTY_HEADER(PathGui::ViewProviderPathProject);
 
 public:
-        
+    
+    /// constructor
+    ViewProviderPathProject();
+    ~ViewProviderPathProject();
+    /// properties
+    App::PropertyBool ShowExtents;
+    /// functions
+    virtual void attach(App::DocumentObject *);
     QIcon getIcon(void) const;
+    void showExtents(void); 
+    
+protected:
+    virtual void onChanged(const App::Property* prop);
+    SoSeparator  *ExtentsRoot;
 };
 
 } //namespace PathGui

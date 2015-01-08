@@ -21,12 +21,17 @@ SET(PathScripts_SRCS
     PathScripts/toolpathparams.py
     PathScripts/pre_example.py
     PathScripts/post_example.py
+    PathScripts/post_example2.py
+    PathScripts/post_example3.py
     PathScripts/post_editor.py
     PathScripts/TooltableEditor.py
     PathScripts/PathProfile.py
     PathScripts/PathPocket.py
     PathScripts/PathDrilling.py
     PathScripts/PathDressup.py
+    PathScripts/PathHop.py
+    PathScripts/PathUtils.py
+    PathScripts/PathSelection.py
 )
 
 ADD_CUSTOM_TARGET(PathScripts ALL

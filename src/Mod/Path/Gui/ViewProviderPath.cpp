@@ -77,10 +77,10 @@ ViewProviderPath::ViewProviderPath()
     float mr,mg,mb;
     mr = ((mcol >> 24) & 0xff) / 255.0; mg = ((mcol >> 16) & 0xff) / 255.0; mb = ((mcol >> 8) & 0xff) / 255.0;
     int lwidth = hGrp->GetInt("DefaultPathLineWidth",1);
-    ADD_PROPERTY(NormalColor,(lr,lg,lb));
-    ADD_PROPERTY(MarkerColor,(mr,mg,mb));
-    ADD_PROPERTY(LineWidth,(lwidth));
-    ADD_PROPERTY(ShowFirstRapid,(true));
+    ADD_PROPERTY_TYPE(NormalColor,(lr,lg,lb),"Path",App::Prop_None,"The color of the feed rate moves");
+    ADD_PROPERTY_TYPE(MarkerColor,(mr,mg,mb),"Path",App::Prop_None,"The color of the markers");
+    ADD_PROPERTY_TYPE(LineWidth,(lwidth),"Path",App::Prop_None,"The line width of this path");
+    ADD_PROPERTY_TYPE(ShowFirstRapid,(true),"Path",App::Prop_None,"Turns the display of the first rapid move on/off");
     
     pcPathRoot = new Gui::SoFCSelection();
 
@@ -235,14 +235,14 @@ void ViewProviderPath::updateData(const App::Property* prop)
             Path::Command cmd = tp.getCommand(i);
             std::string name = cmd.Name;
             Base::Vector3d next = cmd.getPlacement().getPosition();
+            if (!absolute)
+                next = last + next;
             if (!cmd.has("x"))
                 next.x = last.x;
             if (!cmd.has("y"))
                 next.y = last.y;
             if (!cmd.has("z"))
                 next.z = last.z;
-            if (!absolute)
-                next = last + next;
             
             if ( (name == "G0") || (name == "G00") || (name == "G1") || (name == "G01") ) {
                 // straight line
@@ -329,7 +329,7 @@ void ViewProviderPath::updateData(const App::Property* prop)
         
         // update the coloring after we changed the color vector
         NormalColor.touch();
-        //recomputeBoundingBox();
+        recomputeBoundingBox();
         
     } else if ( prop == &pcPathObj->Placement) {
         
@@ -339,7 +339,7 @@ void ViewProviderPath::updateData(const App::Property* prop)
         pl.getRotation().getValue(q1,q2,q3,q4);
         pcTransform->translation.setValue(pos.x,pos.y,pos.z);
         pcTransform->rotation.setValue(q1,q2,q3,q4);
-        //recomputeBoundingBox();
+        recomputeBoundingBox();
     }
 }
 
@@ -357,7 +357,6 @@ void ViewProviderPath::recomputeBoundingBox()
     Base::Placement pl = *(&pcPathObj->Placement.getValue());
     Base::Vector3d pt;
     for (unsigned int i=0;i<pcLineCoords->point.getNum();i++) {
-        std::cout << i << std::endl;
         pt.x = pcLineCoords->point[i].getValue()[0];
         pt.y = pcLineCoords->point[i].getValue()[1];
         pt.z = pcLineCoords->point[i].getValue()[2];
