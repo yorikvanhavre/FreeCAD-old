@@ -59,7 +59,9 @@ static PyObject * open(PyObject *self, PyObject *args)
         std::string path = App::GetApplication().getHomePath();
         path += "Mod/Path/PathScripts/";
         QDir dir1(QString::fromUtf8(path.c_str()), QString::fromAscii("pre_*.py"));
-        QDir dir2(QString::fromUtf8(App::Application::Config()["UserAppData"].c_str()), QString::fromAscii("pre_*.py"));
+        std::string cMacroPath = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Macro")
+            ->GetASCII("MacroPath",App::Application::getUserAppDataDir().c_str());
+        QDir dir2(QString::fromUtf8(cMacroPath.c_str()), QString::fromAscii("pre_*.py"));
         QFileInfoList list = dir1.entryInfoList();
         list << dir2.entryInfoList();
         std::vector<std::string> scripts;
@@ -101,7 +103,9 @@ static PyObject * importer(PyObject *self, PyObject *args)
         std::string path = App::GetApplication().getHomePath();
         path += "Mod/Path/PathScripts/";
         QDir dir1(QString::fromUtf8(path.c_str()), QString::fromAscii("pre_*.py"));
-        QDir dir2(QString::fromUtf8(App::Application::Config()["UserAppData"].c_str()), QString::fromAscii("pre_*.py"));
+        std::string cMacroPath = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Macro")
+            ->GetASCII("MacroPath",App::Application::getUserAppDataDir().c_str());
+        QDir dir2(QString::fromUtf8(cMacroPath.c_str()), QString::fromAscii("pre_*.py"));
         QFileInfoList list = dir1.entryInfoList();
         list << dir2.entryInfoList();
         std::vector<std::string> scripts;
