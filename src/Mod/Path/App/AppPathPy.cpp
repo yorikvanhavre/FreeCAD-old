@@ -72,6 +72,11 @@ static PyObject * write (PyObject *self, PyObject *args)
                 Base::PyGILStateLocker lock;
                 pName = PyString_FromString(modpath.c_str());
                 pModule = PyImport_Import(pName);
+                if (pModule == NULL) {
+                    // try to import the file from the user folder
+                    pName = PyString_FromString(Pre);
+                    pModule = PyImport_Import(pName);
+                }
                 if (pModule != NULL) {
                     pFunc = PyObject_GetAttrString(pModule,"parse");
                     if (pFunc && PyCallable_Check(pFunc)) {
@@ -140,6 +145,11 @@ static PyObject * read (PyObject *self, PyObject *args)
         Base::PyGILStateLocker lock;
         pName = PyString_FromString(modpath.c_str());
         pModule = PyImport_Import(pName);
+        if (pModule == NULL) {
+            // try to import the file from the user folder
+            pName = PyString_FromString(Pre);
+            pModule = PyImport_Import(pName);
+        }
         if (pModule != NULL) {
             pFunc = PyObject_GetAttrString(pModule,"parse");
             if (pFunc && PyCallable_Check(pFunc)) {

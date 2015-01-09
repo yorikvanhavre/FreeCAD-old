@@ -58,8 +58,10 @@ static PyObject * open(PyObject *self, PyObject *args)
     PY_TRY {
         std::string path = App::GetApplication().getHomePath();
         path += "Mod/Path/PathScripts/";
-        QDir dir(QString::fromUtf8(path.c_str()), QString::fromAscii("pre_*.py"));
-        QFileInfoList list = dir.entryInfoList();
+        QDir dir1(QString::fromUtf8(path.c_str()), QString::fromAscii("pre_*.py"));
+        QDir dir2(QString::fromUtf8(App::Application::Config()["UserAppData"].c_str()), QString::fromAscii("pre_*.py"));
+        QFileInfoList list = dir1.entryInfoList();
+        list << dir2.entryInfoList();
         std::vector<std::string> scripts;
         for (int i = 0; i < list.size(); ++i) {
             QFileInfo fileInfo = list.at(i);
@@ -98,8 +100,10 @@ static PyObject * importer(PyObject *self, PyObject *args)
     PY_TRY {
         std::string path = App::GetApplication().getHomePath();
         path += "Mod/Path/PathScripts/";
-        QDir dir(QString::fromUtf8(path.c_str()), QString::fromAscii("pre_*.py"));
-        QFileInfoList list = dir.entryInfoList();
+        QDir dir1(QString::fromUtf8(path.c_str()), QString::fromAscii("pre_*.py"));
+        QDir dir2(QString::fromUtf8(App::Application::Config()["UserAppData"].c_str()), QString::fromAscii("pre_*.py"));
+        QFileInfoList list = dir1.entryInfoList();
+        list << dir2.entryInfoList();
         std::vector<std::string> scripts;
         for (int i = 0; i < list.size(); ++i) {
             QFileInfo fileInfo = list.at(i);
@@ -153,8 +157,10 @@ static PyObject * exporter(PyObject *self, PyObject *args)
             App::DocumentObject* obj = static_cast<App::DocumentObjectPy*>(item)->getDocumentObjectPtr();
             std::string path = App::GetApplication().getHomePath();
             path += "Mod/Path/PathScripts/";
-            QDir dir(QString::fromUtf8(path.c_str()), QString::fromAscii("post_*.py"));
-            QFileInfoList list = dir.entryInfoList();
+            QDir dir1(QString::fromUtf8(path.c_str()), QString::fromAscii("post_*.py"));
+            QDir dir2(QString::fromUtf8(App::Application::Config()["UserAppData"].c_str()), QString::fromAscii("post_*.py"));
+            QFileInfoList list = dir1.entryInfoList();
+            list << dir2.entryInfoList();
             std::vector<std::string> scripts;
             for (int i = 0; i < list.size(); ++i) {
                 QFileInfo fileInfo = list.at(i);
