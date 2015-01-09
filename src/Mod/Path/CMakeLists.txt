@@ -19,11 +19,11 @@ SET(PathScripts_SRCS
     PathScripts/heeks_funcs.py
     PathScripts/parseGroups.py
     PathScripts/toolpathparams.py
+    PathScripts/PostUtils.py
     PathScripts/pre_example.py
+    PathScripts/pre_opensbp.py
+    PathScripts/post_linuxcnc.py
     PathScripts/post_example.py
-    PathScripts/post_example2.py
-    PathScripts/post_example3.py
-    PathScripts/post_editor.py
     PathScripts/TooltableEditor.py
     PathScripts/PathProfile.py
     PathScripts/PathPocket.py
