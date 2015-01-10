@@ -37,6 +37,7 @@
 #include <App/DocumentObjectPy.h>
 
 #include <Gui/Command.h>
+#include <Gui/WaitCursor.h>
 
 #include "ViewProviderPath.h"
 #include "DlgProcessorChooser.h"
@@ -54,6 +55,8 @@ static PyObject * open(PyObject *self, PyObject *args)
     Base::FileInfo fi(EncodedName);
     if (!fi.exists())
         Py_Error(Base::BaseExceptionFreeCADError, "File not found");
+    Gui::WaitCursor wc;
+    wc.restoreCursor();
 
     PY_TRY {
         std::string path = App::GetApplication().getHomePath();
@@ -98,6 +101,8 @@ static PyObject * importer(PyObject *self, PyObject *args)
     Base::FileInfo fi(EncodedName);
     if (!fi.exists())
         Py_Error(Base::BaseExceptionFreeCADError, "File not found");
+    Gui::WaitCursor wc;
+    wc.restoreCursor();
 
     PY_TRY {
         std::string path = App::GetApplication().getHomePath();
@@ -149,6 +154,8 @@ static PyObject * exporter(PyObject *self, PyObject *args)
         return NULL;
     std::string EncodedName = std::string(Name);
     PyMem_Free(Name);
+    Gui::WaitCursor wc;
+    wc.restoreCursor();
 
     PY_TRY {
         Py::Sequence list(object);
