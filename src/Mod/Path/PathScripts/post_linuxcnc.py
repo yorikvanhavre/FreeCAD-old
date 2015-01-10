@@ -39,23 +39,24 @@ another string, which is properly formatted GCode.
 
 import datetime
 now = datetime.datetime.now()
-from PathScripts import post_editor
+from PathScripts import PostUtils
 
-OUTPUT_COMMENTS = False
+OUTPUT_COMMENTS = True
+OUTPUT_HEADER = True
+OUTPUT_LINE_NUMBERS = False
 SHOW_EDITOR = True
-USE_LINE_NUMBERS = True
 MODAL = False #if true commands are suppressed if the same as previous line.
 COMMAND_SPACE = ""
-
 LINENR = 100 #line number starting value
 
+
 #Preamble text will appear at the beginning of the GCODE output file.
-PREAMBLE = '''G17 G21 G80 G40 G90
+PREAMBLE = '''G17 G21 G90
 '''
 #Postamble text will appear following the last operation.
 POSTAMBLE = '''M05
 G00 X-1.0 Y1.0
-G17 G80 G40 G90
+G17 G90
 M2
 '''
  
@@ -69,17 +70,14 @@ POST_OPERATION = '''
 
 '''
 
-def fmt(val): 
-    num = eval(val)
-    return format(num, '.4f')
-
-def ffmt(val):
-    num = eval(val)
-    return format(num, '.2f')
+#Tool Change commands will be inserted before a tool change
+TOOL_CHANGE = '''(A tool change)
+(happens here)
+'''
 
 def linenumber():
     global LINENR
-    if USE_LINE_NUMBERS == True:
+    if OUTPUT_LINE_NUMBERS == True:
         LINENR += 10 
         return "N" + str(LINENR) + " "
     return ""
@@ -89,54 +87,89 @@ def parse(inputstring):
     print "postprocessing..."
     
     output = ""
+    lastcommand = None
+
+    #params = ['X','Y','Z','A','B','I','J','K','F','S'] #This list control the order of parameters
+    params = ['X','Y','Z','A','B','I','J','F','S'] #linuxcnc doesn't want K properties on XY plane  Arcs need work.
     
-    # write some stuff first
-    if OUTPUT_COMMENTS:
+    # write header
+    if OUTPUT_HEADER:
         output += linenumber() + "(Exported by FreeCAD)\n"
         output += linenumber() + "(Post Processor: " + __name__ +")\n"
         output += linenumber() + "(Output Time:"+str(now)+")\n"
+    
     #Write the preamble 
     if OUTPUT_COMMENTS: output += linenumber() + "(begin preamble)\n"
     for line in PREAMBLE.splitlines(True):
         output += linenumber() + line
 
     lastcommand = None
-    
+
     # treat the input line by line
     lines = inputstring.splitlines(True)
     for line in lines:
-        wordlist = [a.strip() for a in line.split(" ")]
-        
-        # if modal only print the command if it is not the same as the last one
-        command = wordlist[0]
-        if MODAL == False:
+        commandline = PostUtils.stringsplit(line)
+        outstring = []
+        command = commandline['command']
+        outstring.append(command) 
+        # if modal: only print the command if it is not the same as the last one
+        if MODAL == True:
             if command == lastcommand:
-                wordlist.pop(0) 
+                outstring.pop(0) 
 
-        #remove the 'k' words.  Ask Dan about this
-        indices = [i for i, s in enumerate(wordlist) if 'K' in s]
-        if len(indices) <> 0:
-            wordlist.pop(indices[0])
+        # Now add the remaining parameters in order
+        for param in params:
+            if commandline[param]: 
+                if param == 'F': 
+                    outstring.append(param + format(eval(commandline[param]), '.2f'))
+                else:
+                    outstring.append(param + format(eval(commandline[param]), '.4f'))
+        
 
         # store the latest command
         lastcommand = command
 
-        #Insert a line number and newline 
-        if USE_LINE_NUMBERS: wordlist.insert(0,(linenumber()))
-        wordlist.append("\n")
+        # Check for Tool Change: 
+        if command == 'M6':
+            if OUTPUT_COMMENTS: output += "(begin toolchange)\n" 
+            for line in TOOL_CHANGE.splitlines(True):
+                output += linenumber() + line
 
-        #dump to output
-        for w in wordlist:
-            output += w + COMMAND_SPACE
+        if command == "message":
+          if OUTPUT_COMMENTS == False:
+            outstring = []
+          else:
+            outstring.pop(0) #remove the command
 
-    # write some more stuff at the end
+        #prepend a line number and append a newline
+        if len(outstring) >= 1:
+            if OUTPUT_LINE_NUMBERS: 
+                outstring.insert(0,(linenumber()))
+            outstring.append("\n")
+
+            #append the line to the final output
+            for w in outstring:
+                output += w + COMMAND_SPACE
+    
+    # write some stuff at the end
     if OUTPUT_COMMENTS: output += "(begin postamble)\n" 
     for line in POSTAMBLE.splitlines(True):
         output += linenumber() + line
 
+    if SHOW_EDITOR:
+        dia = PostUtils.GCodeEditorDialog()
+        dia.editor.setText(output)
+        result = dia.exec_()
+        if result:
+            final = dia.editor.toPlainText()
+        else:
+            final = output
+    else:
+        final = output
+      
     print "done postprocessing."
-    return output
-
-
-
+    return final
+   
+    
 print __name__ + " gcode postprocessor loaded."
+
