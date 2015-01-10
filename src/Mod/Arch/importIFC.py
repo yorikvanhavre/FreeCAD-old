@@ -115,7 +115,6 @@ def explore(filename=None,toplevel="IfcRoot"):
         print "File not found"
         return
 
-    ifcopenshell.clean()
     ifc = ifcopenshell.open(filename)
     tree = QtGui.QTreeWidget()
     tree.setColumnCount(3)
@@ -238,13 +237,15 @@ def insert(filename,docname,skip=[]):
     FreeCAD.ActiveDocument = doc
     
     global ifcfile # keeping global for debugging purposes
-    ifcopenshell.clean()
     if isinstance(filename,unicode): 
         import sys #workaround since ifcopenshell currently can't handle unicode filenames
         filename = filename.encode(sys.getfilesystemencoding())
     ifcfile = ifcopenshell.open(filename)
-    shape_attributes = ifcopenshell.SEW_SHELLS
-    if SEPARATE_OPENINGS: shape_attributes += ifcopenshell.DISABLE_OPENING_SUBTRACTIONS
+    from ifcopenshell import geom
+    settings = ifcopenshell.geom.settings()
+    settings.set(settings.USE_BREP_DATA,True)
+    if SEPARATE_OPENINGS: 
+        settings.set(settings.DISABLE_OPENING_SUBTRACTIONS,True)
     sites = ifcfile.by_type("IfcSite")
     buildings = ifcfile.by_type("IfcBuilding")
     floors = ifcfile.by_type("IfcBuildingStorey")
@@ -264,7 +265,8 @@ def insert(filename,docname,skip=[]):
         subtractions.append([r.RelatedOpeningElement.id(), r.RelatingBuildingElement.id()])
     for r in ifcfile.by_type("IfcRelDefinesByProperties"):
         for obj in r.RelatedObjects:
-            properties.setdefault(obj.id(),[]).extend([e.id() for e in r.RelatingPropertyDefinition.HasProperties])
+            if r.RelatingPropertyDefinition.is_a("IfcPropertySet"):
+                properties.setdefault(obj.id(),[]).extend([e.id() for e in r.RelatingPropertyDefinition.HasProperties])
 
     # products
     for product in products:
@@ -279,8 +281,11 @@ def insert(filename,docname,skip=[]):
         if (ptype == "IfcOpeningElement") and (not SEPARATE_OPENINGS): continue
         if pid in skip: continue
         if ptype in SKIP: continue
-        
-        brep = ifcopenshell.create_shape(product,shape_attributes)
+        print "creating ", product
+        try:
+            brep = ifcopenshell.geom.create_shape(settings,product).geometry.brep_data
+        except:
+            continue
         if brep:
             shape = Part.Shape()
             shape.importBrepFromString(brep)
@@ -299,6 +304,9 @@ def insert(filename,docname,skip=[]):
                     tr = dict((v,k) for k, v in translationtable.iteritems())
                     if r in tr.keys():
                         r = tr[r]
+                    # remove the "StandardCase"
+                    if "StandardCase" in r:
+                        r = r[:-12]
                     obj.Role = r
                 except:
                     pass
@@ -322,8 +330,11 @@ def insert(filename,docname,skip=[]):
                 a = obj.IfcAttributes
                 for p in properties[pid]:
                     o = ifcfile[p]
-                    a[o.Name] = str(o.NominalValue)
+                    if o.is_a("IfcPropertySingleValue"):
+                        a[o.Name] = str(o.NominalValue)
                 obj.IfcAttributes = a
+            
+    print "all done"
 
     # subtractions
     if SEPARATE_OPENINGS:
