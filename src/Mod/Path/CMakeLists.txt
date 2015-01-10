@@ -20,10 +20,10 @@ SET(PathScripts_SRCS
     PathScripts/parseGroups.py
     PathScripts/toolpathparams.py
     PathScripts/PostUtils.py
-    PathScripts/pre_example.py
-    PathScripts/pre_opensbp.py
-    PathScripts/post_linuxcnc.py
-    PathScripts/post_example.py
+    PathScripts/example_pre.py
+    PathScripts/opensbp_pre.py
+    PathScripts/linuxcnc_post.py
+    PathScripts/example_post.py
     PathScripts/TooltableEditor.py
     PathScripts/PathProfile.py
     PathScripts/PathPocket.py
