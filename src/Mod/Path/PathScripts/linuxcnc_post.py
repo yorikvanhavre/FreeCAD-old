@@ -90,7 +90,7 @@ def parse(inputstring):
     lastcommand = None
 
     #params = ['X','Y','Z','A','B','I','J','K','F','S'] #This list control the order of parameters
-    params = ['X','Y','Z','A','B','I','J','F','S'] #linuxcnc doesn't want K properties on XY plane  Arcs need work.
+    params = ['X','Y','Z','A','B','I','J','F','S','T'] #linuxcnc doesn't want K properties on XY plane  Arcs need work.
     
     # write header
     if OUTPUT_HEADER:
@@ -122,6 +122,8 @@ def parse(inputstring):
             if commandline[param]: 
                 if param == 'F': 
                     outstring.append(param + format(eval(commandline[param]), '.2f'))
+                elif param == 'T':
+                    outstring.append(param + (commandline[param]))
                 else:
                     outstring.append(param + format(eval(commandline[param]), '.4f'))
         

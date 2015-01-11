@@ -101,7 +101,7 @@ class GCodeEditorDialog(QtGui.QDialog):
         self.buttons.rejected.connect(self.reject)
 
 def stringsplit(commandline):
-    returndict = {'command':None, 'X':None, 'Y':None, 'Z':None, 'A':None, 'B':None, 'F':None, 'S':None, 'I':None, 'J':None,'K':None, 'txt': None}
+    returndict = {'command':None, 'X':None, 'Y':None, 'Z':None, 'A':None, 'B':None, 'F':None, 'T':None, 'S':None, 'I':None, 'J':None,'K':None, 'txt': None}
     wordlist = [a.strip() for a in commandline.split(" ")]
     if wordlist[0][0] == '(':
         returndict['command'] = 'message'
