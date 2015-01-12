@@ -32,6 +32,7 @@ SET(PathScripts_SRCS
     PathScripts/PathHop.py
     PathScripts/PathUtils.py
     PathScripts/PathSelection.py
+    PathScripts/PathFixture.py
 )
 
 ADD_CUSTOM_TARGET(PathScripts ALL
