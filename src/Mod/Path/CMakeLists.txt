@@ -15,14 +15,9 @@ INSTALL(
 
 SET(PathScripts_SRCS
     PathScripts/__init__.py
-    PathScripts/find_outer_profile.py
-    PathScripts/heeks_funcs.py
-    PathScripts/parseGroups.py
-    PathScripts/toolpathparams.py
     PathScripts/PostUtils.py
     PathScripts/example_pre.py
     PathScripts/opensbp_pre.py
-    PathScripts/linuxcnc_post.py
     PathScripts/example_post.py
     PathScripts/TooltableEditor.py
     PathScripts/PathProfile.py
