@@ -19,6 +19,7 @@ SET(PathScripts_SRCS
     PathScripts/example_pre.py
     PathScripts/opensbp_pre.py
     PathScripts/example_post.py
+    PathScripts/linuxcnc_post.py
     PathScripts/TooltableEditor.py
     PathScripts/PathProfile.py
     PathScripts/PathPocket.py
