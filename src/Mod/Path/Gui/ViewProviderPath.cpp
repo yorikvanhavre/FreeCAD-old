@@ -306,30 +306,32 @@ void ViewProviderPath::updateData(const App::Property* prop)
             }
         }
         
-        pcLineCoords->point.deleteValues(0);
-        pcLineCoords->point.setNum(points.size());
-        std::vector<int> ei;
-        for(unsigned int i=0;i<points.size();i++) {
-            pcLineCoords->point.set1Value(i,points[i].x,points[i].y,points[i].z);
-            ei.push_back(i);
+        if (!points.empty()) {
+            pcLineCoords->point.deleteValues(0);
+            pcLineCoords->point.setNum(points.size());
+            std::vector<int> ei;
+            for(unsigned int i=0;i<points.size();i++) {
+                pcLineCoords->point.set1Value(i,points[i].x,points[i].y,points[i].z);
+                ei.push_back(i);
+            }
+            int* segs = &ei[0];
+            pcLines->coordIndex.setNum(points.size());
+            pcLines->coordIndex.setValues(0,points.size(),(const int32_t*)segs);
+    
+            pcMarkerCoords->point.deleteValues(0);
+            
+            // putting one marker at each node makes the display awfully slow
+            // leaving just one at the origin for now:
+            pcMarkerCoords->point.setNum(1);
+            pcMarkerCoords->point.set1Value(0,markers[0].x,markers[0].y,markers[0].z);
+            //pcMarkerCoords->point.setNum(markers.size());
+            //for(unsigned int i=0;i<markers.size();i++)
+            //    pcMarkerCoords->point.set1Value(i,markers[i].x,markers[i].y,markers[i].z);
+            
+            // update the coloring after we changed the color vector
+            NormalColor.touch();
+            recomputeBoundingBox();
         }
-        int* segs = &ei[0];
-        pcLines->coordIndex.setNum(points.size());
-        pcLines->coordIndex.setValues(0,points.size(),(const int32_t*)segs);
-
-        pcMarkerCoords->point.deleteValues(0);
-        
-        // putting one marker at each node makes the display awfully slow
-        // leaving just one at the origin for now:
-        pcMarkerCoords->point.setNum(1);
-        pcMarkerCoords->point.set1Value(0,markers[0].x,markers[0].y,markers[0].z);
-        //pcMarkerCoords->point.setNum(markers.size());
-        //for(unsigned int i=0;i<markers.size();i++)
-        //    pcMarkerCoords->point.set1Value(i,markers[i].x,markers[i].y,markers[i].z);
-        
-        // update the coloring after we changed the color vector
-        NormalColor.touch();
-        recomputeBoundingBox();
         
     } else if ( prop == &pcPathObj->Placement) {
         
