@@ -69,75 +69,75 @@ def parse(inputstring):
         if not l:
             # discard empty lines
             continue
-        if l[0] in ["'"]:
+        if l[0] in ["'","&"]:
             # discard comment and other non strictly gcode lines
             if l[0:9] == "'New Path":
-              # starting new path
-              if any (x in output for x in movecommand): #make sure the path has at least one move command.
-                return_output.append(output)
-                output = ""
+                # starting new path
+                if any (x in output for x in movecommand): #make sure the path has at least one move command.
+                    return_output.append(output)
+                    output = ""
             continue
 
         words = [a.strip() for a in l.split(",")]
         words[0] = words[0].upper()
         if words[0] in ["J2","J3","J4","J5","M2","M3","M4","M5"]: #multi-axis jogs and moves
-                if words[0][0] == 'J': #jog move
-                        s = "G0 "
-                else:   #feed move
-                        s = "G1 "
-                speed = lastfeedspeed["XY"] 
-                for i  in range (1, len(words)):
-                        if words [i] == '':
-                                if last[AXIS[i-1]] == None:
-                                        continue
-                                else:
-                                        s += AXIS[i-1] + last[AXIS[i-1]]
-                        else:
-                                s += AXIS[i-1] + words[i]
-                                last[AXIS[i-1]] = words[i]
-                output += s +" F" + speed + '\n'
+            if words[0][0] == 'J': #jog move
+                s = "G0 "
+            else:   #feed move
+                s = "G1 "
+            speed = lastfeedspeed["XY"] 
+            for i  in range (1, len(words)):
+                if words [i] == '':
+                    if last[AXIS[i-1]] == None:
+                        continue
+                    else:
+                        s += AXIS[i-1] + last[AXIS[i-1]]
+                else:
+                    s += AXIS[i-1] + words[i]
+                    last[AXIS[i-1]] = words[i]
+            output += s +" F" + speed + '\n'
 
-	if words[0] in ["JA","JB","JX","JY","JZ","MA","MB","MX","MY","MZ"]: #single axis jogs and moves
-                if words[0][0] == 'J': #jog move
-                        s = "G0 "
-                        if words[0][1] in ['X','Y']:
-                            speed = lastrapidspeed["XY"]
-                        else:
-                            speed = lastrapidspeed[words[0][1]]
+        if words[0] in ["JA","JB","JX","JY","JZ","MA","MB","MX","MY","MZ"]: #single axis jogs and moves
+            if words[0][0] == 'J': #jog move
+                s = "G0 "
+                if words[0][1] in ['X','Y']:
+                    speed = lastrapidspeed["XY"]
+                else:
+                    speed = lastrapidspeed[words[0][1]]
 
-                else:   #feed move
-                        s = "G1 "
-                        if words[0][1] in ['X','Y']:
-                            speed = lastfeedspeed["XY"]
-                        else:
-                            speed = lastfeedspeed[words[0][1]]
+            else:   #feed move
+                s = "G1 "
+                if words[0][1] in ['X','Y']:
+                    speed = lastfeedspeed["XY"]
+                else:
+                    speed = lastfeedspeed[words[0][1]]
             
 
-                last[words[0][1]] = words[1]
-		output += s + words[0][1] + str(words[1])  + " F" + speed + "\n"
+            last[words[0][1]] = words[1]
+            output += s + words[0][1] + str(words[1])  + " F" + speed + "\n"
 
         if words[0] in ["JS"]: #set jog speed
-                for i  in range (1, len(words)):
-                        if words [i] == '':
-                            continue
-                        else:
-                            lastrapidspeed[SPEEDS[i-1]] = words[i]
+            for i  in range (1, len(words)):
+                if words [i] == '':
+                    continue
+                else:
+                    lastrapidspeed[SPEEDS[i-1]] = words[i]
 
-	if words[0] in ["MD"]: #move distance with distance and angle.
-		#unsupported at this time
-		continue
-	if words[0] in ["MH"]: #move home
-		#unsupported at this time
-		continue
-	if words[0] in ["MS"]: #set move speed
-                for i  in range (1, len(words)):
-                        if words [i] == '':
-                            continue
-                        else:
-                            lastfeedspeed[SPEEDS[i-1]] = words[i]
-	if words[0] in ["MO"]: #motors off
-		#unsupported at this time
-		continue
+        if words[0] in ["MD"]: #move distance with distance and angle.
+            #unsupported at this time
+            continue
+        if words[0] in ["MH"]: #move home
+            #unsupported at this time
+            continue
+        if words[0] in ["MS"]: #set move speed
+            for i  in range (1, len(words)):
+                if words [i] == '':
+                    continue
+                else:
+                    lastfeedspeed[SPEEDS[i-1]] = words[i]
+        if words[0] in ["MO"]: #motors off
+            #unsupported at this time
+            continue
 
         if words[0] in ["TR"]: #Setting spindle speed
             if  int(words[1]) < 0:
@@ -154,19 +154,17 @@ def parse(inputstring):
 
             else:
                 if words[7] == "1": #CW
-                    s = "G02"
+                    s = "G2"
                 else: #CCW
-                    s = "G03"
-
-                s += " X" + words[2] + " Y" + words[3] + " I" + words[4] + " J" + words[5] + " F=" + str(lastfeedspeed["XY"])
-                print "arc:" + s
+                    s = "G3"
+                s += " X" + words[2] + " Y" + words[3] + " I" + words[4] + " J" + words[5] + " F" + str(lastfeedspeed["XY"])
                 output  += s + '\n'
-    print "done preprocessing."
 
     #Make sure all appended paths have at least one move command.
     if any (x in output for x in movecommand):
-      return_output.append(output)
-    
+        return_output.append(output)
+        print "done preprocessing."
+
     return return_output
 
 print __name__ + " gcode preprocessor loaded."
