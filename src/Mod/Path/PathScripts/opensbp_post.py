@@ -97,21 +97,17 @@ def feedrate(commandline):
         newX = CurrentState['X']
     else:
         newX = eval(commandline['X'])
-    print "newX: "+ str(newX)
 
     if commandline['Y'] == None: 
         newY = CurrentState['Y']
     else:
         newY = eval(commandline['Y'])
 
-    print "newY: " + str(newY)
     if commandline['Z'] == None: 
         newZ = CurrentState['Z']
     else:
         newZ = eval(commandline['Z'])
 
-    print "newZ: " + str(newZ)
-        
     if newX == CurrentState['X'] and newY == CurrentState['Y']:
         # ZMove only
         AXISMOVE = "Z"
@@ -169,11 +165,24 @@ def tool_change(commandline):
     if OUTPUT_COMMENTS: txt += "'a tool change happens now\n"
     for line in TOOL_CHANGE.splitlines(True):
         txt += line
-    txt += "&ToolName = <somehow the tool name would go here>\n"   
+    txt += "&ToolName = " + commandline['T']
+    txt += "\n"   
+    txt += "&Tool=" + commandline['T']
+    txt += "\n"
+
     return txt
 
 def comment(commandline):
     print "a comment"
+
+def spindle(commandline):
+    txt =""
+    if commandline['command'] == "M3": #CW
+        pass
+    else:
+        pass
+    txt += "TR," + commandline['S']
+    return txt
 
 #Supported Commands
 scommands = {"G0": move,
@@ -181,6 +190,7 @@ scommands = {"G0": move,
     "G2": arc,
     "G3": arc,
     "M6": tool_change,
+    "M3": spindle,
     "message": comment
     }
 
