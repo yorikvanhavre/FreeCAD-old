@@ -45,6 +45,7 @@ FeatureProject::FeatureProject()
     ADD_PROPERTY_TYPE( Description, (""),                "Machine",App::Prop_None,"An optional description of this machine");
     ADD_PROPERTY_TYPE( FeedRate,    (0),                 "Machine",App::Prop_None,"The default feed rate of this machine");
     ADD_PROPERTY_TYPE( SpindleSpeed,(0),                 "Machine",App::Prop_None,"The default spindle speed of this machine");
+    ADD_PROPERTY_TYPE( SafeHeight,  (0),                 "Machine",App::Prop_None,"The safe height of this machine");
 
 }
 
