@@ -47,6 +47,7 @@ public:
     App::PropertyString       Description;
     App::PropertySpeed        FeedRate;
     App::PropertySpeed        SpindleSpeed;
+    App::PropertyLength       SafeHeight;
 
     /// returns the type name of the ViewProvider
     virtual const char* getViewProviderName(void) const {
