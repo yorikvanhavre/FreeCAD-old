@@ -78,14 +78,29 @@ static PyObject * open(PyObject *self, PyObject *args)
             Py_Return;
         }
         selected = Dlg.getSelected();
-        App::Document *pcDoc = App::GetApplication().newDocument("Unnamed");
+    
+        std::ostringstream pre;
         std::ostringstream cmd;
-        cmd << "Path.read(\"" << EncodedName << "\",\"" << pcDoc->getName() << "\"";
-        if (!selected.empty())
-            cmd << ",\"" << selected << "\"";
-        cmd << ")";
-        Gui::Command::runCommand(Gui::Command::Gui,"import Path");
-        Gui::Command::runCommand(Gui::Command::Gui,cmd.str().c_str());
+        if (selected.empty()) {
+            App::Document *pcDoc = App::GetApplication().newDocument("Unnamed");
+            Gui::Command::runCommand(Gui::Command::Gui,"import Path");
+            cmd << "Path.read(\"" << EncodedName << "\",\"" << pcDoc->getName() << "\")";
+            Gui::Command::runCommand(Gui::Command::Gui,cmd.str().c_str());
+        } else {
+            for (int i = 0; i < list.size(); ++i) {
+                QFileInfo fileInfo = list.at(i);
+                if (fileInfo.baseName().toStdString() == selected) {
+                    if (fileInfo.absoluteFilePath().contains(QString::fromAscii("PathScripts"))) {
+                        pre << "from PathScripts import " << selected;
+                    } else {
+                        pre << "import " << selected;
+                    }
+                    Gui::Command::runCommand(Gui::Command::Gui,pre.str().c_str());
+                    cmd << selected << ".open(\"" << EncodedName << "\")";
+                    Gui::Command::runCommand(Gui::Command::Gui,cmd.str().c_str());
+                }
+            }
+        }
     } PY_CATCH;
     Py_Return;
 }
@@ -135,13 +150,27 @@ static PyObject * importer(PyObject *self, PyObject *args)
             pcDoc = App::GetApplication().newDocument(DocName);
         }
 
+        std::ostringstream pre;
         std::ostringstream cmd;
-        cmd << "Path.read(\"" << EncodedName << "\",\"" << pcDoc->getName() << "\"";
-        if (!selected.empty())
-            cmd << ",\"" << selected << "\"";
-        cmd << ")";
-        Gui::Command::runCommand(Gui::Command::Gui,"import Path");
-        Gui::Command::runCommand(Gui::Command::Gui,cmd.str().c_str());
+        if (selected.empty()) {
+            Gui::Command::runCommand(Gui::Command::Gui,"import Path");
+            cmd << "Path.read(\"" << EncodedName << "\",\"" << pcDoc->getName() << "\")";
+            Gui::Command::runCommand(Gui::Command::Gui,cmd.str().c_str());
+        } else {
+            for (int i = 0; i < list.size(); ++i) {
+                QFileInfo fileInfo = list.at(i);
+                if (fileInfo.baseName().toStdString() == selected) {
+                    if (fileInfo.absoluteFilePath().contains(QString::fromAscii("PathScripts"))) {
+                        pre << "from PathScripts import " << selected;
+                    } else {
+                        pre << "import " << selected;
+                    }
+                    Gui::Command::runCommand(Gui::Command::Gui,pre.str().c_str());
+                    cmd << selected << ".insert(\"" << EncodedName << "\",\"" << pcDoc->getName() << "\")";
+                    Gui::Command::runCommand(Gui::Command::Gui,cmd.str().c_str());
+                }
+            }
+        }
     } PY_CATCH;
     Py_Return;
 }
@@ -158,41 +187,59 @@ static PyObject * exporter(PyObject *self, PyObject *args)
     wc.restoreCursor();
 
     PY_TRY {
-        Py::Sequence list(object);
-        if (list.size() == 0) {
+        Py::Sequence objlist(object);
+        if (objlist.size() == 0)
+            Py_Error(Base::BaseExceptionFreeCADError, "No object to export");
+        std::string path = App::GetApplication().getHomePath();
+        path += "Mod/Path/PathScripts/";
+        QDir dir1(QString::fromUtf8(path.c_str()), QString::fromAscii("*_post.py"));
+        std::string cMacroPath = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Macro")
+            ->GetASCII("MacroPath",App::Application::getUserAppDataDir().c_str());
+        QDir dir2(QString::fromUtf8(cMacroPath.c_str()), QString::fromAscii("*_post.py"));
+        QFileInfoList list = dir1.entryInfoList();
+        list << dir2.entryInfoList();
+        std::vector<std::string> scripts;
+        for (int i = 0; i < list.size(); ++i) {
+            QFileInfo fileInfo = list.at(i);
+            scripts.push_back(fileInfo.baseName().toStdString());
+        }
+        std::string selected;
+        PathGui::DlgProcessorChooser Dlg(scripts);
+        if (Dlg.exec() != QDialog::Accepted) {
             Py_Return;
-        } else if (list.size() > 1)
-            Py_Error(Base::BaseExceptionFreeCADError, "Unable to export more than one object to a GCode file");
-        PyObject* item = list[0].ptr();
-        if (PyObject_TypeCheck(item, &(App::DocumentObjectPy::Type))) {
-            App::DocumentObject* obj = static_cast<App::DocumentObjectPy*>(item)->getDocumentObjectPtr();
-            std::string path = App::GetApplication().getHomePath();
-            path += "Mod/Path/PathScripts/";
-            QDir dir1(QString::fromUtf8(path.c_str()), QString::fromAscii("*_post.py"));
-            std::string cMacroPath = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Macro")
-                ->GetASCII("MacroPath",App::Application::getUserAppDataDir().c_str());
-            QDir dir2(QString::fromUtf8(cMacroPath.c_str()), QString::fromAscii("*_post.py"));
-            QFileInfoList list = dir1.entryInfoList();
-            list << dir2.entryInfoList();
-            std::vector<std::string> scripts;
-            for (int i = 0; i < list.size(); ++i) {
-                QFileInfo fileInfo = list.at(i);
-                scripts.push_back(fileInfo.baseName().toStdString());
+        }
+        selected = Dlg.getSelected();
+            
+        std::ostringstream pre;
+        std::ostringstream cmd;
+        if (selected.empty()) {
+            if (objlist.size() > 1) {
+                Py_Error(Base::BaseExceptionFreeCADError, "Cannot export more than one object without using a post script");
             }
-            std::string selected;
-            PathGui::DlgProcessorChooser Dlg(scripts);
-            if (Dlg.exec() != QDialog::Accepted) {
+            PyObject* item = objlist[0].ptr();
+            if (PyObject_TypeCheck(item, &(App::DocumentObjectPy::Type))) {
+                App::DocumentObject* obj = static_cast<App::DocumentObjectPy*>(item)->getDocumentObjectPtr();
+                App::Document* doc = obj->getDocument();
+                Gui::Command::runCommand(Gui::Command::Gui,"import Path");
+                cmd << "Path.write(FreeCAD.getDocument(\"" << doc->getName() << "\").getObject(\"" << obj->getNameInDocument() << "\"),\"" << EncodedName << "\")";            
+                Gui::Command::runCommand(Gui::Command::Gui,cmd.str().c_str());
+            } else {
                 Py_Return;
             }
-            selected = Dlg.getSelected();
-            std::ostringstream cmd;
-            App::Document* doc = obj->getDocument();
-            cmd << "Path.write(FreeCAD.getDocument(\"" << doc->getName() << "\").getObject(\"" << obj->getNameInDocument() << "\"),\"" << EncodedName << "\"";
-            if (!selected.empty())
-                cmd << ",\"" << selected << "\"";
-            cmd << ")";
-            Gui::Command::runCommand(Gui::Command::Gui,"import Path");
-            Gui::Command::runCommand(Gui::Command::Gui,cmd.str().c_str());
+        } else {
+            for (int i = 0; i < list.size(); ++i) {
+                QFileInfo fileInfo = list.at(i);
+                if (fileInfo.baseName().toStdString() == selected) {
+                    if (fileInfo.absoluteFilePath().contains(QString::fromAscii("PathScripts"))) {
+                        pre << "from PathScripts import " << selected;
+                    } else {
+                        pre << "import " << selected;
+                    }
+                    Gui::Command::runCommand(Gui::Command::Gui,pre.str().c_str());
+                    cmd << selected << ".export(__objs__,\"" << EncodedName << "\")";
+                    Gui::Command::runCommand(Gui::Command::Gui,cmd.str().c_str());
+                }
+            }
         }
     } PY_CATCH;
     Py_Return;

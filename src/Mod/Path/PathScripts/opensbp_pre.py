@@ -50,6 +50,33 @@ Many other OpenSBP commands not handled
 AXIS = 'X','Y','Z','A','B'  #OpenSBP always puts multiaxis move parameters in this order
 SPEEDS = 'XY','Z','A','B'
 
+
+import os, Path
+
+# to distinguish python built-in open function from the one declared below
+if open.__module__ == '__builtin__':
+    pythonopen = open
+
+
+def open(filename):
+    "called when freecad opens a file."
+    docname = os.path.splitext(os.path.basename(filename))[0]
+    doc = FreeCAD.newDocument(docname)
+    insert(filename,doc.Name)
+
+
+def insert(filename,docname):
+    "called when freecad imports a file"
+    gfile = pythonopen(filename)
+    gcode = gfile.read()
+    gfile.close()
+    gcode = parse(gcode)
+    doc = FreeCAD.getDocument(docname)
+    obj = doc.addObject("Path::Feature","Path")
+    path = Path.Path(gcode)
+    obj.Path = path
+
+
 def parse(inputstring):
     "parse(inputstring): returns a parsed output string"
     print "preprocessing..."
