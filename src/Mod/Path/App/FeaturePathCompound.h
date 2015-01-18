@@ -27,6 +27,7 @@
 #include <App/GeoFeature.h>
 #include <App/PropertyFile.h>
 #include <App/PropertyGeo.h>
+#include <App/PropertyUnits.h>
 
 #include "Path.h"
 #include "FeaturePath.h"
@@ -46,6 +47,11 @@ public:
 
     App::PropertyLinkList     Group;
     App::PropertyBool         UsePlacements;
+    App::PropertyString       OperationDescription;
+    App::PropertySpeed        FeedRate;
+    App::PropertyFloat        SpindleSpeed;
+//    App::PropertyLength       SafeHeight;
+    App::PropertyLength       RetractHeight;
 
     /// returns the type name of the ViewProvider
     virtual const char* getViewProviderName(void) const {
