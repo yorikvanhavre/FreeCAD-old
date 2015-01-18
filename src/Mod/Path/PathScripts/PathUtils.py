@@ -199,7 +199,7 @@ def SortPath(wire,Side,radius,clockwise,ZClearance,StepDown,ZStart,ZFinalDepth,f
             n=0
             for e in edgelist:
                 if isSameEdge(e,firstedge):
-                    FreeCAD.Console.PrintMessage('found first edge\n')
+#                    FreeCAD.Console.PrintMessage('found first edge\n')
                     elindex = n
                 n=n+1
             l1 = edgelist[:elindex]

@@ -32,6 +32,7 @@ from GCode.
 '''
 
 import os, Path
+import FreeCAD
 
 # to distinguish python built-in open function from the one declared below
 if open.__module__ == '__builtin__':

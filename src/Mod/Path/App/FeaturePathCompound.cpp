@@ -44,7 +44,7 @@ FeatureCompound::FeatureCompound()
     ADD_PROPERTY_TYPE( FeedRate,    (0),                 "Operation",App::Prop_None,"The feed rate of the paths in these compounded operations");
     ADD_PROPERTY_TYPE( SpindleSpeed,(0),                 "Operation",App::Prop_None,"The spindle speed, in revolutions per minute, of the tool used in these compounded operations");
 //    ADD_PROPERTY_TYPE( SafeHeight,  (0),                 "Operation",App::Prop_None,"The safe height for this operation");
-    ADD_PROPERTY_TYPE( RetractHeight,  (0),                 "Operation",App::Prop_None,"The retract height of tools between compounded operations inside clamping area");
+    ADD_PROPERTY_TYPE( RetractHeight,  (0),                 "Operation",App::Prop_None,"The retract height, above top surface of part, between compounded operations inside clamping area");
 }
 
 FeatureCompound::~FeatureCompound()
