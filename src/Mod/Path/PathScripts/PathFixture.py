@@ -37,16 +37,17 @@ except AttributeError:
 
 class Fixture():
     def __init__(self,obj):
-        obj.addProperty("App::PropertyEnumeration", "Fixture", "Fixture Parameters", "Fixture Offset Number")
-        obj.Fixture = ['G54','G55','G56','G57','G58','G59']
+        obj.addProperty("App::PropertyInteger", "Fixture", "Fixture Parameters", "Fixture Offset Number")
+        obj.Fixture=1
         obj.Proxy = self
 
     def execute(self,obj):
-        obj.Label = obj.Fixture
-        output =""
-        output += obj.Fixture
-        path = Path.Path(output)
+        fixlist = ['G53','G54','G55','G56','G57','G58','G59','G59.1', 'G59.2', 'G59.3', 'G59.4', 'G59.5','G59.6','G59.7', 'G59.8', 'G59.9']
+        if 0>= int(obj.Fixture)<=15:
+            fixture=fixlist[int(obj.Fixture)]
+            path = Path.Path(fixture)
         obj.Path = path
+        obj.Label = "Fixture"+str(obj.Fixture)
 
 class _ViewProviderFixture:
 
