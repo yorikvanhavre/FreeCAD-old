@@ -44,9 +44,7 @@ class Fixture():
     def execute(self,obj):
         fixlist = ['G53','G54','G55','G56','G57','G58','G59','G59.1', 'G59.2', 'G59.3', 'G59.4', 'G59.5','G59.6','G59.7', 'G59.8', 'G59.9']
         fixture=fixlist[int(obj.Fixture)]
-        fcommand = Path.Command(fixture)
-        path = Path.Path([fcommand])
-        obj.Path = path
+        obj.Path = Path.Path(fixture)
         obj.Label = "Fixture"+str(obj.Fixture)
 
 class _ViewProviderFixture:
