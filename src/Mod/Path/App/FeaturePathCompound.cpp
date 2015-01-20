@@ -40,6 +40,11 @@ FeatureCompound::FeatureCompound()
 {
     ADD_PROPERTY_TYPE( Group,         (0),   "Base",Prop_None,"Ordered list of paths to combine");
     ADD_PROPERTY_TYPE( UsePlacements, (false), "Base",Prop_None,"Specifies if the placements of children must be computed");
+    ADD_PROPERTY_TYPE( OperationDescription, (""),                "Operation",App::Prop_None,"An optional description of this compounded operation");
+    ADD_PROPERTY_TYPE( FeedRate,    (0),                 "Operation",App::Prop_None,"The feed rate of the paths in these compounded operations");
+    ADD_PROPERTY_TYPE( SpindleSpeed,(0),                 "Operation",App::Prop_None,"The spindle speed, in revolutions per minute, of the tool used in these compounded operations");
+//    ADD_PROPERTY_TYPE( SafeHeight,  (0),                 "Operation",App::Prop_None,"The safe height for this operation");
+    ADD_PROPERTY_TYPE( RetractHeight,  (0),                 "Operation",App::Prop_None,"The retract height, above top surface of part, between compounded operations inside clamping area");
 }
 
 FeatureCompound::~FeatureCompound()

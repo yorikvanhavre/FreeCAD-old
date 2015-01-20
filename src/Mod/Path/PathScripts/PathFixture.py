@@ -23,84 +23,89 @@
 #***************************************************************************
 ''' Used to create CNC machine fixture offsets such as G54,G55, etc...'''
 
-import FreeCAD
-import Path
+import FreeCAD,FreeCADGui,Path,PathGui
+from PySide import QtCore,QtGui
 
-class FixtureParams():
+# Qt tanslation handling
+try:
+    _encoding = QtGui.QApplication.UnicodeUTF8
+    def translate(context, text, disambig=None):
+        return QtGui.QApplication.translate(context, text, disambig, _encoding)
+except AttributeError:
+    def translate(context, text, disambig=None):
+        return QtGui.QApplication.translate(context, text, disambig)
+
+class Fixture():
     def __init__(self,obj):
-
-        obj.addProperty("App::PropertyEnumeration", "Fixture", "Fixture Parameters", "Fixture Mode")
-        obj.Fixture = ['G54','G55','G56','G57','G58','G59']
+        obj.addProperty("App::PropertyInteger", "Fixture", "Fixture Parameters", "Fixture Offset Number")
+        obj.Fixture=1
         obj.Proxy = self
 
     def execute(self,obj):
-        obj.Label = obj.Fixture
+        fixlist = ['G53','G54','G55','G56','G57','G58','G59','G59.1', 'G59.2', 'G59.3', 'G59.4', 'G59.5','G59.6','G59.7', 'G59.8', 'G59.9']
+        fixture=fixlist[int(obj.Fixture)]
+        obj.Path = Path.Path(fixture)
+        obj.Label = "Fixture"+str(obj.Fixture)
 
-        output =""
-        output += obj.Fixture
-        output +="G91"
-        output +="G0X0Y0Z0"
-        output +="G90"
-        path = Path.Path(output)
-        obj.Path = path
+class _ViewProviderFixture:
 
-class ViewProviderFixtureParams:
-    def __init__(self, obj):
-        "Set this object to the proxy object of the actual view provider"
+    def __init__(self,obj): #mandatory
+#        obj.addProperty("App::PropertyFloat","SomePropertyName","PropertyGroup","Description of this property")
         obj.Proxy = self
 
-    def __getstate__(self):
+    def __getstate__(self): #mandatory
         return None
 
-    def __setstate__(self,state):
+    def __setstate__(self,state): #mandatory
         return None
 
+    def getIcon(self): #optional
+        return ":/icons/Path-Fixture.svg"
 
-    def getIcon(self):
-        return """
-        /* XPM */
-        static char * fixtures_xpm[] = {
-        "16 16 14 1",
-        " 	c None",
-        ".	c #FF0000",
-        "+	c #FE0000",
-        "@	c #0000FF",
-        "#	c #0000FE",
-        "$	c #1900E5",
-            "%	c #BE0040",
-            "&	c #61009D",
-            "*	c #A0005E",
-            "=	c #F90005",
-            "-	c #1400EA",
-            ";	c #3400CA",
-            ">	c #650099",
-            ",	c #AD0051",
-            "                ",
-            "                ",
-            "     ..         ",
-            "                ",
-            "    +  + ..     ",
-            "        .       ",
-            "   +    .  +    ",
-            "                ",
-            "  . @#$% &  .   ",
-            " .    *   *     ",
-            "      = @@-; .  ",
-            ".    ... >,.  . ",
-            "                ",
-            "    ..  +..+....",
-            "                ",
-            "                "};
-                        """
-'''
-f1 = FreeCAD.ActiveDocument.addObject("Path::FeaturePython","FixtureOffset")
-FixtureParams(f1)
-ViewProviderFixtureParams(f1.ViewObject)
-App.activeDocument().recompute()
-'''
+#    def attach(self): #optional
+#        # this is executed on object creation and object load from file
+#        pass
 
-def makeFixture():
-    f1 = FreeCAD.ActiveDocument.addObject("Path::FeaturePython","FixtureOffset")
-    FixtureParams(f1)
-    ViewProviderFixtureParams(f1.ViewObject)
-#    FreeCAD.activeDocument().recompute()
+    def onChanged(self,obj,prop): #optional
+        # this is executed when a property of the VIEW PROVIDER changes
+        pass
+
+    def updateData(self,obj,prop): #optional
+        # this is executed when a property of the APP OBJECT changes
+        pass
+
+    def setEdit(self,vobj,mode): #optional
+        # this is executed when the object is double-clicked in the tree
+        pass
+
+    def unsetEdit(self,vobj,mode): #optional
+        # this is executed when the user cancels or terminates edit mode
+        pass
+
+
+class CommandPathFixture:
+    def GetResources(self):
+        return {'Pixmap'  : 'Path-Fixture',
+                'MenuText': QtCore.QT_TRANSLATE_NOOP("PathFixture","Fixture"),
+                'Accel': "P, F",
+                'ToolTip': QtCore.QT_TRANSLATE_NOOP("PathFixture","Creates a Fixture Offset object")}
+
+    def IsActive(self):
+        return not FreeCAD.ActiveDocument is None
+
+    def Activated(self):
+        FreeCAD.ActiveDocument.openTransaction(translate("PathFixture","Create a Fixture Offset"))
+        FreeCADGui.addModule("PathScripts.PathFixture")
+        FreeCADGui.doCommand('obj = FreeCAD.ActiveDocument.addObject("Path::FeaturePython","Fixture")')
+        FreeCADGui.doCommand('PathScripts.PathFixture.Fixture(obj)')
+        FreeCADGui.doCommand('PathScripts.PathFixture._ViewProviderFixture(obj.ViewObject)')
+#        FreeCADGui.doCommand('obj.ViewObject.Proxy = 0')
+        FreeCAD.ActiveDocument.commitTransaction()
+        FreeCAD.ActiveDocument.recompute()
+
+if FreeCAD.GuiUp: 
+    # register the FreeCAD command
+    FreeCADGui.addCommand('Path_Fixture',CommandPathFixture())
+
+
+FreeCAD.Console.PrintLog("Loading PathFixture... done\n")

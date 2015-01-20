@@ -10,5 +10,7 @@
         <file>icons/Path-Project.svg</file>
         <file>icons/Path-Dressup.svg</file>
         <file>icons/Path-Hop.svg</file>
+        <file>icons/Path-Fixture.svg</file>
+        <file>icons/Path-Copy.svg</file>
     </qresource>
 </RCC> 

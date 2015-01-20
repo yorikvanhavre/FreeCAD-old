@@ -67,10 +67,11 @@ class PathWorkbench ( Workbench ):
         from PathScripts import PathDrilling
         from PathScripts import PathDressup
         from PathScripts import PathHop
-        
+        from PathScripts import PathCopy
+        from PathScripts import PathFixture
         # build commands list
-        commands = ["Path_Profile","Path_Pocket","Path_Drilling","Path_Dressup","Path_Hop","Path_Shape","Path_Compound","Path_Project"]
-        
+        commands =["Path_Profile","Path_Pocket","Path_Drilling","Path_Dressup","Path_Hop","Path_Shape","Path_Copy","Path_Compound","Path_Project","Path_Fixture"]
+
         # Add commands to menu and toolbar
         def QT_TRANSLATE_NOOP(scope, text): return text
         self.appendToolbar(QT_TRANSLATE_NOOP("PathWorkbench","Path"),commands)

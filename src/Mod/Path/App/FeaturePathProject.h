@@ -41,12 +41,14 @@ public:
     virtual ~FeatureProject();
 
     Path::PropertyTooltable   Tooltable;
-    App::PropertyVectorList   Fixtures;
+//    App::PropertyVectorList   Fixtures;
     App::PropertyVector       CornerMin;
     App::PropertyVector       CornerMax;
+    App::PropertyLength       SafeHeight;
     App::PropertyString       Description;
-    App::PropertySpeed        FeedRate;
-    App::PropertySpeed        SpindleSpeed;
+//    App::PropertySpeed        FeedRate;
+//    App::PropertyFloat        SpindleSpeed;
+
 
     /// returns the type name of the ViewProvider
     virtual const char* getViewProviderName(void) const {

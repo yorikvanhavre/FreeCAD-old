@@ -39,12 +39,13 @@ PROPERTY_SOURCE(Path::FeatureProject, Path::FeatureCompound)
 FeatureProject::FeatureProject()
 {
     ADD_PROPERTY_TYPE( Tooltable,   (Path::Tooltable()), "Machine",App::Prop_None,"The tooltable of this feature");
-    ADD_PROPERTY_TYPE( Fixtures,    ((Base::Vector3d())),"Machine",App::Prop_None,"The list of fixtures points of this feature");
+//    ADD_PROPERTY_TYPE( Fixtures,    ((Base::Vector3d())),"Machine",App::Prop_None,"The list of fixtures points of this feature");
     ADD_PROPERTY_TYPE( CornerMin,   (Base::Vector3d()),  "Machine",App::Prop_None,"The lower left corner of the machine extents");
     ADD_PROPERTY_TYPE( CornerMax,   (Base::Vector3d()),  "Machine",App::Prop_None,"The upper right corner of the machine extents");
-    ADD_PROPERTY_TYPE( Description, (""),                "Machine",App::Prop_None,"An optional description of this machine");
-    ADD_PROPERTY_TYPE( FeedRate,    (0),                 "Machine",App::Prop_None,"The default feed rate of this machine");
-    ADD_PROPERTY_TYPE( SpindleSpeed,(0),                 "Machine",App::Prop_None,"The default spindle speed of this machine");
+    ADD_PROPERTY_TYPE( SafeHeight,  (0),                 "Machine",App::Prop_None,"The safe height of this machine setup");
+    ADD_PROPERTY_TYPE( Description, (""),                "Machine",App::Prop_None,"An optional description of this CNC Project");
+//    ADD_PROPERTY_TYPE( FeedRate,    (0),                 "Machine",App::Prop_None,"The default feed rate of this machine");
+//    ADD_PROPERTY_TYPE( SpindleSpeed,(0),                 "Machine",App::Prop_None,"The default spindle speed of this machine");
 
 }
 
