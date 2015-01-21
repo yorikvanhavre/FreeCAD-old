@@ -47,11 +47,6 @@ public:
 
     App::PropertyLinkList     Group;
     App::PropertyBool         UsePlacements;
-    App::PropertyString       OperationDescription;
-    App::PropertySpeed        FeedRate;
-    App::PropertyFloat        SpindleSpeed;
-//    App::PropertyLength       SafeHeight;
-    App::PropertyLength       RetractHeight;
 
     /// returns the type name of the ViewProvider
     virtual const char* getViewProviderName(void) const {
@@ -67,6 +62,8 @@ public:
     void removeObject(DocumentObject* obj);
 
 };
+
+typedef App::FeaturePythonT<FeatureCompound> FeatureCompoundPython;
 
 } //namespace Path
 
