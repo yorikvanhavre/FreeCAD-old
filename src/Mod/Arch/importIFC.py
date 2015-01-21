@@ -83,11 +83,10 @@ END-ISO-10303-21;
 """
 
 
-def explore(filename=None,toplevel="IfcRoot"):
-    """explore([filename],[toplevel]): opens a dialog showing 
+def explore(filename=None):
+    """explore([filename]): opens a dialog showing 
     the contents of an IFC file. If no filename is given, a dialog will
-    pop up to choose a file. toplevel (default IFcRoot) can be used to
-    limit the display to a certain category of objects and its derivates."""
+    pop up to choose a file."""
     
     p = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/Arch")
     DEBUG = p.GetBool("ifcDebug",False)
@@ -95,9 +94,8 @@ def explore(filename=None,toplevel="IfcRoot"):
     try:
         import ifcopenshell
     except:
-        if DEBUG: print "using legacy importer"
-        import importIFClegacy
-        return importIFClegacy.explore(filename)
+        FreeCAD.Console.PrintError("IfcOpenShell was not found on this system. IFC support is disabled\n")
+        return
     
     if not filename:
         from PySide import QtGui
@@ -129,8 +127,14 @@ def explore(filename=None,toplevel="IfcRoot"):
     bold = QtGui.QFont()
     bold.setWeight(75)
     bold.setBold(True)
+    
+    entities =  ifc.by_type("IfcRoot")
+    entities += ifc.by_type("IfcRepresentation")
+    entities += ifc.by_type("IfcRepresentationItem")
+    entities += ifc.by_type("IfcPlacement")
+    entities = sorted(entities, key=lambda eid: eid.id())
 
-    for entity in ifc.by_type(toplevel):
+    for entity in entities:
         item = QtGui.QTreeWidgetItem(tree)
         if hasattr(entity,"id"):
             item.setText(0,str(entity.id()))
@@ -171,7 +175,7 @@ def explore(filename=None,toplevel="IfcRoot"):
                         break
                     else:
                         if not argname in ["Id", "GlobalId"]:
-                            if isinstance(argvalue,ifcopenshell.ifc_wrapper.entity_instance):
+                            if isinstance(argvalue,ifcopenshell.entity_instance):
                                 t = "Entity #" + str(argvalue.id()) + ": " + str(argvalue.is_a())
                             elif isinstance(argvalue,list):
                                 t = ""
@@ -182,7 +186,7 @@ def explore(filename=None,toplevel="IfcRoot"):
                             item.setText(2,str(t))
                             if isinstance(argvalue,list):
                                 for argitem in argvalue:
-                                    if isinstance(argitem,ifcopenshell.ifc_wrapper.entity_instance):
+                                    if isinstance(argitem,ifcopenshell.entity_instance):
                                         t = "Entity #" + str(argitem.id()) + ": " + str(argitem.is_a()) 
                                     else:
                                         t = argitem
@@ -225,9 +229,8 @@ def insert(filename,docname,skip=[]):
     try:
         import ifcopenshell
     except:
-        if DEBUG: print "using legacy importer"
-        import importIFClegacy
-        return importIFClegacy.insert(filename,docname,skip)
+        FreeCAD.Console.PrintError("IfcOpenShell was not found on this system. IFC support is disabled\n")
+        return
 
     if DEBUG: print "opening ",filename,"..."
     try:
@@ -244,6 +247,9 @@ def insert(filename,docname,skip=[]):
     from ifcopenshell import geom
     settings = ifcopenshell.geom.settings()
     settings.set(settings.USE_BREP_DATA,True)
+    settings.set(settings.SEW_SHELLS,True)
+    settings.set(settings.USE_WORLD_COORDS,True)
+    #settings.set(settings.CONVERT_BACK_UNITS,True)
     if SEPARATE_OPENINGS: 
         settings.set(settings.DISABLE_OPENING_SUBTRACTIONS,True)
     sites = ifcfile.by_type("IfcSite")
@@ -277,15 +283,17 @@ def insert(filename,docname,skip=[]):
         if PREFIX_NUMBERS: name = "ID" + str(pid) + " " + name
         obj = None
         baseobj = None
+        brep = None
         
         if (ptype == "IfcOpeningElement") and (not SEPARATE_OPENINGS): continue
         if pid in skip: continue
         if ptype in SKIP: continue
-        print "creating ", product
         try:
-            brep = ifcopenshell.geom.create_shape(settings,product).geometry.brep_data
+            cr = ifcopenshell.geom.create_shape(settings,product)
         except:
-            continue
+            pass
+        else:
+            brep = cr.geometry.brep_data
         if brep:
             shape = Part.Shape()
             shape.importBrepFromString(brep)
@@ -334,8 +342,6 @@ def insert(filename,docname,skip=[]):
                         a[o.Name] = str(o.NominalValue)
                 obj.IfcAttributes = a
             
-    print "all done"
-
     # subtractions
     if SEPARATE_OPENINGS:
         for subtraction in subtractions:
@@ -348,7 +354,6 @@ def insert(filename,docname,skip=[]):
             cobs = [objects[child] for child in children if child in objects.keys()]
             if cobs:
                 Arch.addComponents(cobs,objects[host])
-
 
     FreeCAD.ActiveDocument.recompute()
     
@@ -376,9 +381,8 @@ def export(exportList,filename):
         global ifcopenshell
         import ifcopenshell
     except:
-        if DEBUG: print "using legacy exporter"
-        import importIFClegacy
-        return importIFClegacy.export(exportList,filename)
+        FreeCAD.Console.PrintError("IfcOpenShell was not found on this system. IFC support is disabled\n")
+        return
         
     if isinstance(filename,unicode): 
         import sys #workaround since ifcopenshell currently can't handle unicode filenames
