@@ -27,6 +27,7 @@
 
 #endif
 #include <boost/algorithm/string.hpp>
+#include <boost/lexical_cast.hpp>
 #include <Base/Vector3D.h>
 #include <Base/Rotation.h>
 #include <Base/Writer.h>
@@ -122,7 +123,7 @@ std::string Command::toGCode (void) const
     str << Name;
     for(std::map<std::string,double>::const_iterator i = Parameters.begin(); i != Parameters.end(); ++i) {
         std::string k = i->first;
-        double v = i->second;
+        std::string v = boost::lexical_cast<std::string>(i->second);
         str << " " << k << v;
     }
     return str.str();
@@ -162,14 +163,27 @@ void Command::setFromGCode (std::string str)
                 } else {
                     throw Base::Exception("Badly formatted GCode argument");
                 }
+            } else if (mode == "comment") {
+                value += str[i];
             }
             key = str[i];
+        } else if (str[i] == '(') {
+            mode = "comment";
+        } else if (str[i] == ')') {
+            key = "(";
+            value += ")";
+        } else {
+            // add non-ascii characters only if this is a comment
+            if (mode == "comment") {
+                value += str[i];
+            }
         }
     }
     if (!key.empty() && !value.empty()) {
-        if (mode == "command") {
+        if ( (mode == "command") || (mode == "comment") ) {
             std::string cmd = key + value;
-            boost::to_upper(cmd);
+            if (mode == "command")
+                boost::to_upper(cmd);
             Name = cmd;
         } else {
             double val = std::atof(value.c_str());
@@ -208,6 +222,25 @@ void Command::setFromPlacement (const Base::Placement &plac)
         Parameters[b] = bval;
     if (cval != 0.0)
         Parameters[c] = cval;
+}
+
+void Command::setCenter(const Base::Vector3d &pos, bool clockwise)
+{
+    if (clockwise) {
+        Name = "G2";
+    } else {
+        Name = "G3";
+    }
+    std::string i = "I";
+    std::string j = "J";
+    std::string k = "K";
+    double ival, jval, kval;
+    ival = pos.x;
+    jval = pos.y;
+    kval = pos.z;
+    Parameters[i] = ival;
+    Parameters[j] = jval;
+    Parameters[k] = kval;
 }
 
 Command Command::transform(const Base::Placement other)

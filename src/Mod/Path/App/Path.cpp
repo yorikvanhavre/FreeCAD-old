@@ -124,7 +124,7 @@ double Toolpath::getLength()
     for(std::vector<Command*>::const_iterator it = vpcCommands.begin();it!=vpcCommands.end();++it) {
         std::string name = (*it)->Name;
         next = (*it)->getPlacement().getPosition();
-        if ( (name == "G0") || (name == "G1") || (name == "G01") ) {
+        if ( (name == "G0") || (name == "G00") || (name == "G1") || (name == "G01") ) {
             // straight line
             l += (next - last).Length();
             last = next;
@@ -143,32 +143,59 @@ double Toolpath::getLength()
 void Toolpath::setFromGCode(const std::string instr)
 {
     clear();
+    
     // remove comments
-    boost::regex e("\\(.*?\\)");
-    std::string str = boost::regex_replace(instr, e, "");
-    // split input string by G or M commands
-    std::size_t found = str.find_first_of("gGmM");
+    //boost::regex e("\\(.*?\\)");
+    //std::string str = boost::regex_replace(instr, e, "");
+    std::string str(instr);
+    
+    // split input string by () or G or M commands
+    std::string mode = "command";
+    std::size_t found = str.find_first_of("(gGmM");
     int last = -1;
     while (found!=std::string::npos)
     {
-        if (last > -1) {
-            std::string gcodestr = str.substr(last,found-last);
-            // TODO outputting each command can be useful anyway.. we should add a pref setting to control this
-            //std::cout << gcodestr << std::endl;
+        if (str[found] == '(') {
+            // start of comment
+            if ( (last > -1) && (mode == "command") ) {
+                // before opening a comment, add the last found command
+                std::string gcodestr = str.substr(last,found-last);
+                Command *tmp = new Command();
+                tmp->setFromGCode(gcodestr);
+                vpcCommands.push_back(tmp);
+            }
+            mode = "comment";
+            last = found;
+            found=str.find_first_of(")",found+1);
+        } else if (str[found] == ')') {
+            // end of comment
+            std::string gcodestr = str.substr(last,found-last+1);
+            Command *tmp = new Command();
+            tmp->setFromGCode(gcodestr);
+            vpcCommands.push_back(tmp);
+            last = -1;
+            found=str.find_first_of("(gGmM",found+1);
+            mode = "command";
+        } else if (mode == "command") {
+            // command
+            if (last > -1) {
+                std::string gcodestr = str.substr(last,found-last);
+                Command *tmp = new Command();
+                tmp->setFromGCode(gcodestr);
+                vpcCommands.push_back(tmp);
+            }
+            last = found;
+            found=str.find_first_of("(gGmM",found+1);
+        }
+    }
+    // add the last command found, if any
+    if (last > -1) {
+        if (mode == "command") {
+            std::string gcodestr = str.substr(last,std::string::npos);
             Command *tmp = new Command();
             tmp->setFromGCode(gcodestr);
             vpcCommands.push_back(tmp);
         }
-        last = found;
-        found=str.find_first_of("gGmM",found+1);
-    }
-    // add the last command found, if any
-    if (last > -1) {
-        std::string gcodestr = str.substr(last,std::string::npos);
-        //std::cout << gcodestr << std::endl;
-        Command *tmp = new Command();
-        tmp->setFromGCode(gcodestr);
-        vpcCommands.push_back(tmp);
     }
     recalculate();
 }

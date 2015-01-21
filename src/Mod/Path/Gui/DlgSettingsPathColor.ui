@@ -156,6 +156,23 @@
           </property>
          </widget>
         </item>
+        <item row="5" column="0">
+         <widget class="QLabel" name="label">
+          <property name="text">
+           <string>Machine extents color</string>
+          </property>
+         </widget>
+        </item>
+        <item row="5" column="1">
+         <widget class="Gui::PrefColorButton" name="DefaultExtentsColor">
+          <property name="prefEntry" stdset="0">
+           <cstring>DefaultExtentsColor</cstring>
+          </property>
+          <property name="prefPath" stdset="0">
+           <cstring>Mod/Path</cstring>
+          </property>
+         </widget>
+        </item>
        </layout>
       </item>
       <item>
