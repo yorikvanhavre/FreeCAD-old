@@ -30,6 +30,8 @@ SET(PathScripts_SRCS
     PathScripts/PathSelection.py
     PathScripts/PathFixture.py
     PathScripts/PathCopy.py
+    PathScripts/PathCompoundExtended.py
+    PathScripts/PathProject.py
 )
 
 ADD_CUSTOM_TARGET(PathScripts ALL
