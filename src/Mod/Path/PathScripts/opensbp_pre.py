@@ -29,8 +29,9 @@ suitable for use in a Path object. This preprocessor, once placed in the
 appropriate PathScripts folder, can be used directly from inside FreeCAD,
 via the GUI importer or via python scripts with:
 
-import Path
-Path.read("/path/to/file.ncc","DocumentName","pre_sbp")
+import opensbp_pre
+opensbp_pre.insert("/path/to/myfile.ngc","DocumentName")
+
 
 DONE
 Correctly imports single axis and multi axis moves.
@@ -50,7 +51,7 @@ Many other OpenSBP commands not handled
 AXIS = 'X','Y','Z','A','B'  #OpenSBP always puts multiaxis move parameters in this order
 SPEEDS = 'XY','Z','A','B'
 
-
+import FreeCAD
 import os, Path
 
 # to distinguish python built-in open function from the one declared below
@@ -67,18 +68,21 @@ def open(filename):
 
 def insert(filename,docname):
     "called when freecad imports a file"
+    "This insert expects parse to return a list of strings"
+    "each string will become a separate path"
     gfile = pythonopen(filename)
     gcode = gfile.read()
     gfile.close()
     gcode = parse(gcode)
     doc = FreeCAD.getDocument(docname)
-    obj = doc.addObject("Path::Feature","Path")
-    path = Path.Path(gcode)
-    obj.Path = path
+    for subpath in gcode:
+        obj = doc.addObject("Path::Feature","Path")
+        path = Path.Path(subpath)
+        obj.Path = path
 
 
 def parse(inputstring):
-    "parse(inputstring): returns a parsed output string"
+    "parse(inputstring): returns a list of parsed output string"
     print "preprocessing..."
     
     # split the input by line
