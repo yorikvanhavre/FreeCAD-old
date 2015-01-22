@@ -28,7 +28,6 @@
 #include <Gui/TaskView/TaskDialog.h>
 #include <Mod/Path/App/FeaturePath.h>
 #include <Mod/Path/App/FeaturePathCompound.h>
-#include <Mod/Path/App/FeaturePathProject.h>
 
 #include "ViewProviderPathCompound.h"
 
@@ -50,9 +49,6 @@ public:
 protected:
     void changeEvent(QEvent *e);
     
-private Q_SLOTS:
-    void editTooltable();
-
 private:
     QWidget* proxy;
     Ui_TaskDlgPathCompound* ui;
