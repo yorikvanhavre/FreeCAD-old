@@ -12,5 +12,6 @@
         <file>icons/Path-Hop.svg</file>
         <file>icons/Path-Fixture.svg</file>
         <file>icons/Path-Copy.svg</file>
+        <file>icons/Path-ToolTable.svg</file>
     </qresource>
 </RCC> 

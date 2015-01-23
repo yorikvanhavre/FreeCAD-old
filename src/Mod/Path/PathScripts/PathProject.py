@@ -70,6 +70,12 @@ class ViewProviderProject:
         vobj.Proxy = self
         vobj.addProperty("App::PropertyBool","ShowExtents","Path",translate("PathProject","Switch the machine extents bounding box on/off"))
 
+    def __getstate__(self): #mandatory
+        return None
+
+    def __setstate__(self,state): #mandatory
+        return None
+
     def getIcon(self):
         return ":/icons/Path-Project.svg"
         

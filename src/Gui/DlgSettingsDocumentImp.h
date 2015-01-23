@@ -45,6 +45,9 @@ public:
 
   void saveSettings();
   void loadSettings();
+  
+protected Q_SLOTS:
+    void onLicenseTypeChanged(int index);
 
 protected:
   void changeEvent(QEvent *e);
