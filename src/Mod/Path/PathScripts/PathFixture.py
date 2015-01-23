@@ -24,6 +24,7 @@
 ''' Used to create CNC machine fixture offsets such as G54,G55, etc...'''
 
 import FreeCAD,FreeCADGui,Path,PathGui
+from PathScripts import PathProject
 from PySide import QtCore,QtGui
 
 # Qt tanslation handling
@@ -46,6 +47,11 @@ class Fixture():
         fixture=fixlist[int(obj.Fixture)]
         obj.Path = Path.Path(fixture)
         obj.Label = "Fixture"+str(obj.Fixture)
+        for o in FreeCAD.ActiveDocument.Objects:
+            if isinstance(o.Proxy,PathProject.ObjectPathProject):
+                g = o.Group
+                g.append(obj)
+                o.Group = g
 
 class _ViewProviderFixture:
 
