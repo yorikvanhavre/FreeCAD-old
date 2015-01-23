@@ -57,6 +57,7 @@ void DlgSettingsPathColor::saveSettings()
     DefaultRapidPathColor->onSave();
     DefaultPathLineWidth->onSave();
     DefaultPathMarkerColor->onSave();
+    DefaultExtentsColor->onSave();
 }
 
 void DlgSettingsPathColor::loadSettings()
@@ -66,6 +67,7 @@ void DlgSettingsPathColor::loadSettings()
     DefaultRapidPathColor->onRestore();
     DefaultPathLineWidth->onRestore();
     DefaultPathMarkerColor->onRestore();
+    DefaultExtentsColor->onRestore();
 }
 
 /**
