@@ -21,10 +21,11 @@
 #*   USA                                                                   *
 #*                                                                         *
 #***************************************************************************
-''' Used to create CNC machine fixture offsets such as G54,G55, etc...'''
+'''used to create material stock around a machined part- for visualization '''
 
-import FreeCAD,FreeCADGui,Path,PathGui
-from PathScripts import PathProject
+import Draft,Part
+import FreeCAD, FreeCADGui
+from FreeCAD import Vector
 from PySide import QtCore,QtGui
 
 # Qt tanslation handling
@@ -36,25 +37,40 @@ except AttributeError:
     def translate(context, text, disambig=None):
         return QtGui.QApplication.translate(context, text, disambig)
 
-class Fixture():
-    def __init__(self,obj):
-        obj.addProperty("App::PropertyInteger", "Fixture", "Fixture Parameters", "Fixture Offset Number")
-        obj.Fixture=1
+class Stock:
+    def __init__(self, obj):
+        "Make stock"
+        obj.addProperty("App::PropertyFloat","Length_Allowance","Stock",translate("Length Allowance","extra allownace from part width")).Length_Allowance = 1.0
+        obj.addProperty("App::PropertyFloat","Width_Allowance","Stock",translate("Width Allowance","extra allownace from part width")).Width_Allowance = 1.0
+        obj.addProperty("App::PropertyFloat","Height_Allowance","Stock",translate("Height Allowance","extra allownace from part width")).Height_Allowance = 1.0
+        obj.addProperty("App::PropertyLink","Base","Base",
+                        "The base object this represents")
         obj.Proxy = self
 
-    def execute(self,obj):
-        fixlist = ['G53','G54','G55','G56','G57','G58','G59','G59.1', 'G59.2', 'G59.3', 'G59.4', 'G59.5','G59.6','G59.7', 'G59.8', 'G59.9']
-        fixture=fixlist[int(obj.Fixture)]
-        obj.Path = Path.Path(fixture)
-        obj.Label = "Fixture"+str(obj.Fixture)
-        for o in FreeCAD.ActiveDocument.Objects:
-            if "Proxy" in o.PropertiesList:
-                if isinstance(o.Proxy,PathProject.ObjectPathProject):
-                    g = o.Group
-                    g.append(obj)
-                    o.Group = g
+#    def __getstate__(self):
+#        return None
 
-class _ViewProviderFixture:
+#    def __setstate__(self,state):
+#        return None
+
+    def execute(self, obj):
+        self.Xmin = obj.Base.Shape.BoundBox.XMin
+        self.Xmax = obj.Base.Shape.BoundBox.XMax
+
+        self.Ymin = obj.Base.Shape.BoundBox.YMin
+        self.Ymax = obj.Base.Shape.BoundBox.YMax
+
+        self.Zmin = obj.Base.Shape.BoundBox.ZMin
+        self.Zmax = obj.Base.Shape.BoundBox.ZMax
+
+        self.length = self.Xmax -self.Xmin+obj.Length_Allowance*2.0
+        self.width  = self.Ymax - self.Ymin+obj.Width_Allowance*2.0
+        self.height = self.Zmax - self.Zmin+obj.Height_Allowance*2.0
+        self.pnt = Vector(self.Xmin-obj.Length_Allowance , self.Ymin-obj.Width_Allowance, self.Zmin-obj.Height_Allowance)
+
+        obj.Shape = Part.makeBox(self.length,self.width,self.height,self.pnt)
+
+class _ViewProviderStock:
 
     def __init__(self,obj): #mandatory
 #        obj.addProperty("App::PropertyFloat","SomePropertyName","PropertyGroup","Description of this property")
@@ -67,7 +83,7 @@ class _ViewProviderFixture:
         return None
 
     def getIcon(self): #optional
-        return ":/icons/Path-Datums.svg"
+        return ":/icons/Path-Stock.svg"
 
 #    def attach(self): #optional
 #        # this is executed on object creation and object load from file
@@ -90,29 +106,43 @@ class _ViewProviderFixture:
         pass
 
 
-class CommandPathFixture:
+
+class CommandPathStock:
     def GetResources(self):
-        return {'Pixmap'  : 'Path-Datums',
-                'MenuText': QtCore.QT_TRANSLATE_NOOP("PathFixture","Fixture"),
-                'Accel': "P, F",
-                'ToolTip': QtCore.QT_TRANSLATE_NOOP("PathFixture","Creates a Fixture Offset object")}
+        return {'Pixmap'  : 'Path-Stock',
+                'MenuText': QtCore.QT_TRANSLATE_NOOP("PathStock","Stock"),
+                'Accel': "P, S",
+                'ToolTip': QtCore.QT_TRANSLATE_NOOP("PathStock","Creates a 3D object to represent raw stock to mill the part out of")}
 
     def IsActive(self):
         return not FreeCAD.ActiveDocument is None
 
     def Activated(self):
-        FreeCAD.ActiveDocument.openTransaction(translate("PathFixture","Create a Fixture Offset"))
-        FreeCADGui.addModule("PathScripts.PathFixture")
-        FreeCADGui.doCommand('obj = FreeCAD.ActiveDocument.addObject("Path::FeaturePython","Fixture")')
-        FreeCADGui.doCommand('PathScripts.PathFixture.Fixture(obj)')
-        FreeCADGui.doCommand('PathScripts.PathFixture._ViewProviderFixture(obj.ViewObject)')
-#        FreeCADGui.doCommand('obj.ViewObject.Proxy = 0')
-        FreeCAD.ActiveDocument.commitTransaction()
+        FreeCAD.ActiveDocument.openTransaction(translate("PathStock","Creates a 3D object to represent raw stock to mill the part out of"))
+        FreeCADGui.addModule("PathScripts.PathStock")
+        snippet = '''
+import FreeCADGui
+if len(FreeCADGui.Selection.getSelection())>0:
+    sel=FreeCADGui.Selection.getSelection()
+    o = sel[0]
+    if "Shape" in o.PropertiesList:
+        obj =FreeCAD.ActiveDocument.addObject('Part::FeaturePython',sel[0].Name+('_Stock'))
+        PathScripts.PathStock.Stock(obj)
+        baseobj = sel[0]
+        obj.Base = baseobj
+        PathScripts.PathStock._ViewProviderStock(obj.ViewObject)
+        FreeCADGui.ActiveDocument.getObject(sel[0].Name+("_Stock")).ShapeColor = (0.3333,0.6667,1.0000)
+        FreeCADGui.ActiveDocument.getObject(sel[0].Name+("_Stock")).Transparency = 75
         FreeCAD.ActiveDocument.recompute()
+    else:
+        FreeCAD.Console.PrintMessage("Select a Solid object and try again.\\n")
+else:
+    FreeCAD.Console.PrintMessage("Select the object you want to show stock for and try again.\\n")
+        '''
+        FreeCADGui.doCommand(snippet)
 
 if FreeCAD.GuiUp: 
     # register the FreeCAD command
-    FreeCADGui.addCommand('Path_Fixture',CommandPathFixture())
+    FreeCADGui.addCommand('Path_Stock',CommandPathStock())
 
-
-FreeCAD.Console.PrintLog("Loading PathFixture... done\n")
+FreeCAD.Console.PrintLog("Loading PathStock... done\n")
