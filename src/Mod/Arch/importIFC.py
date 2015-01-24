@@ -70,7 +70,7 @@ DATA;
 #10=IFCDIRECTION((0.,1.,0.));
 #11=IFCGEOMETRICREPRESENTATIONCONTEXT('Plan','Model',3,1.E-05,#9,#10);
 #12=IFCDIMENSIONALEXPONENTS(0,0,0,0,0,0,0);
-#13=IFCSIUNIT(*,.LENGTHUNIT.,.MILLI.,.METRE.);
+#13=IFCSIUNIT(*,.LENGTHUNIT.,$,.METRE.);
 #14=IFCSIUNIT(*,.AREAUNIT.,$,.SQUARE_METRE.);
 #15=IFCSIUNIT(*,.VOLUMEUNIT.,$,.CUBIC_METRE.);
 #16=IFCSIUNIT(*,.PLANEANGLEUNIT.,$,.RADIAN.);
@@ -164,12 +164,12 @@ def explore(filename=None):
             i = 0
             while True:
                 try:
-                    argname = entity.wrapped_data.get_argument_name(i)
+                    argname = entity.attribute_name(i)
                 except:
                     break
                 else:
                     try:
-                        argvalue = entity.wrapped_data.get_argument(i)
+                        argvalue = getattr(entity,argname)
                     except:
                         print "Error in entity ",entity
                         break
@@ -224,7 +224,6 @@ def insert(filename,docname,skip=[]):
     PREFIX_NUMBERS = p.GetBool("ifcPrefixNumbers",False)
     SKIP = p.GetString("ifcSkip","")
     SEPARATE_OPENINGS = p.GetBool("ifcSeparateOpenings",False)
-    SCALE = p.GetFloat("IfcScalingFactor",1.0)
     
     try:
         import ifcopenshell
@@ -297,8 +296,7 @@ def insert(filename,docname,skip=[]):
         if brep:
             shape = Part.Shape()
             shape.importBrepFromString(brep)
-            if SCALE != 1:
-                shape.scale(SCALE)
+            shape.scale(1000.0) # IfcOpenShell always outputs in meters
             if not shape.isNull():
                 baseobj = FreeCAD.ActiveDocument.addObject("Part::Feature",name+"_body")
                 baseobj.Shape = shape
@@ -341,6 +339,8 @@ def insert(filename,docname,skip=[]):
                     if o.is_a("IfcPropertySingleValue"):
                         a[o.Name] = str(o.NominalValue)
                 obj.IfcAttributes = a
+                
+    if DEBUG: print "All done. Sorting out relationships..."
             
     # subtractions
     if SEPARATE_OPENINGS:
@@ -467,9 +467,9 @@ def export(exportList,filename):
         if ifctype in ["IfcSlab","IfcFooting","IfcRoof"]:
             args = args + ["NOTDEFINED"]
         elif ifctype in ["IfcWindow","IfcDoor"]:
-            args = args + [obj.Width.Value, obj.Height.Value]
+            args = args + [obj.Width.Value/1000.0, obj.Height.Value/1000.0]
         elif ifctype == "IfcSpace":
-            args = args + ["ELEMENT","INTERNAL",obj.Shape.BoundBox.ZMin]
+            args = args + ["ELEMENT","INTERNAL",obj.Shape.BoundBox.ZMin/1000.0]
         elif ifctype == "IfcBuildingElementProxy":
             args = args + ["ELEMENT"]
         elif ifctype == "IfcSite":
@@ -580,9 +580,12 @@ def getRepresentation(ifcfile,context,obj,forcebrep=False,subtraction=False,tess
             if hasattr(obj.Proxy,"getProfiles"):
                 p = obj.Proxy.getProfiles(obj,noplacement=True)
                 extrusionv = obj.Proxy.getExtrusionVector(obj,noplacement=True)
+                extrusionv.multiply(0.001) # to meters
                 if (len(p) == 1) and extrusionv:
                     p = p[0]
+                    p.scale(0.001) # to meters
                     r = obj.Proxy.getPlacement(obj)
+                    r.Base = r.Base.multiply(0.001) # to meters
                     
                     if len(p.Edges) == 1:
                         
@@ -698,6 +701,7 @@ def getRepresentation(ifcfile,context,obj,forcebrep=False,subtraction=False,tess
                 dataset = fcshape.Shells
                 print "Warning! object contains no solids"
             for fcsolid in dataset:
+                fcsolid.scale(0.001) # to meters
                 faces = []
                 curves = False
                 for fcface in fcsolid.Faces:

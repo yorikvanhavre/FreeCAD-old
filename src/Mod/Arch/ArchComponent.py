@@ -26,10 +26,10 @@ __author__ = "Yorik van Havre"
 __url__ = "http://www.freecadweb.org"
 
 # Possible roles for IFC objects
-Roles = ['Undefined','Beam','Beam Standard Case','Chimney','Column','Column Standard Case','Covering','Curtain Wall',
-         'Door','Door Standard Case','Foundation','Furniture','Hydro Equipment','Electric Equipment', 
+Roles = ['Undefined','Beam','Beam','Chimney','Column','Column','Covering','Curtain Wall',
+         'Door','Door','Foundation','Furniture','Hydro Equipment','Electric Equipment', 
          'Member','Plate','Railing','Ramp','Ramp Flight','Rebar','Pile','Roof','Shading Device','Slab','Space'
-         'Stair','Stair Flight','Tendon','Wall','Wall Standard Case','Wall Layer','Window','Window Standard Case']
+         'Stair','Stair Flight','Tendon','Wall','Wall','Wall Layer','Window','Window']
 
 import FreeCAD,Draft
 from FreeCAD import Vector
@@ -301,6 +301,7 @@ class Component:
         self.Type = "Component"
         self.Subvolume = None
         self.MoveWithHost = False
+        obj.Role = Roles
 
     def execute(self,obj):
         return
