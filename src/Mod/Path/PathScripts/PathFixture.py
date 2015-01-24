@@ -48,10 +48,11 @@ class Fixture():
         obj.Path = Path.Path(fixture)
         obj.Label = "Fixture"+str(obj.Fixture)
         for o in FreeCAD.ActiveDocument.Objects:
-            if isinstance(o.Proxy,PathProject.ObjectPathProject):
-                g = o.Group
-                g.append(obj)
-                o.Group = g
+            if "Proxy" in o.PropertiesList:
+                if isinstance(o.Proxy,PathProject.ObjectPathProject):
+                    g = o.Group
+                    g.append(obj)
+                    o.Group = g
 
 class _ViewProviderFixture:
 
@@ -66,7 +67,7 @@ class _ViewProviderFixture:
         return None
 
     def getIcon(self): #optional
-        return ":/icons/Path-Fixture.svg"
+        return ":/icons/Path-Datums.svg"
 
 #    def attach(self): #optional
 #        # this is executed on object creation and object load from file
@@ -91,7 +92,7 @@ class _ViewProviderFixture:
 
 class CommandPathFixture:
     def GetResources(self):
-        return {'Pixmap'  : 'Path-Fixture',
+        return {'Pixmap'  : 'Path-Datums',
                 'MenuText': QtCore.QT_TRANSLATE_NOOP("PathFixture","Fixture"),
                 'Accel': "P, F",
                 'ToolTip': QtCore.QT_TRANSLATE_NOOP("PathFixture","Creates a Fixture Offset object")}
