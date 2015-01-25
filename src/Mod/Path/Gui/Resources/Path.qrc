@@ -16,5 +16,6 @@
         <file>icons/Path-LengthOffset.svg</file>
         <file>icons/Path-Axis.svg</file>
         <file>icons/Path-Stock.svg</file>
+        <file>icons/Path-Plane.svg</file>
     </qresource>
 </RCC> 
