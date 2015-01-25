@@ -24,7 +24,8 @@
 
 import FreeCAD,FreeCADGui,Path,PathGui
 from PySide import QtCore,QtGui
-import PathUtils,PathSelection
+from PathScripts import PathUtils,PathSelection,PathProject
+
 """Path Profile object and FreeCAD command"""
 
 # Qt tanslation handling
@@ -180,7 +181,8 @@ class CommandPathProfile:
         
     def Activated(self):
         import Path
-        from PathScripts import PathUtils,PathProfile
+        from PathScripts import PathUtils,PathProfile,PathProject
+        prjexists = False
         selection = PathSelection.multiSelect()
 
         if not selection:
@@ -238,6 +240,24 @@ class CommandPathProfile:
         obj.SpindleSpeed = 2000.00
         obj.SegLen = 0.5
         obj.ViewObject.Proxy = 0
+
+        for o in FreeCAD.ActiveDocument.Objects:
+            if "Proxy" in o.PropertiesList:
+                if isinstance(o.Proxy,PathProject.ObjectPathProject):
+                    g = o.Group
+                    g.append(obj)
+                    o.Group = g
+                    prjexists = True
+
+        if prjexists:
+            pass
+        else: #create a new path object
+            project = FreeCAD.ActiveDocument.addObject("Path::FeatureCompoundPython","Project")
+            PathProject.ObjectPathProject(project)
+            PathProject.ViewProviderProject(project.ViewObject)
+            g = project.Group
+            g.append(obj)
+            project.Group = g
 
         FreeCAD.ActiveDocument.commitTransaction()
         FreeCAD.ActiveDocument.recompute()
