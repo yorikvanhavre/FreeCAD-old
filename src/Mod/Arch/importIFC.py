@@ -246,7 +246,7 @@ def insert(filename,docname,skip=[]):
     from ifcopenshell import geom
     settings = ifcopenshell.geom.settings()
     settings.set(settings.USE_BREP_DATA,True)
-    settings.set(settings.SEW_SHELLS,True)
+    #settings.set(settings.SEW_SHELLS,True)
     settings.set(settings.USE_WORLD_COORDS,True)
     #settings.set(settings.CONVERT_BACK_UNITS,True)
     if SEPARATE_OPENINGS: 
@@ -275,6 +275,7 @@ def insert(filename,docname,skip=[]):
 
     # products
     for product in products:
+        print "starting ",product
         pid = product.id()
         guid = product.GlobalId
         ptype = product.is_a()
@@ -289,11 +290,12 @@ def insert(filename,docname,skip=[]):
         if ptype in SKIP: continue
         try:
             cr = ifcopenshell.geom.create_shape(settings,product)
+            print "create_shape passed"
+            brep = cr.geometry.brep_data
         except:
             pass
-        else:
-            brep = cr.geometry.brep_data
         if brep:
+            print "brep obtained"
             shape = Part.Shape()
             shape.importBrepFromString(brep)
             shape.scale(1000.0) # IfcOpenShell always outputs in meters
@@ -642,7 +644,7 @@ def getRepresentation(ifcfile,context,obj,forcebrep=False,subtraction=False,tess
                                     ovc =       ifcfile.createIfcCartesianPoint(tuple(e.Curve.Center)[:2])
                                     plc =       ifcfile.createIfcAxis2Placement2D(ovc,xvc)
                                     cir =       ifcfile.createIfcCircle(plc,e.Curve.Radius)
-                                    curve =     ifcfile.createIfcTrimmedCurve(cir,[ifcfile.create_entity("IfcParameterValue",p1)],[ifcfile.create_entity("IfcParameterValue",p2)],follow,"PARAMETER")
+                                    curve =     ifcfile.createIfcTrimmedCurve(cir,[ifcfile.createIfcParameterValue(p1)],[ifcfile.createIfcParameterValue(p2)],follow,"PARAMETER")
                                     
                                 else:
                                     verts = [vertex.Point for vertex in e.Vertexes]
