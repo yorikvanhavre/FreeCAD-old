@@ -81,6 +81,8 @@ class ObjectProfile:
         obj.addProperty("App::PropertyFloat", "LeadInLineLen", "Profile Parameters", translate("lead in length","length of straight segment of toolpath that comes in at angle to first part edge"))
         obj.addProperty("App::PropertyFloat", "LeadOutLineLen", "Profile Parameters", translate("lead_out_line_len","length of straight segment of toolpath that comes in at angle to last part edge"))
         obj.addProperty("App::PropertyFloat", "SegLen", "Profile Parameters",translate("Seg Len","Tesselation  value for tool paths made from beziers, bsplines, and ellipses"))
+        obj.addProperty("App::PropertyBool","Active","Sequence Parameters",translate("Active","Make False, to prevent operation from generating code"))
+
         obj.Proxy = self
 #        obj.Closed = True
 
@@ -166,8 +168,18 @@ class ObjectProfile:
                 output += PathUtils.SortPath(wire,obj.Side,radius,clockwise,obj.ClearanceHeight,obj.StepDown,ZMax, obj.FinalDepth,FirstEdge,obj.PathClosed,obj.SegLen,obj.VertFeed,obj.HorizFeed)
                 #ZCurrent = ZCurrent-abs(obj.StepDown)
 
-            path = Path.Path(output)
-            obj.Path = path
+#            path = Path.Path(output)
+#            obj.Path = path
+
+            if obj.Active:
+                path = Path.Path(output)
+                obj.Path = path
+                obj.ViewObject.Visibility = True
+            else:
+                path = Path.Path("(inactive operation)")
+                obj.Path = path
+                obj.ViewObject.Visibility = False
+
 
 class CommandPathProfile:
     def GetResources(self):
@@ -240,6 +252,7 @@ class CommandPathProfile:
         obj.SpindleSpeed = 2000.00
         obj.SegLen = 0.5
         obj.ViewObject.Proxy = 0
+        obj.Active = True
 
         for o in FreeCAD.ActiveDocument.Objects:
             if "Proxy" in o.PropertiesList:

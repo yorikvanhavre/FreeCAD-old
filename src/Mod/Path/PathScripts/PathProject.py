@@ -52,7 +52,10 @@ class ObjectPathProject:
 
     def __setstate__(self,state):
         return None
-        
+
+    def onChanged(self,obj,prop):
+        pass
+
     def execute(self,obj):
         cmds = []
         for child in obj.Group:
@@ -61,8 +64,7 @@ class ObjectPathProject:
         if cmds:
             path = Path.Path(cmds)
             obj.Path = path
-        
-        
+
 class ViewProviderProject:
     
     
