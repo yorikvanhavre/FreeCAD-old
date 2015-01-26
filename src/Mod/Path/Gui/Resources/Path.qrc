@@ -10,8 +10,12 @@
         <file>icons/Path-Project.svg</file>
         <file>icons/Path-Dressup.svg</file>
         <file>icons/Path-Hop.svg</file>
-        <file>icons/Path-Fixture.svg</file>
+        <file>icons/Path-Datums.svg</file>
         <file>icons/Path-Copy.svg</file>
         <file>icons/Path-ToolTable.svg</file>
+        <file>icons/Path-LengthOffset.svg</file>
+        <file>icons/Path-Axis.svg</file>
+        <file>icons/Path-Stock.svg</file>
+        <file>icons/Path-Plane.svg</file>
     </qresource>
 </RCC> 

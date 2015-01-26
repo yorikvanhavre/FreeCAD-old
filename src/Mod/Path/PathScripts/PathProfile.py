@@ -24,7 +24,8 @@
 
 import FreeCAD,FreeCADGui,Path,PathGui
 from PySide import QtCore,QtGui
-import PathUtils,PathSelection
+from PathScripts import PathUtils,PathSelection,PathProject
+
 """Path Profile object and FreeCAD command"""
 
 # Qt tanslation handling
@@ -80,6 +81,8 @@ class ObjectProfile:
         obj.addProperty("App::PropertyFloat", "LeadInLineLen", "Profile Parameters", translate("lead in length","length of straight segment of toolpath that comes in at angle to first part edge"))
         obj.addProperty("App::PropertyFloat", "LeadOutLineLen", "Profile Parameters", translate("lead_out_line_len","length of straight segment of toolpath that comes in at angle to last part edge"))
         obj.addProperty("App::PropertyFloat", "SegLen", "Profile Parameters",translate("Seg Len","Tesselation  value for tool paths made from beziers, bsplines, and ellipses"))
+        obj.addProperty("App::PropertyBool","Active","Sequence Parameters",translate("Active","Make False, to prevent operation from generating code"))
+
         obj.Proxy = self
 #        obj.Closed = True
 
@@ -165,8 +168,18 @@ class ObjectProfile:
                 output += PathUtils.SortPath(wire,obj.Side,radius,clockwise,obj.ClearanceHeight,obj.StepDown,ZMax, obj.FinalDepth,FirstEdge,obj.PathClosed,obj.SegLen,obj.VertFeed,obj.HorizFeed)
                 #ZCurrent = ZCurrent-abs(obj.StepDown)
 
-            path = Path.Path(output)
-            obj.Path = path
+#            path = Path.Path(output)
+#            obj.Path = path
+
+            if obj.Active:
+                path = Path.Path(output)
+                obj.Path = path
+                obj.ViewObject.Visibility = True
+            else:
+                path = Path.Path("(inactive operation)")
+                obj.Path = path
+                obj.ViewObject.Visibility = False
+
 
 class CommandPathProfile:
     def GetResources(self):
@@ -180,7 +193,8 @@ class CommandPathProfile:
         
     def Activated(self):
         import Path
-        from PathScripts import PathUtils,PathProfile
+        from PathScripts import PathUtils,PathProfile,PathProject
+        prjexists = False
         selection = PathSelection.multiSelect()
 
         if not selection:
@@ -238,6 +252,25 @@ class CommandPathProfile:
         obj.SpindleSpeed = 2000.00
         obj.SegLen = 0.5
         obj.ViewObject.Proxy = 0
+        obj.Active = True
+
+        for o in FreeCAD.ActiveDocument.Objects:
+            if "Proxy" in o.PropertiesList:
+                if isinstance(o.Proxy,PathProject.ObjectPathProject):
+                    g = o.Group
+                    g.append(obj)
+                    o.Group = g
+                    prjexists = True
+
+        if prjexists:
+            pass
+        else: #create a new path object
+            project = FreeCAD.ActiveDocument.addObject("Path::FeatureCompoundPython","Project")
+            PathProject.ObjectPathProject(project)
+            PathProject.ViewProviderProject(project.ViewObject)
+            g = project.Group
+            g.append(obj)
+            project.Group = g
 
         FreeCAD.ActiveDocument.commitTransaction()
         FreeCAD.ActiveDocument.recompute()

@@ -33,6 +33,8 @@ SET(PathScripts_SRCS
     PathScripts/PathCompoundExtended.py
     PathScripts/PathProject.py
     PathScripts/PathToolTableEdit.py
+    PathScripts/PathStock.py
+    PathScripts/PathPlane.py
 )
 
 ADD_CUSTOM_TARGET(PathScripts ALL

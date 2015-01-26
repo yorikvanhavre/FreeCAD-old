@@ -21,7 +21,7 @@
 #*   USA                                                                   *
 #*                                                                         *
 #***************************************************************************
-''' Used to create CNC machine fixture offsets such as G54,G55, etc...'''
+''' Used for CNC machine plane selection G17,G18,G19 '''
 
 import FreeCAD,FreeCADGui,Path,PathGui
 from PathScripts import PathProject
@@ -36,32 +36,30 @@ except AttributeError:
     def translate(context, text, disambig=None):
         return QtGui.QApplication.translate(context, text, disambig)
 
-class Fixture:
+class Plane:
     def __init__(self,obj):
-        obj.addProperty("App::PropertyEnumeration", "Fixture", "Fixture Parameters", translate("Fixture Offset", "Fixture Offset Number"))
-        obj.Fixture=['G53','G54','G55','G56','G57','G58','G59','G59.1', 'G59.2', 'G59.3', 'G59.4', 'G59.5','G59.6','G59.7', 'G59.8', 'G59.9']
+        obj.addProperty("App::PropertyEnumeration", "SelectionPlane","Plane", translate( "Selection Plane",  "Orientation plane of CNC path"))
+        obj.SelectionPlane=['XY', 'XZ', 'YZ']
         obj.addProperty("App::PropertyBool","Active","Sequence Parameters",translate("Active","Make False, to prevent operation from generating code"))
-
         obj.Proxy = self
 
     def execute(self,obj):
-        fixlist = ['G53','G54','G55','G56','G57','G58','G59','G59.1', 'G59.2', 'G59.3', 'G59.4', 'G59.5','G59.6','G59.7', 'G59.8', 'G59.9']
-#        fixture=fixlist[int(obj.Fixture)]
-        fixture=fixlist.index(obj.Fixture)
-        obj.Path = Path.Path(str(obj.Fixture))
-        obj.Label = "Fixture"+str(fixture)
+        clonelist = ['XY', 'XZ', 'YZ']
+        cindx = clonelist.index(str(obj.SelectionPlane))
+        pathlist = ['G17', 'G18', 'G19']
+#        obj.Path = Path.Path(pathlist[cindx])
+        labelindx = clonelist.index(obj.SelectionPlane)+1
+        obj.Label = "Plane"+str(labelindx)
         if obj.Active:
-            obj.Path = Path.Path(str(obj.Fixture))
+            obj.Path = Path.Path(pathlist[cindx])
             obj.ViewObject.Visibility = True
         else:
             obj.Path = Path.Path("(inactive operation)")
             obj.ViewObject.Visibility = False
 
 
-class _ViewProviderFixture:
-
+class _ViewProviderPlane:
     def __init__(self,obj): #mandatory
-#        obj.addProperty("App::PropertyFloat","SomePropertyName","PropertyGroup","Description of this property")
         obj.Proxy = self
 
     def __getstate__(self): #mandatory
@@ -71,11 +69,7 @@ class _ViewProviderFixture:
         return None
 
     def getIcon(self): #optional
-        return ":/icons/Path-Datums.svg"
-
-#    def attach(self): #optional
-#        # this is executed on object creation and object load from file
-#        pass
+        return ":/icons/Path-Plane.svg"
 
     def onChanged(self,obj,prop): #optional
         # this is executed when a property of the VIEW PROVIDER changes
@@ -93,29 +87,28 @@ class _ViewProviderFixture:
         # this is executed when the user cancels or terminates edit mode
         pass
 
-
-class CommandPathFixture:
+class CommandPathPlane:
     def GetResources(self):
-        return {'Pixmap'  : 'Path-Datums',
-                'MenuText': QtCore.QT_TRANSLATE_NOOP("PathFixture","Fixture"),
-                'Accel': "P, F",
-                'ToolTip': QtCore.QT_TRANSLATE_NOOP("PathFixture","Creates a Fixture Offset object")}
+        return {'Pixmap'  : 'Path-Plane',
+                'MenuText': QtCore.QT_TRANSLATE_NOOP("PathPlane","Selection Plane"),
+                'Accel': "P, P",
+                'ToolTip': QtCore.QT_TRANSLATE_NOOP("PathPlane","Create a Selection Plane object")}
 
     def IsActive(self):
         return not FreeCAD.ActiveDocument is None
 
     def Activated(self):
-        FreeCAD.ActiveDocument.openTransaction(translate("PathFixture","Create a Fixture Offset"))
-        FreeCADGui.addModule("PathScripts.PathFixture")
+        FreeCAD.ActiveDocument.openTransaction(translate("PathPlane","Create a Selection Plane object"))
+        FreeCADGui.addModule("PathScripts.PathPlane")
         snippet = '''
 import Path
 import PathScripts
 from PathScripts import PathProject
 prjexists = False
-obj = FreeCAD.ActiveDocument.addObject("Path::FeaturePython","Fixture")
-PathScripts.PathFixture.Fixture(obj)
+obj = FreeCAD.ActiveDocument.addObject("Path::FeaturePython","Plane")
+PathScripts.PathPlane.Plane(obj)
 obj.Active = True
-PathScripts.PathFixture._ViewProviderFixture(obj.ViewObject)
+PathScripts.PathPlane._ViewProviderPlane(obj.ViewObject)
 for o in FreeCAD.ActiveDocument.Objects:
     if "Proxy" in o.PropertiesList:
         if isinstance(o.Proxy,PathProject.ObjectPathProject):
@@ -123,6 +116,7 @@ for o in FreeCAD.ActiveDocument.Objects:
             g.append(obj)
             o.Group = g
             prjexists = True
+
 if prjexists:
     pass
 else: #create a new path object
@@ -135,13 +129,16 @@ else: #create a new path object
 
 
 '''
+
         FreeCADGui.doCommand(snippet)
         FreeCAD.ActiveDocument.commitTransaction()
         FreeCAD.ActiveDocument.recompute()
 
 if FreeCAD.GuiUp: 
     # register the FreeCAD command
-    FreeCADGui.addCommand('Path_Fixture',CommandPathFixture())
+    FreeCADGui.addCommand('Path_Plane',CommandPathPlane())
 
 
-FreeCAD.Console.PrintLog("Loading PathFixture... done\n")
+FreeCAD.Console.PrintLog("Loading PathPlane... done\n")
+
+
