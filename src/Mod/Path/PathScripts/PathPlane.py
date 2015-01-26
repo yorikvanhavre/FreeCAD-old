@@ -40,15 +40,23 @@ class Plane:
     def __init__(self,obj):
         obj.addProperty("App::PropertyEnumeration", "SelectionPlane","Plane", translate( "Selection Plane",  "Orientation plane of CNC path"))
         obj.SelectionPlane=['XY', 'XZ', 'YZ']
+        obj.addProperty("App::PropertyBool","Active","Sequence Parameters",translate("Active","Make False, to prevent operation from generating code"))
         obj.Proxy = self
 
     def execute(self,obj):
         clonelist = ['XY', 'XZ', 'YZ']
         cindx = clonelist.index(str(obj.SelectionPlane))
         pathlist = ['G17', 'G18', 'G19']
-        obj.Path = Path.Path(pathlist[cindx])
+#        obj.Path = Path.Path(pathlist[cindx])
         labelindx = clonelist.index(obj.SelectionPlane)+1
         obj.Label = "Plane"+str(labelindx)
+        if obj.Active:
+            obj.Path = Path.Path(pathlist[cindx])
+            obj.ViewObject.Visibility = True
+        else:
+            obj.Path = Path.Path("(inactive operation)")
+            obj.ViewObject.Visibility = False
+
 
 class _ViewProviderPlane:
     def __init__(self,obj): #mandatory
@@ -99,6 +107,7 @@ from PathScripts import PathProject
 prjexists = False
 obj = FreeCAD.ActiveDocument.addObject("Path::FeaturePython","Plane")
 PathScripts.PathPlane.Plane(obj)
+obj.Active = True
 PathScripts.PathPlane._ViewProviderPlane(obj.ViewObject)
 for o in FreeCAD.ActiveDocument.Objects:
     if "Proxy" in o.PropertiesList:

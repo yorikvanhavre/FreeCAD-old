@@ -47,11 +47,11 @@ class Stock:
                         "The base object this represents")
         obj.Proxy = self
 
-#    def __getstate__(self):
-#        return None
+    def __getstate__(self):
+        return None
 
-#    def __setstate__(self,state):
-#        return None
+    def __setstate__(self,state):
+        return None
 
     def execute(self, obj):
         self.Xmin = obj.Base.Shape.BoundBox.XMin
