@@ -26,10 +26,10 @@ __author__ = "Yorik van Havre"
 __url__ = "http://www.freecadweb.org"
 
 # Possible roles for IFC objects
-Roles = ['Undefined','Beam','Beam','Chimney','Column','Column','Covering','Curtain Wall',
-         'Door','Door','Foundation','Furniture','Hydro Equipment','Electric Equipment', 
-         'Member','Plate','Railing','Ramp','Ramp Flight','Rebar','Pile','Roof','Shading Device','Slab','Space'
-         'Stair','Stair Flight','Tendon','Wall','Wall','Wall Layer','Window','Window']
+Roles = ['Undefined','Beam','Chimney','Column','Covering','Curtain Wall',
+         'Door','Foundation','Furniture','Hydro Equipment','Electric Equipment', 
+         'Member','Plate','Railing','Ramp','Ramp Flight','Rebar','Pile','Roof','Shading Device','Slab','Space',
+         'Stair','Stair Flight','Tendon','Wall','Wall Layer','Window']
 
 import FreeCAD,Draft
 from FreeCAD import Vector

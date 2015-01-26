@@ -30,6 +30,7 @@ import os,time,tempfile,uuid,FreeCAD,Part,Draft,Arch
 if open.__module__ == '__builtin__':
     pyopen = open # because we'll redefine open below
 
+# which IFC type must create which FreeCAD type
 typesmap = { "Site":       ["IfcSite"],
              "Building":   ["IfcBuilding"], 
              "Floor":      ["IfcBuildingStorey"],
@@ -42,13 +43,16 @@ typesmap = { "Site":       ["IfcSite"],
              "Rebar":      ["IfcReinforcingBar"],
              "Equipment":  ["IfcFurnishingElement","IfcSanitaryTerminal","IfcFlowTerminal","IfcElectricAppliance"]
            }
-           
+
+# specific name translations
 translationtable = { "Foundation":"Footing",
                      "Floor":"BuildingStorey",
                      "Rebar":"ReinforcingBar",
                      "HydroEquipment":"SanitaryTerminal",
                      "ElectricEquipment":"ElectricAppliance",
-                     "Furniture":"FurnishingElement"
+                     "Furniture":"FurnishingElement",
+                     "Stair Flight":"StairFlight",
+                     "Curtain Wall":"CurtainWall"
                    }
 
 ifctemplate = """ISO-10303-21;
@@ -74,7 +78,7 @@ DATA;
 #14=IFCSIUNIT(*,.AREAUNIT.,$,.SQUARE_METRE.);
 #15=IFCSIUNIT(*,.VOLUMEUNIT.,$,.CUBIC_METRE.);
 #16=IFCSIUNIT(*,.PLANEANGLEUNIT.,$,.RADIAN.);
-#17=IFCMEASUREWITHUNIT(IFCPLANEANGLEMEASURE(0.01745),#16);
+#17=IFCMEASUREWITHUNIT(IFCPLANEANGLEMEASURE(0.017453292519943295),#16);
 #18=IFCCONVERSIONBASEDUNIT(#12,.PLANEANGLEUNIT.,'DEGREE',#17);
 #19=IFCUNITASSIGNMENT((#13,#14,#15,#18));
 #20=IFCPROJECT('$projectid',#5,'$project',$,$,$,$,(#11),#19);
@@ -246,9 +250,8 @@ def insert(filename,docname,skip=[]):
     from ifcopenshell import geom
     settings = ifcopenshell.geom.settings()
     settings.set(settings.USE_BREP_DATA,True)
-    #settings.set(settings.SEW_SHELLS,True)
+    settings.set(settings.SEW_SHELLS,True)
     settings.set(settings.USE_WORLD_COORDS,True)
-    #settings.set(settings.CONVERT_BACK_UNITS,True)
     if SEPARATE_OPENINGS: 
         settings.set(settings.DISABLE_OPENING_SUBTRACTIONS,True)
     sites = ifcfile.by_type("IfcSite")
@@ -272,10 +275,10 @@ def insert(filename,docname,skip=[]):
         for obj in r.RelatedObjects:
             if r.RelatingPropertyDefinition.is_a("IfcPropertySet"):
                 properties.setdefault(obj.id(),[]).extend([e.id() for e in r.RelatingPropertyDefinition.HasProperties])
+    count = 0
 
     # products
     for product in products:
-        print "starting ",product
         pid = product.id()
         guid = product.GlobalId
         ptype = product.is_a()
@@ -286,16 +289,14 @@ def insert(filename,docname,skip=[]):
         brep = None
         
         if (ptype == "IfcOpeningElement") and (not SEPARATE_OPENINGS): continue
-        if pid in skip: continue
-        if ptype in SKIP: continue
+        if pid in skip: continue # user given id skip list
+        if ptype in SKIP: continue # preferences-set type skip list
         try:
             cr = ifcopenshell.geom.create_shape(settings,product)
-            print "create_shape passed"
             brep = cr.geometry.brep_data
         except:
             pass
         if brep:
-            print "brep obtained"
             shape = Part.Shape()
             shape.importBrepFromString(brep)
             shape.scale(1000.0) # IfcOpenShell always outputs in meters
@@ -329,7 +330,8 @@ def insert(filename,docname,skip=[]):
         if obj:
             sh = baseobj.Shape.ShapeType if hasattr(baseobj,"Shape") else "None"
             sols = str(baseobj.Shape.Solids) if hasattr(baseobj,"Shape") else ""
-            if DEBUG: print "creating object ",pid," : ",ptype, " with shape: ",sh," ",sols
+            pc = str(int((float(count)/len(products)*100)))+"% "
+            if DEBUG: print pc,"creating object ",pid," : ",ptype, " with shape: ",sh," ",sols
             objects[pid] = obj
             
         # properties
@@ -341,24 +343,28 @@ def insert(filename,docname,skip=[]):
                     if o.is_a("IfcPropertySingleValue"):
                         a[o.Name] = str(o.NominalValue)
                 obj.IfcAttributes = a
-                
-    if DEBUG: print "All done. Sorting out relationships..."
+        count += 1
+        
+    FreeCAD.ActiveDocument.recompute()
+        
+    if DEBUG: print "Processing relationships..."
             
     # subtractions
     if SEPARATE_OPENINGS:
         for subtraction in subtractions:
             if (subtraction[0] in objects.keys()) and (subtraction[1] in objects.keys()):
-                    Arch.removeComponents(objects[subtraction[0]],objects[subtraction[1]])
-
+                #print objects[subtraction[0]].Name, objects[subtraction[1]].Name
+                Arch.removeComponents(objects[subtraction[0]],objects[subtraction[1]])
+                
     # additions
     for host,children in additions.iteritems():
         if host in objects.keys():
             cobs = [objects[child] for child in children if child in objects.keys()]
             if cobs:
                 Arch.addComponents(cobs,objects[host])
-
+                
     FreeCAD.ActiveDocument.recompute()
-    
+        
     # cleaning bad shapes
     for obj in objects.values():
         if obj.isDerivedFrom("Part::Feature"):
