@@ -75,7 +75,7 @@ def export(obj,filename):
     modal=True
     commands = obj[0]
     gcode = ''
-    safetyblock1 = 'G90G40G49'
+    safetyblock1 = 'G90G40G49\n'
     gcode+=safetyblock1
 
     units = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Units")
@@ -98,7 +98,7 @@ def export(obj,filename):
     else:
         FreeCAD.Console.PrintError('Select a path object and try again\n')
     if obj[0].Editor:
-        FreeCAD.Console.PrintMessage('Editor test')
+        FreeCAD.Console.PrintMessage('Editor Activated\n')
         dia = PostUtils.GCodeEditorDialog()
         dia.editor.setText(gcode)
         dia.exec_()
