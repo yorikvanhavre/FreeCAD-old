@@ -43,6 +43,7 @@ class ObjectPocket:
     def __init__(self,obj):
         obj.addProperty("App::PropertyLinkSub","Base","Path",translate("PathProfile","The base geometry of this object"))
         obj.addProperty("App::PropertyInteger","ToolNumber","Path",translate("PathProfile","The tool number to use"))
+        obj.addProperty("App::PropertyBool","Active","Sequence Parameters",translate("Active","Make False, to prevent operation from generating code"))
         obj.Proxy = self
 
     def __getstate__(self):
@@ -135,8 +136,16 @@ class ObjectPocket:
                         last = point
                     
             #print output
-            path = Path.Path(output)
-            obj.Path = path
+#            path = Path.Path(output)
+#            obj.Path = path
+            if obj.Active:
+                path = Path.Path(output)
+                obj.Path = path
+                obj.ViewObject.Visibility = True
+            else:
+                path = Path.Path("(inactive operation)")
+                obj.Path = path
+                obj.ViewObject.Visibility = False
 
 
 class CommandPathPocket:
@@ -177,6 +186,7 @@ class CommandPathPocket:
         # if everything is ok, execute and register the transaction in the undo/redo stack
         FreeCAD.ActiveDocument.openTransaction(translate("PathPocket","Create Pocket"))
         FreeCADGui.addModule("PathScripts.PathPocket")
+        FreeCADGui.doCommand('prjexists = False')
         FreeCADGui.doCommand('obj = FreeCAD.ActiveDocument.addObject("Path::FeaturePython","Pocket")')
         FreeCADGui.doCommand('PathScripts.PathPocket.ObjectPocket(obj)')
         subs = "["
@@ -185,6 +195,28 @@ class CommandPathPocket:
         subs += "]"
         FreeCADGui.doCommand('obj.Base = (FreeCAD.ActiveDocument.' + selection[0].ObjectName + ',' + subs + ')')
         FreeCADGui.doCommand('obj.ViewObject.Proxy = 0')
+        FreeCADGui.doCommand('obj.Active = True')
+        snippet = '''
+from PathScripts import PathProject
+for o in FreeCAD.ActiveDocument.Objects:
+    if "Proxy" in o.PropertiesList:
+        if isinstance(o.Proxy,PathProject.ObjectPathProject):
+            g = o.Group
+            g.append(obj)
+            o.Group = g
+            prjexists = True
+
+if prjexists:
+    pass
+else: #create a new path object
+    project = FreeCAD.ActiveDocument.addObject("Path::FeatureCompoundPython","Project")
+    PathProject.ObjectPathProject(project)
+    PathProject.ViewProviderProject(project.ViewObject)
+    g = project.Group
+    g.append(obj)
+    project.Group = g
+'''
+        FreeCADGui.doCommand(snippet)
         FreeCAD.ActiveDocument.commitTransaction()
         FreeCAD.ActiveDocument.recompute()
 

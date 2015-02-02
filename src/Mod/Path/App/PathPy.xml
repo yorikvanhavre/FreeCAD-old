@@ -61,6 +61,11 @@ deletes the command found at the given position or from the end of the path</Use
                 <UserDocu>returns a gcode string representing the path</UserDocu>
             </Documentation>
         </Methode>
+        <Methode Name="copy" Const="true">
+            <Documentation>
+                <UserDocu>returns a copy of this path</UserDocu>
+            </Documentation>
+        </Methode>
         <ClassDeclarations>
             bool touched;
         </ClassDeclarations>
