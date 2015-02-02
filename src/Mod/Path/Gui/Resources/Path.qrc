@@ -17,5 +17,6 @@
         <file>icons/Path-Axis.svg</file>
         <file>icons/Path-Stock.svg</file>
         <file>icons/Path-Plane.svg</file>
+        <file>icons/Path-Post.svg</file>
     </qresource>
 </RCC> 
