@@ -47,23 +47,18 @@ class ObjectProfile:
         obj.addProperty("App::PropertyLinkSub","Face2","Path",translate("Face2","Second Selected Face to help determine where the upper level of tool path is"))
         obj.addProperty("App::PropertyBool","PathClosed","Path",translate("Path Closed","If the toolpath is a closed polyline this is True"))
         obj.addProperty("App::PropertyLinkSub","Edge1","Path",translate("Edge 1","First Selected Edge to help determine which geometry to make a toolpath around"))
-#        obj.addProperty("Part::PropertyPartShape","FirstEdge","Shape",translate("FirstEdge","First Selected Edge to help determine where to start the toolpath"))
         obj.addProperty("App::PropertyLinkSub","Edge2","Path",translate("Edge 2","Second Selected Edge to help determine which geometry to make a toolpath around"))
-#        obj.addProperty("Part::PropertyPartShape","SecondEdge","Shape",translate("SecondEdge","Second Selected Edge to help determine where to start the toolpath"))
         obj.addProperty("App::PropertyInteger","ToolNumber","Tool",translate("PathProfile","The tool number to use"))
-
         obj.addProperty("App::PropertyFloat", "SpindleSpeed", "Tool", translate("Spindle Speed","The speed of the cutting spindle in RPM"))
-
         obj.addProperty("App::PropertyEnumeration", "SpindleDir", "Tool", translate("Spindle Dir","Direction of spindle rotation"))
         obj.SpindleDir = ['Forward','Reverse']
-
-
         obj.addProperty("App::PropertyFloat", "ClearanceHeight", "Depth Parameters", translate("Clearance Height","The height needed to clear clamps and obstructions"))
         obj.addProperty("App::PropertyFloat", "StepDown", "Depth Parameters", translate("StepDown","Incremental Step Down of Tool"))
         obj.addProperty("App::PropertyFloat", "StartDepth", "Depth Parameters", translate("Start Depth","Starting Depth of Tool- first cut depth in Z"))
         obj.addProperty("App::PropertyBool","UseStartDepth","Depth Parameters",translate("Use Start Depth","make True, if manually specifying a Start Start Depth"))
         obj.addProperty("App::PropertyFloat", "FinalDepth", "Depth Parameters", translate("Final Depth","Final Depth of Tool- lowest value in Z"))
         obj.addProperty("App::PropertyFloat", "RetractHeight", "Depth Parameters", translate("Retract Height","The height desired to retract tool when path is finished"))
+        obj.addProperty("App::PropertyString","Comment","Profile Parameters",translate("PathProject","An optional comment for this profile"))
         obj.addProperty("App::PropertyVector","StartPoint","Profile Parameters",translate("Start Point","The start point of this path"))
         obj.addProperty("App::PropertyBool","UseStartPoint","Profile Parameters",translate("Use Start Point","make True, if specifying a Start Point"))
         obj.addProperty("App::PropertyEnumeration", "Direction", "Profile Parameters",translate("Direction", "The direction that the toolpath should go around the part ClockWise CW or CounterClockWise CCW"))
@@ -141,6 +136,7 @@ class ObjectProfile:
             else:
                 clockwise=True
             output =""
+            output += '('+obj.Comment+')\n'
             output += "M6 T"
             output += str(obj.ToolNumber)+"\n"
             output +="M"
