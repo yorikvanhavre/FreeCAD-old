@@ -98,12 +98,16 @@ def lineout(command, oldvals):
             line+= 'M6T'+str(int(command.Parameters['T']))
         elif '(' in command.Name: 
             line+= str(fcoms(command.Name))
+        elif command.Name == 'G43':
+            line+= 'G43H'+str(int(command.Parameters['H']))
         else:
             line += str(command.Name)
     if command.Name == 'M3':
         line+= 'S'+str(sfmt(command.Parameters['S']))
     if command.Name == 'M4':
         line+= 'S'+str(sfmt(command.Parameters['S']))
+
+
     if 'X' in command.Parameters:
         if oldvals.params and (oldvals.com == command.Name) and modal:
             d =oldvals.params 
@@ -207,6 +211,13 @@ def export(obj,filename):
                     pass
                 else:
                     gcode+= lineout(c, oldvals)+'\n'
+            elif c.Name == 'G43':
+                if oldtool:
+                    pass
+                else:
+                    strcom = 'G43 H'+str(int(oldtoolno.retVal()))
+                    tooloffset = Path.Command(strcom)
+                    gcode+= lineout(tooloffset, oldvals)
             else:
                 gcode+= lineout(c, oldvals)+'\n'
                 oldvals = saveVals(c)
