@@ -258,8 +258,8 @@ def SortPath(wire,Side,radius,clockwise,ZClearance,StepDown,ZStart,ZFinalDepth,f
         toolpath.append(edge)
 
     paths ="G0 Z" 
-    paths = str(ZClearance)
-    paths = "\n"
+    paths += str(ZClearance)
+    paths += "\n"
     first = toolpath[0].Vertexes[0].Point
     paths += "G0 X"+str(fmt(first.x))+"Y"+str(fmt(first.y))+"\n"
     ZCurrent = ZStart- StepDown
