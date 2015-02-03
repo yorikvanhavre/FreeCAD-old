@@ -15,18 +15,29 @@ INSTALL(
 
 SET(PathScripts_SRCS
     PathScripts/__init__.py
-    PathScripts/find_outer_profile.py
-    PathScripts/heeks_funcs.py
-    PathScripts/parseGroups.py
-    PathScripts/toolpathparams.py
-    PathScripts/pre_example.py
-    PathScripts/post_example.py
-    PathScripts/post_editor.py
+    PathScripts/PostUtils.py
+    PathScripts/example_pre.py
+    PathScripts/opensbp_pre.py
+    PathScripts/example_post.py
+    PathScripts/linuxcnc_post.py
+    PathScripts/comparams_post.py
+    PathScripts/dumper_post.py
     PathScripts/TooltableEditor.py
     PathScripts/PathProfile.py
     PathScripts/PathPocket.py
     PathScripts/PathDrilling.py
     PathScripts/PathDressup.py
+    PathScripts/PathHop.py
+    PathScripts/PathUtils.py
+    PathScripts/PathSelection.py
+    PathScripts/PathFixture.py
+    PathScripts/PathCopy.py
+    PathScripts/PathCompoundExtended.py
+    PathScripts/PathProject.py
+    PathScripts/PathToolTableEdit.py
+    PathScripts/PathStock.py
+    PathScripts/PathPlane.py
+    PathScripts/PathPost.py
 )
 
 ADD_CUSTOM_TARGET(PathScripts ALL
