@@ -50,24 +50,33 @@ class CommandPathPost:
         return not FreeCAD.ActiveDocument is None
 
     def Activated(self):
-        FreeCAD.ActiveDocument.openTransaction(translate("PathPlane","Create a Selection Plane object"))
+        FreeCAD.ActiveDocument.openTransaction(translate("PathPost","Post Process the Selected path(s)"))
         FreeCADGui.addModule("PathScripts.PathPost")
         #select the PathProject that you want to post output from
-        obj = FreeCADGui.Selection.getSelection()[0]
+        postname = "dumper_post"
+        filename = "tmp.tap"
 
-        #need to check for existance of these: obj.PostProcessor, obj.OutputFile
-        if not (obj.PostProcessor and obj.OutputFile):
-            FreeCAD.Console.PrintError('Please use the Output File and Post Processor file browsers in your project\n')
-            FreeCAD.Console.PrintError('to give the post command something to work with.\n')
+        obj = FreeCADGui.Selection.getSelection()
+        if len(obj) != 1: #
+            for i in obj:
+                if hasattr(i, "PostProcessor"): #Can't do projects and paths
+                    FreeCAD.Console.PrintError('Select only a single project or select one or more paths and try again. \n')
+                    return
+            #processing multiple paths
 
-        if (obj.PostProcessor and obj.OutputFile):
-            sys.path.append(os.path.split(obj.PostProcessor)[0])
-            lessextn = os.path.splitext(obj.PostProcessor)[0]
-            postname = os.path.split(lessextn)[1]
-            exec "import %s as current_post" % postname
-            objlist = []
-            objlist.append(obj)
-            current_post.export(objlist,obj.OutputFile)
+        else: #processing a single selection
+            if hasattr(obj[0], "PostProcessor"): #A project selected.  Use the selected post.
+                proj = obj[0]
+                #need to check for existance of these: obj.PostProcessor, obj.OutputFile
+                if proj.PostProcessor and proj.OutputFile:
+                    sys.path.append(os.path.split(proj.PostProcessor)[0])
+                    lessextn = os.path.splitext(proj.PostProcessor)[0]
+                    postname = os.path.split(lessextn)[1]
+                    filename = proj.OutputFile
+
+        exec "import %s as current_post" % postname
+        current_post.export(obj,filename)
+
         FreeCAD.ActiveDocument.commitTransaction()
         FreeCAD.ActiveDocument.recompute()
 
