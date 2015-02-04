@@ -1,5 +1,5 @@
 #***************************************************************************
-#*   (c) Yorik van Havre (yorik@uncreated.net) 2014                        *
+#*   (c) sliptonic (shopinthewoods@gmail.com) 2014                        *
 #*                                                                         *
 #*   This file is part of the FreeCAD CAx development system.              *
 #*                                                                         *
@@ -23,30 +23,27 @@
 
 
 '''
-This is an example postprocessor file for the Path workbench. It is used to
+This is a postprocessor file for the Path workbench. It is used to
 take a pseudo-gcode fragment outputted by a Path object, and output
-real GCode suitable for a particular machine. This postprocessor, once placed 
+real GCode suitable for a linuxcnc 3 axis mill. This postprocessor, once placed 
 in the appropriate PathScripts folder, can be used directly from inside FreeCAD,
 via the GUI importer or via python scripts with:
 
-import Path
-Path.write(object,"/path/to/file.ncc","post_example")
-
-It must contain at least a parse() function, that takes a string as 
-argument, which is the pseudo-GCode data from a Path object, and return
-another string, which is properly formatted GCode.
+import linuxcnc_post
+linuxcnc_post.export(object,"/path/to/file.ncc")
 '''
 
 import datetime
 now = datetime.datetime.now()
 from PathScripts import PostUtils
 
+#These globals set common customization preferences
 OUTPUT_COMMENTS = True
 OUTPUT_HEADER = True
-OUTPUT_LINE_NUMBERS = False
+OUTPUT_LINE_NUMBERS = True
 SHOW_EDITOR = True
 MODAL = False #if true commands are suppressed if the same as previous line.
-COMMAND_SPACE = ""
+COMMAND_SPACE = " "
 LINENR = 100 #line number starting value
 
 
@@ -61,19 +58,13 @@ M2
 '''
  
 #Pre operation text will be inserted before every operation
-PRE_OPERATION = '''
- 
-'''
+PRE_OPERATION = ''''''
  
 #Post operation text will be inserted after every operation
-POST_OPERATION = '''
-
-'''
+POST_OPERATION = ''''''
 
 #Tool Change commands will be inserted before a tool change
-TOOL_CHANGE = '''(A tool change)
-(happens here)
-'''
+TOOL_CHANGE = ''''''
 
 
 # to distinguish python built-in open function from the one declared below
@@ -82,15 +73,60 @@ if open.__module__ == '__builtin__':
 
 
 def export(objectslist,filename):
-    "called when freecad exports a list of objects"
-    if len(objectslist) > 1:
-        print "This script is unable to write more than one Path object"
-        return
-    obj = objectslist[0]
-    if not hasattr(obj,"Path"):
-        print "the given object is not a path"
-    gcode = obj.Path.toGCode()
-    gcode = parse(gcode)
+    for obj in objectslist:
+
+        if not hasattr(obj,"Path"):
+            print "the object " + obj.Name + " is not a path. Please select only path and Compounds."
+            return
+    
+
+    print "postprocessing..."
+    gcode = ""
+
+    # write header
+    if OUTPUT_HEADER:
+        gcode += linenumber() + "(Exported by FreeCAD)\n"
+        gcode += linenumber() + "(Post Processor: " + __name__ +")\n"
+        gcode += linenumber() + "(Output Time:"+str(now)+")\n"
+    
+    #Write the preamble 
+    if OUTPUT_COMMENTS: gcode += linenumber() + "(begin preamble)\n"
+    for line in PREAMBLE.splitlines(True):
+        gcode += linenumber() + line
+
+    for obj in objectslist:
+        
+        #do the pre_op
+        if OUTPUT_COMMENTS: gcode += linenumber() + "(begin operation: " + obj.Label + ")\n"
+        for line in PRE_OPERATION.splitlines(True):
+            gcode += linenumber() + line
+
+        gcode += parse(obj)
+
+        #do the post_op
+        if OUTPUT_COMMENTS: gcode += linenumber() + "(finish operation: " + obj.Label + ")\n"
+        for line in POST_OPERATION.splitlines(True):
+            gcode += linenumber() + line
+
+    #do the post_amble
+
+    if OUTPUT_COMMENTS: gcode += "(begin postamble)\n" 
+    for line in POSTAMBLE.splitlines(True):
+        gcode += linenumber() + line
+
+    if SHOW_EDITOR:
+        dia = PostUtils.GCodeEditorDialog()
+        dia.editor.setText(gcode)
+        result = dia.exec_()
+        if result:
+            final = dia.editor.toPlainText()
+        else:
+            final = gcode
+    else:
+        final = gcode
+      
+    print "done postprocessing."
+ 
     gfile = pythonopen(filename,"wb")
     gfile.write(gcode)
     gfile.close()
@@ -103,95 +139,67 @@ def linenumber():
         return "N" + str(LINENR) + " "
     return ""
 
-def parse(inputstring):
-    "parse(inputstring): returns a parsed output string"
-    print "postprocessing..."
-    
-    output = ""
+def parse(pathobj):
+    out = ""
     lastcommand = None
 
     #params = ['X','Y','Z','A','B','I','J','K','F','S'] #This list control the order of parameters
     params = ['X','Y','Z','A','B','I','J','F','S','T'] #linuxcnc doesn't want K properties on XY plane  Arcs need work.
     
-    # write header
-    if OUTPUT_HEADER:
-        output += linenumber() + "(Exported by FreeCAD)\n"
-        output += linenumber() + "(Post Processor: " + __name__ +")\n"
-        output += linenumber() + "(Output Time:"+str(now)+")\n"
+    if hasattr(pathobj,"Group"): #We have a compound or project.
+        if OUTPUT_COMMENTS: out += linenumber() + "(compound: " + pathobj.Label + ")\n" 
+        for p in pathobj.Group:
+            out += parse(p)
+        return out      
+    else: #parsing simple path
+        if OUTPUT_COMMENTS: out += linenumber() + "(Path: " + pathobj.Label + ")\n"
+
+        for c in pathobj.Path.Commands:
+            outstring = []    
+            command = c.Name
+            outstring.append(command) 
+            # if modal: only print the command if it is not the same as the last one
+            if MODAL == True:
+                if command == lastcommand:
+                    outstring.pop(0) 
+
+
+            # Now add the remaining parameters in order
+            for param in params:
+                if param in c.Parameters:
+                    if param == 'F': 
+                        outstring.append(param + format(c.Parameters['F'], '.2f'))
+                    elif param == 'T':
+                        outstring.append(param + str(c.Parameters['T']))
+                    else:
+                        outstring.append(param + format(c.Parameters[param], '.4f'))
+
+            # store the latest command
+            lastcommand = command
+
+            # Check for Tool Change: 
+            if command == 'M6':
+                if OUTPUT_COMMENTS: out += linenumber() + "(begin toolchange)\n" 
+                for line in TOOL_CHANGE.splitlines(True):
+                    out += linenumber() + line
+
+            if command == "message":
+                if OUTPUT_COMMENTS == False:
+                    out = []
+            else:
+                outstring.pop(0) #remove the command
+
+            #prepend a line number and append a newline
+            if len(outstring) >= 1:
+                if OUTPUT_LINE_NUMBERS: 
+                    outstring.insert(0,(linenumber()))
+
+                #append the line to the final output
+                for w in outstring:
+                    out += w + COMMAND_SPACE
+                out = out.strip() + "\n"
     
-    #Write the preamble 
-    if OUTPUT_COMMENTS: output += linenumber() + "(begin preamble)\n"
-    for line in PREAMBLE.splitlines(True):
-        output += linenumber() + line
-
-    lastcommand = None
-
-    # treat the input line by line
-    lines = inputstring.splitlines(True)
-    for line in lines:
-        commandline = PostUtils.stringsplit(line)
-        outstring = []
-        command = commandline['command']
-        outstring.append(command) 
-        # if modal: only print the command if it is not the same as the last one
-        if MODAL == True:
-            if command == lastcommand:
-                outstring.pop(0) 
-
-        # Now add the remaining parameters in order
-        for param in params:
-            if commandline[param]: 
-                if param == 'F': 
-                    outstring.append(param + format(eval(commandline[param]), '.2f'))
-                elif param == 'T':
-                    outstring.append(param + (commandline[param]))
-                else:
-                    outstring.append(param + format(eval(commandline[param]), '.4f'))
-        
-
-        # store the latest command
-        lastcommand = command
-
-        # Check for Tool Change: 
-        if command == 'M6':
-            if OUTPUT_COMMENTS: output += "(begin toolchange)\n" 
-            for line in TOOL_CHANGE.splitlines(True):
-                output += linenumber() + line
-
-        if command == "message":
-          if OUTPUT_COMMENTS == False:
-            outstring = []
-          else:
-            outstring.pop(0) #remove the command
-
-        #prepend a line number and append a newline
-        if len(outstring) >= 1:
-            if OUTPUT_LINE_NUMBERS: 
-                outstring.insert(0,(linenumber()))
-            outstring.append("\n")
-
-            #append the line to the final output
-            for w in outstring:
-                output += w + COMMAND_SPACE
-    
-    # write some stuff at the end
-    if OUTPUT_COMMENTS: output += "(begin postamble)\n" 
-    for line in POSTAMBLE.splitlines(True):
-        output += linenumber() + line
-
-    if SHOW_EDITOR:
-        dia = PostUtils.GCodeEditorDialog()
-        dia.editor.setText(output)
-        result = dia.exec_()
-        if result:
-            final = dia.editor.toPlainText()
-        else:
-            final = output
-    else:
-        final = output
-      
-    print "done postprocessing."
-    return final
+        return out
    
     
 print __name__ + " gcode postprocessor loaded."

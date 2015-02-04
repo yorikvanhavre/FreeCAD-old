@@ -57,6 +57,10 @@ class CommandPathPost:
         filename = "tmp.tap"
 
         obj = FreeCADGui.Selection.getSelection()
+        if len(obj) == 0:
+            FreeCAD.Console.PrintError('Select a single project or select one or more paths and try again. \n')
+            return
+          
         if len(obj) != 1: #
             for i in obj:
                 if hasattr(i, "PostProcessor"): #Can't do projects and paths
