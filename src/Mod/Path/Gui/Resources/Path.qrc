@@ -18,5 +18,6 @@
         <file>icons/Path-Stock.svg</file>
         <file>icons/Path-Plane.svg</file>
         <file>icons/Path-Post.svg</file>
+        <file>icons/Path-LoadTool.svg</file>
     </qresource>
 </RCC> 

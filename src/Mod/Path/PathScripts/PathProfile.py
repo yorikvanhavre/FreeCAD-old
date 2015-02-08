@@ -136,7 +136,7 @@ class ObjectProfile:
             else:
                 clockwise=True
             output =""
-            output += '('+obj.Comment+')\n'
+            output += '('+ str(obj.Comment)+')\n'
             output += "M6 T"
             output += str(obj.ToolNumber)+"\n"
             output +="M"
