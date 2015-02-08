@@ -38,19 +38,27 @@ except AttributeError:
 
 class LoadTool:
     def __init__(self,obj):
-        obj.addProperty("App::PropertyInteger", "ToolNumber","Tool", translate( "Tool Number",  "The active tool"))
-#        obj.addProperty("App::PropertyInteger", "HeightNumber","Tool", translate( "Height Offset Number",  "The Height offset number of the active tool"))
-#        obj.addProperty("App::PropertyFloat", "Height", "Tool", translate("Height","The first height value in Z, to rapid to, before making a feed move in Z"))
+        obj.addProperty("App::PropertyIntegerConstraint", "ToolNumber","Tool", translate( "Tool Number",  "The active tool"))
+        obj.ToolNumber = (0,0,10000,1)
+        obj.addProperty("App::PropertyFloat", "SpindleSpeed", "Tool", translate("Spindle Speed","The speed of the cutting spindle in RPM"))
+        obj.addProperty("App::PropertyEnumeration", "SpindleDir", "Tool", translate("Spindle Dir","Direction of spindle rotation"))
+        obj.SpindleDir = ['Forward','Reverse']
         obj.Proxy = self
 
 
     def execute(self,obj):
-        c1 = Path.Command('M6T'+str(obj.ToolNumber))
-#        c2 = Path.Command('G43H'+str(obj.ToolNumber))
-#        c3 = Path.Command('G0Z'+str(obj.Height))
-        obj.Path = Path.Path([c1])
+        commands = ""
+        commands = 'M6T'+str(obj.ToolNumber)+'\n'
+#        c1 = Path.Command('M6T'+str(obj.ToolNumber))
+        if obj.SpindleDir =='Forward':
+            commands +='M3S'+str(obj.SpindleSpeed)+'\n'
+#            c2 = Path.Command('M3S'+str(obj.SpindleSpeed))
+        else:
+            commands +='M4S'+str(obj.SpindleSpeed)+'\n'
+#            c2 = Path.Command('M4S'+str(obj.SpindleSpeed))
+        obj.Path = Path.Path(commands)
+#        obj.Path = Path.Path(c1+c2)
 #        obj.Path.addCommands(c2)
-#        obj.Path.addCommands(c3)
         obj.Label = "Tool"+str(obj.ToolNumber)
 
 class _ViewProviderLoadTool:

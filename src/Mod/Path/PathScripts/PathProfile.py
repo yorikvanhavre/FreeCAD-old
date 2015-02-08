@@ -48,10 +48,11 @@ class ObjectProfile:
         obj.addProperty("App::PropertyBool","PathClosed","Path",translate("Path Closed","If the toolpath is a closed polyline this is True"))
         obj.addProperty("App::PropertyLinkSub","Edge1","Path",translate("Edge 1","First Selected Edge to help determine which geometry to make a toolpath around"))
         obj.addProperty("App::PropertyLinkSub","Edge2","Path",translate("Edge 2","Second Selected Edge to help determine which geometry to make a toolpath around"))
-        obj.addProperty("App::PropertyInteger","ToolNumber","Tool",translate("PathProfile","The tool number to use"))
-        obj.addProperty("App::PropertyFloat", "SpindleSpeed", "Tool", translate("Spindle Speed","The speed of the cutting spindle in RPM"))
-        obj.addProperty("App::PropertyEnumeration", "SpindleDir", "Tool", translate("Spindle Dir","Direction of spindle rotation"))
-        obj.SpindleDir = ['Forward','Reverse']
+        obj.addProperty("App::PropertyIntegerConstraint","ToolNum","Tool",translate("PathProfile","The tool number to use"))
+        obj.ToolNum = (0,0,1000,1)
+#        obj.addProperty("App::PropertyFloat", "SpindleSpeed", "Tool", translate("Spindle Speed","The speed of the cutting spindle in RPM"))
+#        obj.addProperty("App::PropertyEnumeration", "SpindleDir", "Tool", translate("Spindle Dir","Direction of spindle rotation"))
+#        obj.SpindleDir = ['Forward','Reverse']
         obj.addProperty("App::PropertyFloat", "ClearanceHeight", "Depth Parameters", translate("Clearance Height","The height needed to clear clamps and obstructions"))
         obj.addProperty("App::PropertyFloat", "StepDown", "Depth Parameters", translate("StepDown","Incremental Step Down of Tool"))
         obj.addProperty("App::PropertyFloat", "StartDepth", "Depth Parameters", translate("Start Depth","Starting Depth of Tool- first cut depth in Z"))
@@ -99,7 +100,7 @@ class ObjectProfile:
 
     def execute(self,obj):
         if obj.Base:
-            tool = self.getTool(obj,obj.ToolNumber)
+            tool = self.getTool(obj,obj.ToolNum)
             if tool:
                 radius = tool.Diameter/2
             else:
@@ -137,15 +138,15 @@ class ObjectProfile:
                 clockwise=True
             output =""
             output += '('+ str(obj.Comment)+')\n'
-            output += "M6 T"
-            output += str(obj.ToolNumber)+"\n"
-            output +="M"
-            if obj.SpindleDir =='Forward':
-                output +="3"
-            else:
-                output +="4"
-            output += " \n"
-            output +="S"+str(obj.SpindleSpeed) +"\n" #going to just use spindle forward for the moment
+#            output += "M6 T"
+#            output += str(obj.ToolNum)+"\n"
+#            output +="M"
+#            if obj.SpindleDir =='Forward':
+#                output +="3"
+#            else:
+#                output +="4"
+#            output += " \n"
+#            output +="S"+str(obj.SpindleSpeed) +"\n" #going to just use spindle forward for the moment
 
 #            output += "\n"
             FirstEdge= None
@@ -244,8 +245,8 @@ class CommandPathProfile:
         obj.StartDepth = ZMax- obj.StepDown
         obj.FinalDepth = ZMin-1.0
         obj.ClearanceHeight =  ZMax + 5.0
-        obj.SpindleDir = 'Forward'
-        obj.SpindleSpeed = 2000.00
+#        obj.SpindleDir = 'Forward'
+#        obj.SpindleSpeed = 2000.00
         obj.SegLen = 0.5
         obj.ViewObject.Proxy = 0
         obj.Active = True
@@ -253,6 +254,7 @@ class CommandPathProfile:
         for o in FreeCAD.ActiveDocument.Objects:
             if "Proxy" in o.PropertiesList:
                 if isinstance(o.Proxy,PathProject.ObjectPathProject):
+                    project = o
                     g = o.Group
                     g.append(obj)
                     o.Group = g
@@ -267,6 +269,9 @@ class CommandPathProfile:
             g = project.Group
             g.append(obj)
             project.Group = g
+        tl = PathUtils.changeTool(obj,project)
+        if tl:
+            obj.ToolNum = tl
 
         FreeCAD.ActiveDocument.commitTransaction()
         FreeCAD.ActiveDocument.recompute()

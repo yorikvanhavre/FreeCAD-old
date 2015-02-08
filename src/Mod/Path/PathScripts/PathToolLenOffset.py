@@ -38,7 +38,8 @@ except AttributeError:
 
 class ToolLenOffset:
     def __init__(self,obj):
-        obj.addProperty("App::PropertyInteger", "HeightNumber","HeightOffset", translate( "Height Offset Number",  "The Height offset number of the active tool"))
+        obj.addProperty("App::PropertyIntegerConstraint", "HeightNumber","HeightOffset", translate( "Height Offset Number",  "The Height offset number of the active tool"))
+        obj.HeightNumber = (0,0,10000,1)
         obj.addProperty("App::PropertyFloat", "Height", "HeightOffset", translate("Height","The first height value in Z, to rapid to, before making a feed move in Z"))
         obj.addProperty("App::PropertyBool","Active","HeightOffset",translate("Active","Make False, to prevent operation from generating code"))
         obj.Proxy = self
@@ -102,7 +103,7 @@ class CommandPathToolLenOffset:
         snippet = '''
 import Path
 import PathScripts
-from PathScripts import PathProject
+from PathScripts import PathProject,PathUtils
 prjexists = False
 obj = FreeCAD.ActiveDocument.addObject("Path::FeaturePython","HeightOffset")
 PathScripts.PathToolLenOffset.ToolLenOffset(obj)
@@ -111,6 +112,7 @@ PathScripts.PathToolLenOffset._ViewProviderTLO(obj.ViewObject)
 for o in FreeCAD.ActiveDocument.Objects:
     if "Proxy" in o.PropertiesList:
         if isinstance(o.Proxy,PathProject.ObjectPathProject):
+            project = o
             g = o.Group
             g.append(obj)
             o.Group = g
@@ -124,6 +126,11 @@ else: #create a new path object
     g = project.Group
     g.append(obj)
     project.Group = g
+
+tl = PathUtils.changeTool(obj,project)
+if tl:
+    obj.HeightNumber = tl
+FreeCAD.ActiveDocument.recompute()
 '''
         FreeCADGui.doCommand(snippet)
         FreeCAD.ActiveDocument.commitTransaction()
