@@ -42,8 +42,8 @@ class ObjectCompoundExtended:
 
     def __init__(self,obj):
         obj.addProperty("App::PropertyString","Description",  "Path",translate("PathCompoundExtended","An optional description of this compounded operation"))
-        obj.addProperty("App::PropertySpeed", "FeedRate",     "Path",translate("PathCompoundExtended","The feed rate of the paths in these compounded operations"))
-        obj.addProperty("App::PropertyFloat", "SpindleSpeed", "Path",translate("PathCompoundExtended","The spindle speed, in revolutions per minute, of the tool used in these compounded operations"))
+#        obj.addProperty("App::PropertySpeed", "FeedRate",     "Path",translate("PathCompoundExtended","The feed rate of the paths in these compounded operations"))
+#        obj.addProperty("App::PropertyFloat", "SpindleSpeed", "Path",translate("PathCompoundExtended","The spindle speed, in revolutions per minute, of the tool used in these compounded operations"))
         obj.addProperty("App::PropertyLength","SafeHeight",   "Path",translate("PathCompoundExtended","The safe height for this operation"))
         obj.addProperty("App::PropertyLength","RetractHeight","Path",translate("PathCompoundExtended","The retract height, above top surface of part, between compounded operations inside clamping area"))
         obj.Proxy = self
