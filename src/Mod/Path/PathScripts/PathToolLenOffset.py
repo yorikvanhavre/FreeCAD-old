@@ -2,7 +2,7 @@
 
 #***************************************************************************
 #*                                                                         *
-#*   Copyright (c) 2014 Yorik van Havre <yorik@uncreated.net>              *
+#*   Copyright (c) 2015 Dan Falck <ddfalck@gmail.com>                      *
 #*                                                                         *
 #*   This program is free software; you can redistribute it and/or modify  *
 #*   it under the terms of the GNU Lesser General Public License (LGPL)    *
@@ -21,11 +21,11 @@
 #*   USA                                                                   *
 #*                                                                         *
 #***************************************************************************
+''' Used for CNC machine Tool Length Offsets ie G43H2'''
 
 import FreeCAD,FreeCADGui,Path,PathGui
+from PathScripts import PathProject
 from PySide import QtCore,QtGui
-
-"""Path Compound Extended object and FreeCAD command"""
 
 # Qt tanslation handling
 try:
@@ -36,72 +36,85 @@ except AttributeError:
     def translate(context, text, disambig=None):
         return QtGui.QApplication.translate(context, text, disambig)
 
-
-class ObjectCompoundExtended:
-    
-
+class ToolLenOffset:
     def __init__(self,obj):
-        obj.addProperty("App::PropertyString","Description",  "Path",translate("PathCompoundExtended","An optional description of this compounded operation"))
-        obj.addProperty("App::PropertySpeed", "FeedRate",     "Path",translate("PathCompoundExtended","The feed rate of the paths in these compounded operations"))
-        obj.addProperty("App::PropertyFloat", "SpindleSpeed", "Path",translate("PathCompoundExtended","The spindle speed, in revolutions per minute, of the tool used in these compounded operations"))
-        obj.addProperty("App::PropertyLength","SafeHeight",   "Path",translate("PathCompoundExtended","The safe height for this operation"))
-        obj.addProperty("App::PropertyLength","RetractHeight","Path",translate("PathCompoundExtended","The retract height, above top surface of part, between compounded operations inside clamping area"))
+        obj.addProperty("App::PropertyInteger", "HeightNumber","HeightOffset", translate( "Height Offset Number",  "The Height offset number of the active tool"))
+        obj.addProperty("App::PropertyFloat", "Height", "HeightOffset", translate("Height","The first height value in Z, to rapid to, before making a feed move in Z"))
+        obj.addProperty("App::PropertyBool","Active","HeightOffset",translate("Active","Make False, to prevent operation from generating code"))
         obj.Proxy = self
 
-    def __getstate__(self):
-        return None
-
-    def __setstate__(self,state):
-        return None
 
     def execute(self,obj):
-        cmds = []
-        for child in obj.Group:
-            if child.isDerivedFrom("Path::Feature"):
-                cmds.extend(child.Path.Commands)
-        if cmds:
-            path = Path.Path(cmds)
-            obj.Path = path
 
-class CommandCompoundExtended:
+        command = 'G43H'+str(obj.HeightNumber)+'G0Z'+str(obj.Height)
+        obj.Path = Path.Path(command)
+        obj.Label = "Height"+str(obj.HeightNumber)
+        if obj.Active:
+            obj.Path = Path.Path(command)
+            obj.ViewObject.Visibility = True
+        else:
+            obj.Path = Path.Path("(inactive operation)")
+            obj.ViewObject.Visibility = False
+
+class _ViewProviderTLO:
+    def __init__(self,obj): #mandatory
+        obj.Proxy = self
+
+    def __getstate__(self): #mandatory
+        return None
+
+    def __setstate__(self,state): #mandatory
+        return None
+
+    def getIcon(self): #optional
+        return ":/icons/Path-LengthOffset.svg"
+
+    def onChanged(self,obj,prop): #optional
+        # this is executed when a property of the VIEW PROVIDER changes
+        pass
+
+    def updateData(self,obj,prop): #optional
+        # this is executed when a property of the APP OBJECT changes
+        pass
+
+    def setEdit(self,vobj,mode): #optional
+        # this is executed when the object is double-clicked in the tree
+        pass
+
+    def unsetEdit(self,vobj,mode): #optional
+        # this is executed when the user cancels or terminates edit mode
+        pass
 
 
+class CommandPathToolLenOffset:
     def GetResources(self):
-        return {'Pixmap'  : 'Path-Compound',
-                'MenuText': QtCore.QT_TRANSLATE_NOOP("PathCompoundExtended","Compound"),
-                'Accel': "P, C",
-                'ToolTip': QtCore.QT_TRANSLATE_NOOP("PathCompoundExtended","Creates a Path Compound object")}
+        return {'Pixmap'  : 'Path-LengthOffset',
+                'MenuText': QtCore.QT_TRANSLATE_NOOP("PathToolLenOffset","Tool Length Offset"),
+                'Accel': "P, T",
+                'ToolTip': QtCore.QT_TRANSLATE_NOOP("PathToolLenOffset","Create a Tool Length Offset object")}
 
     def IsActive(self):
         return not FreeCAD.ActiveDocument is None
-        
-    def Activated(self):
 
-        FreeCAD.ActiveDocument.openTransaction(translate("PathCompoundExtended","Create Compound"))
-        FreeCADGui.addModule("PathScripts.PathCompoundExtended")
+    def Activated(self):
+        FreeCAD.ActiveDocument.openTransaction(translate("PathPlane","Create a Selection Plane object"))
+        FreeCADGui.addModule("PathScripts.PathToolLenOffset")
         snippet = '''
 import Path
 import PathScripts
 from PathScripts import PathProject
-incl = []
 prjexists = False
-sel = FreeCADGui.Selection.getSelection()
-for s in sel:
-    if s.isDerivedFrom("Path::Feature"):
-        incl.append(s)
-
-obj = FreeCAD.ActiveDocument.addObject("Path::FeatureCompoundPython","Compound")
-PathScripts.PathCompoundExtended.ObjectCompoundExtended(obj)
-
+obj = FreeCAD.ActiveDocument.addObject("Path::FeaturePython","HeightOffset")
+PathScripts.PathToolLenOffset.ToolLenOffset(obj)
+obj.Active = True
+PathScripts.PathToolLenOffset._ViewProviderTLO(obj.ViewObject)
 for o in FreeCAD.ActiveDocument.Objects:
     if "Proxy" in o.PropertiesList:
         if isinstance(o.Proxy,PathProject.ObjectPathProject):
-            project = o
             g = o.Group
             g.append(obj)
             o.Group = g
             prjexists = True
-
 if prjexists:
     pass
 else: #create a new path object
@@ -111,27 +124,17 @@ else: #create a new path object
     g = project.Group
     g.append(obj)
     project.Group = g
-
-if incl:
-    children = []
-    p = project.Group
-    
-    g = obj.Group
-    for child in incl:
-        p.remove(child)
-        children.append(FreeCAD.ActiveDocument.getObject(child.Name))
-    project.Group = p
-    g.append(children)
-    obj.Group = children
-obj.ViewObject.Proxy = 0
 '''
         FreeCADGui.doCommand(snippet)
         FreeCAD.ActiveDocument.commitTransaction()
         FreeCAD.ActiveDocument.recompute()
 
-
 if FreeCAD.GuiUp: 
     # register the FreeCAD command
-    FreeCADGui.addCommand('Path_CompoundExtended',CommandCompoundExtended())
+    FreeCADGui.addCommand('Path_ToolLenOffset', CommandPathToolLenOffset())
+    
+FreeCAD.Console.PrintLog("Loading PathToolLenOffset... done\n")
 
-FreeCAD.Console.PrintLog("Loading PathCompoundExtended... done\n")
+
+
+
