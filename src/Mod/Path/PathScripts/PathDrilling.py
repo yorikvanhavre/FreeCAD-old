@@ -24,6 +24,7 @@
 
 import FreeCAD,FreeCADGui,Path,PathGui
 from PySide import QtCore,QtGui
+from PathScripts import PathUtils,PathSelection,PathProject
 
 """Path Drilling object and FreeCAD command"""
 
@@ -41,9 +42,24 @@ class ObjectDrilling:
     
 
     def __init__(self,obj):
-        obj.addProperty("App::PropertyInteger","ToolNumber","Path",translate("PathProfile","The tool number to use"))
-        obj.addProperty("App::PropertyVector","StartPoint","Path",translate("PathProfile","The start position of the drilling"))
-        obj.addProperty("App::PropertyDistance","DrillingHeight","Path",translate("PathProfile","The Z position of the end of the drilling"))
+        #obj.addProperty("App::PropertyVector","StartPoint","Path",translate("PathProfile","The start position of the drilling"))
+
+        obj.addProperty("App::PropertyLinkSub","Base","Path",translate("Parent Object","The base geometry of this toolpath"))
+        obj.addProperty("App::PropertyVectorList","locations","Path","The drilling locations")
+
+        obj.addProperty("App::PropertyFloatConstraint", "PeckDepth", "Drilling", translate("PeckDepth","Incremental Drill depth before retracting to clear chips"))
+        obj.PeckDepth = (0,0,1000,1)
+        obj.addProperty("App::PropertyFloat", "ClearanceHeight", "Drilling", translate("Clearance Height","The height needed to clear clamps and obstructions"))
+        obj.addProperty("App::PropertyFloat", "FinalDepth", "Drilling", translate("Final Depth","Final Depth of Tool- lowest value in Z"))
+        obj.addProperty("App::PropertyFloat", "RetractHeight", "Drilling", translate("Retract Height","The height where feed starts and height during retract tool when path is finished"))
+        obj.addProperty("App::PropertyFloatConstraint", "VertFeed", "Feed",translate("Vert Feed","Feed rate for vertical moves in Z"))
+        obj.VertFeed = (0,0,100000,1)
+
+        obj.addProperty("App::PropertyFloatConstraint", "HorizFeed", "Feed",translate("Horiz Feed","Feed rate for horizontal moves"))
+        obj.HorizFeed = (0,0,100000,1)
+
+        obj.addProperty("App::PropertyString","Comment","Path",translate("PathProject","An optional comment for this profile"))
+        obj.addProperty("App::PropertyBool","Active","Path",translate("Active","Make False, to prevent operation from generating code"))
         obj.Proxy = self
 
     def __getstate__(self):
@@ -63,21 +79,21 @@ class ObjectDrilling:
         return None
 
     def execute(self,obj):
-        # absolute coords, millimeters, cancel offsets
-        output = "G90\nG21\nG40\n"
-        # save tool
-        output += "M06 T" + str(obj.ToolNumber) + "\n"
-        
-        # rapid move to the start position
-        output += "G0 X" + str(obj.StartPoint.x) + " Y" + str(obj.StartPoint.y) + " Z" + str(obj.StartPoint.z) + "\n"
-        
-        # feed rate move to the drilling Z position
-        output += "G1 Z" + str(obj.DrillingHeight.Value) + "\n"
-        
-        # rapid move back to the start position
-        output += "G0 Z" + str(obj.StartPoint.z) + "\n"
-        
-        #print output
+        output = "G90 G98\n"
+        output += "G0 Z" + str(obj.ClearanceHeight) + "\n"
+        if obj.PeckDepth > 0:
+            cmd = "G83"
+            qword = " Q"+ str(obj.PeckDepth)
+        else:
+            cmd = "G81"
+            qword = ""
+            
+        for p in obj.locations:
+            output += cmd + " X" + str(p.x) + " Y" + str(p.y) + " Z" + str(obj.FinalDepth) + qword + " R" + str(obj.RetractHeight) + " F" + str(obj.VertFeed) + "\n"
+
+        output += "G80\n"
+
+        print output
         path = Path.Path(output)
         obj.Path = path
 
@@ -95,11 +111,54 @@ class CommandPathDrilling:
         return not FreeCAD.ActiveDocument is None
         
     def Activated(self):
+        import Path
+        import Part
+
+        from PathScripts import PathUtils,PathDrilling,PathProject
+        prjexists = False
+        selection = PathSelection.multiSelect()
+
+        if not selection:
+            return
+        # if everything is ok, execute and register the transaction in the undo/redo stack
         FreeCAD.ActiveDocument.openTransaction(translate("PathDrilling","Create Drilling"))
         FreeCADGui.addModule("PathScripts.PathDrilling")
-        FreeCADGui.doCommand('obj = FreeCAD.ActiveDocument.addObject("Path::FeaturePython","Drilling")')
-        FreeCADGui.doCommand('PathScripts.PathDrilling.ObjectDrilling(obj)')
-        FreeCADGui.doCommand('obj.ViewObject.Proxy = 0')
+        
+        obj = FreeCAD.ActiveDocument.addObject("Path::FeaturePython","Drilling")
+        PathDrilling.ObjectDrilling(obj)
+
+        if selection['pointlist']:
+            myList = obj.locations
+            for point in selection['pointlist']:
+                if isinstance(point, Part.Vertex):
+                    #vec = FreeCAD.Vector(point.X, point.Y, point.Z)
+                    myList.append(FreeCAD.Vector(point.X, point.Y, point.Z))
+            obj.locations = myList        
+   
+
+
+
+        obj.ViewObject.Proxy = 0
+        obj.Active = False
+       
+        for o in FreeCAD.ActiveDocument.Objects:
+            if "Proxy" in o.PropertiesList:
+                if isinstance(o.Proxy,PathProject.ObjectPathProject):
+                    g = o.Group
+                    g.append(obj)
+                    o.Group = g
+                    prjexists = True
+
+        if prjexists:
+            pass
+        else: #create a new path object
+            project = FreeCAD.ActiveDocument.addObject("Path::FeatureCompoundPython","Project")
+            PathProject.ObjectPathProject(project)
+            PathProject.ViewProviderProject(project.ViewObject)
+            g = project.Group
+            g.append(obj)
+            project.Group = g
+
         FreeCAD.ActiveDocument.commitTransaction()
         FreeCAD.ActiveDocument.recompute()
 

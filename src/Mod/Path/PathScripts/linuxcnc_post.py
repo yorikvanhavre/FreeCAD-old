@@ -40,7 +40,7 @@ from PathScripts import PostUtils
 #These globals set common customization preferences
 OUTPUT_COMMENTS = True
 OUTPUT_HEADER = True
-OUTPUT_LINE_NUMBERS = True
+OUTPUT_LINE_NUMBERS = False
 SHOW_EDITOR = True
 MODAL = False #if true commands are suppressed if the same as previous line.
 COMMAND_SPACE = " "
@@ -144,7 +144,7 @@ def parse(pathobj):
     lastcommand = None
 
     #params = ['X','Y','Z','A','B','I','J','K','F','S'] #This list control the order of parameters
-    params = ['X','Y','Z','A','B','I','J','F','S','T'] #linuxcnc doesn't want K properties on XY plane  Arcs need work.
+    params = ['X','Y','Z','A','B','I','J','F','S','T','Q','R','L'] #linuxcnc doesn't want K properties on XY plane  Arcs need work.
     
     if hasattr(pathobj,"Group"): #We have a compound or project.
         if OUTPUT_COMMENTS: out += linenumber() + "(compound: " + pathobj.Label + ")\n" 
@@ -152,6 +152,10 @@ def parse(pathobj):
             out += parse(p)
         return out      
     else: #parsing simple path
+
+        if not hasattr(pathobj,"Path"): #groups might contain non-path things like stock.
+            return out
+
         if OUTPUT_COMMENTS: out += linenumber() + "(Path: " + pathobj.Label + ")\n"
 
         for c in pathobj.Path.Commands:
@@ -162,7 +166,7 @@ def parse(pathobj):
             if MODAL == True:
                 if command == lastcommand:
                     outstring.pop(0) 
-
+            
 
             # Now add the remaining parameters in order
             for param in params:
@@ -186,8 +190,8 @@ def parse(pathobj):
             if command == "message":
                 if OUTPUT_COMMENTS == False:
                     out = []
-            else:
-                outstring.pop(0) #remove the command
+                else:
+                    outstring.pop(0) #remove the command
 
             #prepend a line number and append a newline
             if len(outstring) >= 1:
