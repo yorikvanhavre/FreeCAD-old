@@ -41,6 +41,7 @@ SET(PathScripts_SRCS
     PathScripts/PathLoadTool.py
     PathScripts/PathToolLenOffset.py
     PathScripts/PathComment.py
+    PathScripts/PathStop.py
 )
 
 ADD_CUSTOM_TARGET(PathScripts ALL

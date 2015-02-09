@@ -269,7 +269,7 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="5.5"
-     inkscape:cx="2"
+     inkscape:cx="-28"
      inkscape:cy="61.090909"
      inkscape:current-layer="layer1"
      showgrid="true"
@@ -379,25 +379,25 @@
        style="opacity:0.17045456;color:#000000;fill:#000000;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:1;marker:none;visibility:visible;display:inline;overflow:visible" />
     <text
        xml:space="preserve"
-       style="font-size:20px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans;-inkscape-font-specification:Sans"
-       x="13.454544"
-       y="35.272728"
+       style="font-size:24.20000076px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans;-inkscape-font-specification:Sans"
+       x="12.194348"
+       y="36.38842"
        id="text3072"
        sodipodi:linespacing="125%"><tspan
          sodipodi:role="line"
          id="tspan3074"
-         x="13.454544"
-         y="35.272728">(</tspan></text>
+         x="12.194348"
+         y="36.38842">(</tspan></text>
     <text
        xml:space="preserve"
-       style="font-size:20px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans;-inkscape-font-specification:Sans"
-       x="47.090908"
-       y="35.454544"
+       style="font-size:24.20000076px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans;-inkscape-font-specification:Sans"
+       x="46.348896"
+       y="36.244781"
        id="text3076"
        sodipodi:linespacing="125%"><tspan
          sodipodi:role="line"
          id="tspan3078"
-         x="47.090908"
-         y="35.454544">)</tspan></text>
+         x="46.348896"
+         y="36.244781">)</tspan></text>
   </g>
 </svg>

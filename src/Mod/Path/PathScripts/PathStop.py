@@ -1,0 +1,129 @@
+# -*- coding: utf-8 -*-
+
+#***************************************************************************
+#*                                                                         *
+#*   Copyright (c) 2015 Dan Falck <ddfalck@gmail.com>                      *
+#*                                                                         *
+#*   This program is free software; you can redistribute it and/or modify  *
+#*   it under the terms of the GNU Lesser General Public License (LGPL)    *
+#*   as published by the Free Software Foundation; either version 2 of     *
+#*   the License, or (at your option) any later version.                   *
+#*   for detail see the LICENCE text file.                                 *
+#*                                                                         *
+#*   This program is distributed in the hope that it will be useful,       *
+#*   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
+#*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
+#*   GNU Library General Public License for more details.                  *
+#*                                                                         *
+#*   You should have received a copy of the GNU Library General Public     *
+#*   License along with this program; if not, write to the Free Software   *
+#*   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  *
+#*   USA                                                                   *
+#*                                                                         *
+#***************************************************************************
+''' Used for CNC machine Stops for Path module. Create an Optional or Mandatory Stop.'''
+
+import FreeCAD,FreeCADGui,Path,PathGui
+from PathScripts import PathProject
+from PySide import QtCore,QtGui
+
+# Qt tanslation handling
+try:
+    _encoding = QtGui.QApplication.UnicodeUTF8
+    def translate(context, text, disambig=None):
+        return QtGui.QApplication.translate(context, text, disambig, _encoding)
+except AttributeError:
+    def translate(context, text, disambig=None):
+        return QtGui.QApplication.translate(context, text, disambig)
+
+class Stop:
+    def __init__(self,obj):
+        obj.addProperty("App::PropertyEnumeration", "Stop", "Path", translate("Program Stop", "Pause program"))
+        obj.Stop=['Optional', 'Mandatory']
+        obj.Proxy = self
+
+    def __getstate__(self):
+        return None
+
+    def __setstate__(self,state):
+        return None
+
+    def onChanged(self,obj,prop):
+        pass
+#        FreeCAD.ActiveDocument.recompute()
+
+    def execute(self,obj):
+        if obj.Stop == 'Optional':
+            word = 'M1'
+        else:
+            word = 'M0'
+
+        output =""
+        output = word+'\n'
+        path = Path.Path(output)
+        obj.Path = path
+
+class _ViewProviderStop:
+
+    def __init__(self,obj): #mandatory
+#        obj.addProperty("App::PropertyFloat","SomePropertyName","PropertyGroup","Description of this property")
+        obj.Proxy = self
+
+    def __getstate__(self): #mandatory
+        return None
+
+    def __setstate__(self,state): #mandatory
+        return None
+
+    def getIcon(self): #optional
+        return ":/icons/Path-Stop.svg"
+
+class CommandPathStop:
+    def GetResources(self):
+        return {'Pixmap'  : 'Path-Stop',
+                'MenuText': QtCore.QT_TRANSLATE_NOOP("PathStop","Stop"),
+                'Accel': "P, C",
+                'ToolTip': QtCore.QT_TRANSLATE_NOOP("PathStop","Add a Stop to your CNC program")}
+
+    def IsActive(self):
+        return not FreeCAD.ActiveDocument is None
+
+    def Activated(self):
+        FreeCAD.ActiveDocument.openTransaction(translate("PathStop","Create a Stop in your CNC program"))
+        FreeCADGui.addModule("PathScripts.PathStop")
+        snippet = '''
+import Path
+import PathScripts
+from PathScripts import PathProject
+prjexists = False
+obj = FreeCAD.ActiveDocument.addObject("Path::FeaturePython","Stop")
+PathScripts.PathStop.Stop(obj)
+
+PathScripts.PathStop._ViewProviderStop(obj.ViewObject)
+for o in FreeCAD.ActiveDocument.Objects:
+    if "Proxy" in o.PropertiesList:
+        if isinstance(o.Proxy,PathProject.ObjectPathProject):
+            g = o.Group
+            g.append(obj)
+            o.Group = g
+            prjexists = True
+if prjexists:
+    pass
+else: #create a new path object
+    project = FreeCAD.ActiveDocument.addObject("Path::FeatureCompoundPython","Project")
+    PathProject.ObjectPathProject(project)
+    PathProject.ViewProviderProject(project.ViewObject)
+    g = project.Group
+    g.append(obj)
+    project.Group = g
+'''
+        FreeCADGui.doCommand(snippet)
+        FreeCAD.ActiveDocument.commitTransaction()
+        FreeCAD.ActiveDocument.recompute()
+
+if FreeCAD.GuiUp: 
+    # register the FreeCAD command
+    FreeCADGui.addCommand('Path_Stop',CommandPathStop())
+
+
+FreeCAD.Console.PrintLog("Loading PathStop... done\n")

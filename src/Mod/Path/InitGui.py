@@ -78,12 +78,13 @@ class PathWorkbench ( Workbench ):
         from PathScripts import PathToolLenOffset
         from PathScripts import PathLoadTool
         from PathScripts import PathComment
+        from PathScripts import PathStop
 
         # build commands list
         commands =["Path_Stock","Path_Plane","Path_Fixture","Path_ToolTableEdit","Path_Profile","Path_Pocket","Path_Drilling",\
         "Path_Dressup","Path_Hop","Path_Shape","Path_Copy","Path_CompoundExtended","Path_Project"]
 
-        projcmdlist = ["Path_Project", "Path_Stock","Path_ToolTableEdit","Path_Post","Path_Comment"]
+        projcmdlist = ["Path_Project", "Path_Stock","Path_ToolTableEdit","Path_Post","Path_Comment","Path_Stop"]
         prepcmdlist = ["Path_Plane","Path_Fixture","Path_LoadTool","Path_ToolLenOffset"]
         opcmdlist = ["Path_Profile","Path_Pocket","Path_Drilling"]
         modcmdlist = ["Path_Copy","Path_CompoundExtended","Path_Dressup","Path_Hop","Path_Shape"]
