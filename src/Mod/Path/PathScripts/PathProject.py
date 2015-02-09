@@ -56,8 +56,8 @@ class ObjectPathProject:
     def __setstate__(self,state):
         return None
 
-#    def onChanged(self,obj,prop):
-#        pass
+    def onChanged(self,obj,prop):
+        pass
 
     def execute(self,obj):
         cmds = []
