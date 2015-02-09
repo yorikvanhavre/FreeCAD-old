@@ -49,9 +49,6 @@ def export(objectslist,filename):
 '''
 
     "called when freecad exports a list of objects"
-    # if len(objectslist) > 1:
-    #     print "This script is unable to write more than one Path object"
-    #     return
     for obj in objectslist:
     
         if not hasattr(obj,"Path"):
@@ -82,6 +79,10 @@ def parse(pathobj):
             out += parse(p)
         return out      
     else: #parsing simple path
+
+        if not hasattr(pathobj,"Path"): #groups might contain non-path things like stock.
+            return out
+
         out += "(Path: " + pathobj.Label + ")\n"
 
         for c in pathobj.Path.Commands:
