@@ -256,10 +256,10 @@ def SortPath(wire,Side,radius,clockwise,ZClearance,StepDown,ZStart,ZFinalDepth,f
     toolpath =[]
     for edge in offset.Edges:
         toolpath.append(edge)
-    paths ="G43" #tool length offset 
-    paths +="G0 Z" 
-    paths += str(ZClearance)
-    paths += "\n"
+    paths ="" 
+#    paths +="G0 Z" 
+#    paths += str(ZClearance)
+#    paths += "\n"
     first = toolpath[0].Vertexes[0].Point
     paths += "G0 X"+str(fmt(first.x))+"Y"+str(fmt(first.y))+"\n"
     ZCurrent = ZStart- StepDown
@@ -279,4 +279,26 @@ def SortPath(wire,Side,radius,clockwise,ZClearance,StepDown,ZStart,ZFinalDepth,f
         paths += "G0 Z" + str(ZClearance)
     return paths
 
+# the next two functions are for automatically populating tool numbers/height offset numbers based on previously active toolnumbers
 
+def changeTool(obj,proj):
+    tlnum = 0
+    for p in proj.Group:
+        if not hasattr(p,"Group"):
+            if hasattr(p,'ToolNumber'):
+                tlnum = p.ToolNumber
+            if p == obj:
+                return tlnum
+        elif hasattr(p,"Group"):
+            for g in p.Group:
+                if hasattr(g,'ToolNumber'):
+                    tlnum = g.ToolNumber
+                if g == obj:
+                    return tlnum
+
+
+def findProj():
+    for o in FreeCAD.ActiveDocument.Objects:
+        if "Proxy" in o.PropertiesList:
+            if isinstance(o.Proxy,PathProject.ObjectPathProject):
+                return o

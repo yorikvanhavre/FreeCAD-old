@@ -2,7 +2,7 @@
 
 #***************************************************************************
 #*                                                                         *
-#*   Copyright (c) 2014 Yorik van Havre <yorik@uncreated.net>              *
+#*   Copyright (c) 2015 Dan Falck <ddfalck@gmail.com>                      *
 #*                                                                         *
 #*   This program is free software; you can redistribute it and/or modify  *
 #*   it under the terms of the GNU Lesser General Public License (LGPL)    *
@@ -21,11 +21,11 @@
 #*   USA                                                                   *
 #*                                                                         *
 #***************************************************************************
+''' Used for CNC machine to load cutting Tool ie M6T3'''
 
 import FreeCAD,FreeCADGui,Path,PathGui
+from PathScripts import PathProject
 from PySide import QtCore,QtGui
-
-"""Path Compound Extended object and FreeCAD command"""
 
 # Qt tanslation handling
 try:
@@ -36,72 +36,88 @@ except AttributeError:
     def translate(context, text, disambig=None):
         return QtGui.QApplication.translate(context, text, disambig)
 
-
-class ObjectCompoundExtended:
-    
-
+class LoadTool:
     def __init__(self,obj):
-        obj.addProperty("App::PropertyString","Description",  "Path",translate("PathCompoundExtended","An optional description of this compounded operation"))
-#        obj.addProperty("App::PropertySpeed", "FeedRate",     "Path",translate("PathCompoundExtended","The feed rate of the paths in these compounded operations"))
-#        obj.addProperty("App::PropertyFloat", "SpindleSpeed", "Path",translate("PathCompoundExtended","The spindle speed, in revolutions per minute, of the tool used in these compounded operations"))
-        obj.addProperty("App::PropertyLength","SafeHeight",   "Path",translate("PathCompoundExtended","The safe height for this operation"))
-        obj.addProperty("App::PropertyLength","RetractHeight","Path",translate("PathCompoundExtended","The retract height, above top surface of part, between compounded operations inside clamping area"))
+        obj.addProperty("App::PropertyIntegerConstraint", "ToolNumber","Tool", translate( "Tool Number",  "The active tool"))
+        obj.ToolNumber = (0,0,10000,1)
+        obj.addProperty("App::PropertyFloat", "SpindleSpeed", "Tool", translate("Spindle Speed","The speed of the cutting spindle in RPM"))
+        obj.addProperty("App::PropertyEnumeration", "SpindleDir", "Tool", translate("Spindle Dir","Direction of spindle rotation"))
+        obj.SpindleDir = ['Forward','Reverse']
         obj.Proxy = self
 
-    def __getstate__(self):
-        return None
-
-    def __setstate__(self,state):
-        return None
 
     def execute(self,obj):
-        cmds = []
-        for child in obj.Group:
-            if child.isDerivedFrom("Path::Feature"):
-                cmds.extend(child.Path.Commands)
-        if cmds:
-            path = Path.Path(cmds)
-            obj.Path = path
+        commands = ""
+        commands = 'M6T'+str(obj.ToolNumber)+'\n'
+#        c1 = Path.Command('M6T'+str(obj.ToolNumber))
+        if obj.SpindleDir =='Forward':
+            commands +='M3S'+str(obj.SpindleSpeed)+'\n'
+#            c2 = Path.Command('M3S'+str(obj.SpindleSpeed))
+        else:
+            commands +='M4S'+str(obj.SpindleSpeed)+'\n'
+#            c2 = Path.Command('M4S'+str(obj.SpindleSpeed))
+        obj.Path = Path.Path(commands)
+#        obj.Path = Path.Path(c1+c2)
+#        obj.Path.addCommands(c2)
+        obj.Label = "Tool"+str(obj.ToolNumber)
 
-class CommandCompoundExtended:
+class _ViewProviderLoadTool:
+    def __init__(self,obj): #mandatory
+        obj.Proxy = self
 
+    def __getstate__(self): #mandatory
+        return None
 
+    def __setstate__(self,state): #mandatory
+        return None
+
+    def getIcon(self): #optional
+        return ":/icons/Path-LoadTool.svg"
+
+    def onChanged(self,obj,prop): #optional
+        # this is executed when a property of the VIEW PROVIDER changes
+        pass
+
+    def updateData(self,obj,prop): #optional
+        # this is executed when a property of the APP OBJECT changes
+        pass
+
+    def setEdit(self,vobj,mode): #optional
+        # this is executed when the object is double-clicked in the tree
+        pass
+
+    def unsetEdit(self,vobj,mode): #optional
+        # this is executed when the user cancels or terminates edit mode
+        pass
+
+class CommandPathLoadTool:
     def GetResources(self):
-        return {'Pixmap'  : 'Path-Compound',
-                'MenuText': QtCore.QT_TRANSLATE_NOOP("PathCompoundExtended","Compound"),
-                'Accel': "P, C",
-                'ToolTip': QtCore.QT_TRANSLATE_NOOP("PathCompoundExtended","Creates a Path Compound object")}
+        return {'Pixmap'  : 'Path-LoadTool',
+                'MenuText': QtCore.QT_TRANSLATE_NOOP("PathLoadTool","Tool Number to Load"),
+                'Accel': "P, T",
+                'ToolTip': QtCore.QT_TRANSLATE_NOOP("PathLoadTool","Tool Number to Load")}
 
     def IsActive(self):
         return not FreeCAD.ActiveDocument is None
-        
     def Activated(self):
-
-        FreeCAD.ActiveDocument.openTransaction(translate("PathCompoundExtended","Create Compound"))
-        FreeCADGui.addModule("PathScripts.PathCompoundExtended")
+        FreeCAD.ActiveDocument.openTransaction(translate("Current Tool","Tool Number to Load"))
+        FreeCADGui.addModule("PathScripts.PathLoadTool")
         snippet = '''
 import Path
 import PathScripts
 from PathScripts import PathProject
-incl = []
 prjexists = False
-sel = FreeCADGui.Selection.getSelection()
-for s in sel:
-    if s.isDerivedFrom("Path::Feature"):
-        incl.append(s)
+obj = FreeCAD.ActiveDocument.addObject("Path::FeaturePython","Tool")
+PathScripts.PathLoadTool.LoadTool(obj)
 
-obj = FreeCAD.ActiveDocument.addObject("Path::FeatureCompoundPython","Compound")
-PathScripts.PathCompoundExtended.ObjectCompoundExtended(obj)
-
+PathScripts.PathLoadTool._ViewProviderLoadTool(obj.ViewObject)
 for o in FreeCAD.ActiveDocument.Objects:
     if "Proxy" in o.PropertiesList:
         if isinstance(o.Proxy,PathProject.ObjectPathProject):
-            project = o
             g = o.Group
             g.append(obj)
             o.Group = g
             prjexists = True
-
 if prjexists:
     pass
 else: #create a new path object
@@ -111,27 +127,18 @@ else: #create a new path object
     g = project.Group
     g.append(obj)
     project.Group = g
-
-if incl:
-    children = []
-    p = project.Group
-    
-    g = obj.Group
-    for child in incl:
-        p.remove(child)
-        children.append(FreeCAD.ActiveDocument.getObject(child.Name))
-    project.Group = p
-    g.append(children)
-    obj.Group = children
-obj.ViewObject.Proxy = 0
 '''
         FreeCADGui.doCommand(snippet)
         FreeCAD.ActiveDocument.commitTransaction()
         FreeCAD.ActiveDocument.recompute()
 
-
 if FreeCAD.GuiUp: 
     # register the FreeCAD command
-    FreeCADGui.addCommand('Path_CompoundExtended',CommandCompoundExtended())
+    FreeCADGui.addCommand('Path_LoadTool', CommandPathLoadTool())
+    
+FreeCAD.Console.PrintLog("Loading PathLoadTool... done\n")
 
-FreeCAD.Console.PrintLog("Loading PathCompoundExtended... done\n")
+
+
+
+

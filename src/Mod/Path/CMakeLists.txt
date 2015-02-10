@@ -21,6 +21,7 @@ SET(PathScripts_SRCS
     PathScripts/example_post.py
     PathScripts/linuxcnc_post.py
     PathScripts/comparams_post.py
+    PathScripts/dumper_post.py
     PathScripts/TooltableEditor.py
     PathScripts/PathProfile.py
     PathScripts/PathPocket.py
@@ -37,6 +38,10 @@ SET(PathScripts_SRCS
     PathScripts/PathStock.py
     PathScripts/PathPlane.py
     PathScripts/PathPost.py
+    PathScripts/PathLoadTool.py
+    PathScripts/PathToolLenOffset.py
+    PathScripts/PathComment.py
+    PathScripts/PathStop.py
 )
 
 ADD_CUSTOM_TARGET(PathScripts ALL

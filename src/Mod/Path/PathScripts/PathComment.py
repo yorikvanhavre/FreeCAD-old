@@ -2,7 +2,7 @@
 
 #***************************************************************************
 #*                                                                         *
-#*   Copyright (c) 2014 Yorik van Havre <yorik@uncreated.net>              *
+#*   Copyright (c) 2015 Dan Falck <ddfalck@gmail.com>                      *
 #*                                                                         *
 #*   This program is free software; you can redistribute it and/or modify  *
 #*   it under the terms of the GNU Lesser General Public License (LGPL)    *
@@ -21,11 +21,11 @@
 #*   USA                                                                   *
 #*                                                                         *
 #***************************************************************************
+''' Used for CNC machine comments for Path module. Create a comment and place it in the Document tree.'''
 
 import FreeCAD,FreeCADGui,Path,PathGui
+from PathScripts import PathProject
 from PySide import QtCore,QtGui
-
-"""Path Compound Extended object and FreeCAD command"""
 
 # Qt tanslation handling
 try:
@@ -36,16 +36,9 @@ except AttributeError:
     def translate(context, text, disambig=None):
         return QtGui.QApplication.translate(context, text, disambig)
 
-
-class ObjectCompoundExtended:
-    
-
+class Comment:
     def __init__(self,obj):
-        obj.addProperty("App::PropertyString","Description",  "Path",translate("PathCompoundExtended","An optional description of this compounded operation"))
-#        obj.addProperty("App::PropertySpeed", "FeedRate",     "Path",translate("PathCompoundExtended","The feed rate of the paths in these compounded operations"))
-#        obj.addProperty("App::PropertyFloat", "SpindleSpeed", "Path",translate("PathCompoundExtended","The spindle speed, in revolutions per minute, of the tool used in these compounded operations"))
-        obj.addProperty("App::PropertyLength","SafeHeight",   "Path",translate("PathCompoundExtended","The safe height for this operation"))
-        obj.addProperty("App::PropertyLength","RetractHeight","Path",translate("PathCompoundExtended","The retract height, above top surface of part, between compounded operations inside clamping area"))
+        obj.addProperty("App::PropertyString","Comment","Path",translate("Comment","Comment or note for CNC program"))
         obj.Proxy = self
 
     def __getstate__(self):
@@ -54,54 +47,60 @@ class ObjectCompoundExtended:
     def __setstate__(self,state):
         return None
 
+    def onChanged(self,obj,prop):
+        pass
+#        FreeCAD.ActiveDocument.recompute()
+
     def execute(self,obj):
-        cmds = []
-        for child in obj.Group:
-            if child.isDerivedFrom("Path::Feature"):
-                cmds.extend(child.Path.Commands)
-        if cmds:
-            path = Path.Path(cmds)
+            output =""
+            output += '('+ str(obj.Comment)+')\n'
+            path = Path.Path(output)
             obj.Path = path
 
-class CommandCompoundExtended:
+class _ViewProviderComment:
 
+    def __init__(self,obj): #mandatory
+#        obj.addProperty("App::PropertyFloat","SomePropertyName","PropertyGroup","Description of this property")
+        obj.Proxy = self
 
+    def __getstate__(self): #mandatory
+        return None
+
+    def __setstate__(self,state): #mandatory
+        return None
+
+    def getIcon(self): #optional
+        return ":/icons/Path-Comment.svg"
+
+class CommandPathComment:
     def GetResources(self):
-        return {'Pixmap'  : 'Path-Compound',
-                'MenuText': QtCore.QT_TRANSLATE_NOOP("PathCompoundExtended","Compound"),
+        return {'Pixmap'  : 'Path-Comment',
+                'MenuText': QtCore.QT_TRANSLATE_NOOP("PathComment","Comment"),
                 'Accel': "P, C",
-                'ToolTip': QtCore.QT_TRANSLATE_NOOP("PathCompoundExtended","Creates a Path Compound object")}
+                'ToolTip': QtCore.QT_TRANSLATE_NOOP("PathComment","Add a Comment to your CNC program")}
 
     def IsActive(self):
         return not FreeCAD.ActiveDocument is None
-        
-    def Activated(self):
 
-        FreeCAD.ActiveDocument.openTransaction(translate("PathCompoundExtended","Create Compound"))
-        FreeCADGui.addModule("PathScripts.PathCompoundExtended")
+    def Activated(self):
+        FreeCAD.ActiveDocument.openTransaction(translate("PathComment","Create a Comment in your CNC program"))
+        FreeCADGui.addModule("PathScripts.PathComment")
         snippet = '''
 import Path
 import PathScripts
 from PathScripts import PathProject
-incl = []
 prjexists = False
-sel = FreeCADGui.Selection.getSelection()
-for s in sel:
-    if s.isDerivedFrom("Path::Feature"):
-        incl.append(s)
+obj = FreeCAD.ActiveDocument.addObject("Path::FeaturePython","Comment")
+PathScripts.PathComment.Comment(obj)
 
-obj = FreeCAD.ActiveDocument.addObject("Path::FeatureCompoundPython","Compound")
-PathScripts.PathCompoundExtended.ObjectCompoundExtended(obj)
-
+PathScripts.PathComment._ViewProviderComment(obj.ViewObject)
 for o in FreeCAD.ActiveDocument.Objects:
     if "Proxy" in o.PropertiesList:
         if isinstance(o.Proxy,PathProject.ObjectPathProject):
-            project = o
             g = o.Group
             g.append(obj)
             o.Group = g
             prjexists = True
-
 if prjexists:
     pass
 else: #create a new path object
@@ -111,27 +110,14 @@ else: #create a new path object
     g = project.Group
     g.append(obj)
     project.Group = g
-
-if incl:
-    children = []
-    p = project.Group
-    
-    g = obj.Group
-    for child in incl:
-        p.remove(child)
-        children.append(FreeCAD.ActiveDocument.getObject(child.Name))
-    project.Group = p
-    g.append(children)
-    obj.Group = children
-obj.ViewObject.Proxy = 0
 '''
         FreeCADGui.doCommand(snippet)
         FreeCAD.ActiveDocument.commitTransaction()
         FreeCAD.ActiveDocument.recompute()
 
-
 if FreeCAD.GuiUp: 
     # register the FreeCAD command
-    FreeCADGui.addCommand('Path_CompoundExtended',CommandCompoundExtended())
+    FreeCADGui.addCommand('Path_Comment',CommandPathComment())
 
-FreeCAD.Console.PrintLog("Loading PathCompoundExtended... done\n")
+
+FreeCAD.Console.PrintLog("Loading PathComment... done\n")
