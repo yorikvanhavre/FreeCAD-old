@@ -20,6 +20,10 @@
 #*                                                                         *
 #***************************************************************************
 
+"""This is the deprecated spreadsheet module. It is not used anymore
+in FreeCAD, but is still there for archiving purposes."""
+
+
 import re, math, FreeCAD, FreeCADGui
 from PySide import QtCore,QtGui
 DEBUG = True # set to True to show debug messages
@@ -1109,6 +1113,6 @@ def export(exportList,filename):
     print "successfully exported ",filename
 
 
-FreeCADGui.addCommand('Spreadsheet_Create',_Command_Spreadsheet_Create())
-FreeCADGui.addCommand('Spreadsheet_Controller',_Command_Spreadsheet_Controller())
-FreeCADGui.addCommand('Spreadsheet_PropertyController',_Command_Spreadsheet_PropertyController())
+#FreeCADGui.addCommand('Spreadsheet_Create',_Command_Spreadsheet_Create())
+#FreeCADGui.addCommand('Spreadsheet_Controller',_Command_Spreadsheet_Controller())
+#FreeCADGui.addCommand('Spreadsheet_PropertyController',_Command_Spreadsheet_PropertyController())
