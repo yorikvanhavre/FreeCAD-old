@@ -57,6 +57,7 @@ namespace Path
         void setFromPlacement (const Base::Placement&); // sets the parameters from the contents of the given placement
         const bool has(const std::string); // returns true if the given string exists in the parameters
         Command transform(const Base::Placement); // returns a transformed copy of this command
+        const double getValue(const std::string); // returns the value of a given parameter
 
         // attributes
         std::string Name;
