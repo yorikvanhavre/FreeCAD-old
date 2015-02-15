@@ -27,6 +27,7 @@
 #include <App/GeoFeature.h>
 #include <App/PropertyFile.h>
 #include <App/PropertyGeo.h>
+#include <App/PropertyUnits.h>
 
 #include "Path.h"
 #include "FeaturePath.h"
@@ -61,6 +62,8 @@ public:
     void removeObject(DocumentObject* obj);
 
 };
+
+typedef App::FeaturePythonT<FeatureCompound> FeatureCompoundPython;
 
 } //namespace Path
 
