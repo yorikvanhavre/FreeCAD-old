@@ -311,8 +311,8 @@ void ViewProviderPath::updateData(const App::Property* prop)
                 double r;
                 if (cmd.has("R"))
                     r = cmd.getValue("R");
-//                Base::Vector3d p1(next.x,next.y,last.z);
-                Base::Vector3d p1(next.x,next.y,r);
+                Base::Vector3d p1(next.x,next.y,last.z);
+//                Base::Vector3d p1(next.x,next.y,r);
                 points.push_back(p1);
                 //markers.push_back(p1);
                 colorindex.push_back(0);
@@ -333,7 +333,8 @@ void ViewProviderPath::updateData(const App::Property* prop)
                         tempz -= q;
                     }
                 }
-                points.push_back(p2);
+                Base::Vector3d p3(next.x,next.y,last.z);
+                points.push_back(p3);
                 //markers.push_back(p2);
                 colorindex.push_back(0);
             }
