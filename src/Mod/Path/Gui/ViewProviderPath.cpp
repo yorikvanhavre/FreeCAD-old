@@ -306,12 +306,13 @@ void ViewProviderPath::updateData(const App::Property* prop)
                 // relative mode
                 absolute = false;
                 
-            } else if ( (name == "G81") || (name == "G82") || (name == "G83") ) {
-                // drill
+            } else if ((name=="G81")||(name=="G82")||(name=="G83")||(name=="G84")||(name=="G85")||(name=="G86")||(name=="G89")){
+                // drill,tap,bore
                 double r;
                 if (cmd.has("R"))
                     r = cmd.getValue("R");
-                Base::Vector3d p1(next.x,next.y,last.z);
+//                Base::Vector3d p1(next.x,next.y,last.z);
+                Base::Vector3d p1(next.x,next.y,r);
                 points.push_back(p1);
                 //markers.push_back(p1);
                 colorindex.push_back(0);
