@@ -97,6 +97,41 @@ class ObjectDrilling:
         path = Path.Path(output)
         obj.Path = path
 
+class _ViewProviderDrill:
+    def __init__(self,obj): #mandatory
+#        obj.addProperty("App::PropertyFloat","SomePropertyName","PropertyGroup","Description of this property")
+        obj.Proxy = self
+
+    def __getstate__(self): #mandatory
+        return None
+
+    def __setstate__(self,state): #mandatory
+        return None
+
+    def getIcon(self): #optional
+        return ":/icons/Path-Drilling.svg"
+
+#    def attach(self): #optional
+#        # this is executed on object creation and object load from file
+#        pass
+
+    def onChanged(self,obj,prop): #optional
+        # this is executed when a property of the VIEW PROVIDER changes
+        pass
+
+    def updateData(self,obj,prop): #optional
+        # this is executed when a property of the APP OBJECT changes
+        pass
+
+    def setEdit(self,vobj,mode): #optional
+        # this is executed when the object is double-clicked in the tree
+        pass
+
+    def unsetEdit(self,vobj,mode): #optional
+        # this is executed when the user cancels or terminates edit mode
+        pass
+
+
 
 class CommandPathDrilling:
 
@@ -134,12 +169,10 @@ class CommandPathDrilling:
                     #vec = FreeCAD.Vector(point.X, point.Y, point.Z)
                     myList.append(FreeCAD.Vector(point.X, point.Y, point.Z))
             obj.locations = myList        
-   
 
-
-
-        obj.ViewObject.Proxy = 0
-        obj.Active = False
+        PathDrilling._ViewProviderDrill(obj.ViewObject)
+#        obj.ViewObject.Proxy = 0
+        obj.Active = True
        
         for o in FreeCAD.ActiveDocument.Objects:
             if "Proxy" in o.PropertiesList:

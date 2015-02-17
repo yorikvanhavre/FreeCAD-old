@@ -237,11 +237,11 @@ void ViewProviderPath::updateData(const App::Property* prop)
             Base::Vector3d next = cmd.getPlacement().getPosition();
             if (!absolute)
                 next = last + next;
-            if (!cmd.has("x"))
+            if (!cmd.has("X"))
                 next.x = last.x;
-            if (!cmd.has("y"))
+            if (!cmd.has("Y"))
                 next.y = last.y;
-            if (!cmd.has("z"))
+            if (!cmd.has("Z"))
                 next.z = last.z;
             
             if ( (name == "G0") || (name == "G00") || (name == "G1") || (name == "G01") ) {
@@ -249,10 +249,10 @@ void ViewProviderPath::updateData(const App::Property* prop)
                 if ( (!first) || (ShowFirstRapid.getValue() == true) || (name == "G1") || (name == "G01") ) {
                     if (first) {
                         points.push_back(last);
-                        markers.push_back(last);
+                        markers.push_back(last); // startpoint of path
                     }
                     points.push_back(next);
-                    markers.push_back(next);
+                    //markers.push_back(next); // endpoint
                     last = next;
                     if ( (name == "G0") || (name == "G00") )
                         colorindex.push_back(0); // rapid color
@@ -262,7 +262,7 @@ void ViewProviderPath::updateData(const App::Property* prop)
                     // don't show first G0 move if ShowFirstRapid is False
                     last = next;
                     points.push_back(last);
-                    markers.push_back(last);
+                    markers.push_back(last); // startpoint of path
                 }
                 first = false;
                 
@@ -293,16 +293,50 @@ void ViewProviderPath::updateData(const App::Property* prop)
                 }
                 //std::cout << "next " << next.x << " , " << next.y << " , " << next.z << std::endl;
                 points.push_back(next);
-                markers.push_back(next);
-                markers.push_back(center); // add a marker at center too, why not?
+                //markers.push_back(next); // endpoint
+                //markers.push_back(center); // add a marker at center too
                 last = next;
                 colorindex.push_back(1);
                 
             } else if (name == "G90") {
+                // absolute mode
                 absolute = true;
                 
             } else if (name == "G91") {
+                // relative mode
                 absolute = false;
+                
+            } else if ((name=="G81")||(name=="G82")||(name=="G83")||(name=="G84")||(name=="G85")||(name=="G86")||(name=="G89")){
+                // drill,tap,bore
+                double r;
+                if (cmd.has("R"))
+                    r = cmd.getValue("R");
+                Base::Vector3d p1(next.x,next.y,last.z);
+//                Base::Vector3d p1(next.x,next.y,r);
+                points.push_back(p1);
+                //markers.push_back(p1);
+                colorindex.push_back(0);
+                Base::Vector3d p2(next.x,next.y,r);
+                points.push_back(p2);
+                //markers.push_back(p2);
+                colorindex.push_back(0);
+                points.push_back(next);
+                //markers.push_back(next);
+                colorindex.push_back(1);
+                double q;
+                if (cmd.has("Q")) {
+                    q = cmd.getValue("Q");
+                    double tempz = r;
+                    while (tempz > next.z) {
+                        Base::Vector3d temp(next.x,next.y,tempz);
+                        markers.push_back(temp);
+                        tempz -= q;
+                    }
+                }
+                Base::Vector3d p3(next.x,next.y,last.z);
+                points.push_back(p3);
+                //markers.push_back(p2);
+                colorindex.push_back(0);
             }
         }
         
@@ -321,12 +355,12 @@ void ViewProviderPath::updateData(const App::Property* prop)
             pcMarkerCoords->point.deleteValues(0);
             
             // putting one marker at each node makes the display awfully slow
-            // leaving just one at the origin for now:
-            pcMarkerCoords->point.setNum(1);
-            pcMarkerCoords->point.set1Value(0,markers[0].x,markers[0].y,markers[0].z);
-            //pcMarkerCoords->point.setNum(markers.size());
-            //for(unsigned int i=0;i<markers.size();i++)
-            //    pcMarkerCoords->point.set1Value(i,markers[i].x,markers[i].y,markers[i].z);
+            // following 2 lines leave just one at the origin
+            //pcMarkerCoords->point.setNum(1);
+            //pcMarkerCoords->point.set1Value(0,markers[0].x,markers[0].y,markers[0].z);
+            pcMarkerCoords->point.setNum(markers.size());
+            for(unsigned int i=0;i<markers.size();i++)
+                pcMarkerCoords->point.set1Value(i,markers[i].x,markers[i].y,markers[i].z);
             
             // update the coloring after we changed the color vector
             NormalColor.touch();

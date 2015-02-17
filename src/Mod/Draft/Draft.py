@@ -1799,7 +1799,10 @@ def getSVG(obj,scale=1,linewidth=0.35,fontsize=12,fillstyle="shape color",direct
                         if rot < -90:
                             rot += 180
                         #be carefull with the sweep flag
-                    drawing_plane_normal = FreeCAD.DraftWorkingPlane.axis
+                    if hasattr(FreeCAD,"DraftWorkingPlane"):
+                        drawing_plane_normal = FreeCAD.DraftWorkingPlane.axis
+                    else:
+                        drawing_plane_normal = FreeCAD.Vector(0,0,1)
                     if plane: drawing_plane_normal = plane.axis
                     flag_large_arc = (((e.ParameterRange[1] - \
                             e.ParameterRange[0]) / math.pi) % 2) > 1
@@ -1817,7 +1820,7 @@ def getSVG(obj,scale=1,linewidth=0.35,fontsize=12,fillstyle="shape color",direct
                     bspline=e.Curve.toBSpline(e.FirstParameter,e.LastParameter)
                     if bspline.Degree > 3 or bspline.isRational():
                         try:
-                            bspline=bspline.approximateBSpline(0.05,20, 3,'C0')
+                            bspline=bspline.approximateBSpline(0.05,50, 3,'C0')
                         except RuntimeError:
                             print("Debug: unable to approximate bspline")
                     if bspline.Degree <= 3 and not bspline.isRational():
