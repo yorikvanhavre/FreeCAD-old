@@ -112,14 +112,17 @@ def multiSelect():
     selItems['edgenames']=None
     selItems['pathwire']=None #the whole wire around edges of the face
     selItems['clockwise']=None
+    selItems['circles']=None
     facenames = []
     edgelist =[]
     edgenames=[]
     ptlist=[]
+    circlelist=[]
     face = False
     edges = False
     points = False
     wireobj = False
+    circles = False
     facelist= []
     for s in sel:
         if s.Object.Shape.ShapeType in ['Solid','Compound','Wire','Vertex']:
@@ -138,8 +141,13 @@ def multiSelect():
                 face = True
             if sub.ShapeType =='Edge':
                 edge = sub
-                edgelist.append(edge)
-                edges = True
+                if isinstance(sub.Curve,Part.Circle):
+                    circlelist.append(edge)
+                    circles = True
+                else:
+                    edgelist.append(edge)
+                    edges = True
+                    
             if sub.ShapeType =='Vertex':
                 ptlist.append(sub)
                 points = True
@@ -197,6 +205,8 @@ def multiSelect():
         selItems['edgenames']=edgenames
     if face:
         selItems['facenames'] = facenames
+    if circles:
+        selItems['circles'] = circlelist
 
     return selItems
 
