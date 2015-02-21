@@ -77,6 +77,36 @@ private:
     std::string newName;
 };
 
+class BuildDocDepsExpressionVisitor : public ExpressionVisitor {
+public:
+
+    BuildDocDepsExpressionVisitor(std::set<DocumentObject*> & _docDeps)
+        : docDeps(_docDeps)
+    {
+
+    }
+
+    void visit(Expression * node) {
+        VariableExpression *expr = freecad_dynamic_cast<VariableExpression>(node);
+
+        if (expr) {
+            try {
+                const App::Property * prop = expr->getProperty();
+                App::DocumentObject * docObj = freecad_dynamic_cast<DocumentObject>(prop->getContainer());
+
+                if (docObj)
+                    docDeps.insert(docObj);
+            }
+            catch (const Base::Exception &) {
+                // Ignore this type of exception; it means that the property was not found, which is ok here
+            }
+        }
+    }
+
+private:
+    std::set<App::DocumentObject*> & docDeps;
+};
+
 class RelabelDocumentExpressionVisitor : public ExpressionVisitor {
 public:
 
@@ -436,6 +466,8 @@ void PropertySheet::clear(CellAddress address)
 
     // Erase from internal struct
     data.erase(i);
+
+    rebuildDocDepList();
 }
 
 void PropertySheet::moveCell(CellAddress currPos, CellAddress newPos)
@@ -461,6 +493,8 @@ void PropertySheet::moveCell(CellAddress currPos, CellAddress newPos)
         data[newPos] = cell;
         addDependencies(newPos);
         setDirty(newPos);
+
+        rebuildDocDepList();
     }
 }
 
@@ -800,9 +834,10 @@ void PropertySheet::addDependencies(CellAddress key)
     while (i != expressionDeps.end()) {
         const Property * prop = (*i).getProperty();
         DocumentObject * docObj = prop ? freecad_dynamic_cast<DocumentObject>(prop->getContainer()) : 0;
+        Document * doc = docObj ? docObj->getDocument() : 0;
 
-        std::string docName = (*i).getDocumentName().getString();
-        std::string docObjName = docName + "#" + (prop ? docObj->getNameInDocument() : (*i).getDocumentObjectName().getString());
+        std::string docName = doc ? doc->Label.getValue() : (*i).getDocumentName().getString();
+        std::string docObjName = docName + "#" + (docObj ? docObj->getNameInDocument() : (*i).getDocumentObjectName().getString());
         std::string propName = docObjName + "." + (*i).getPropertyName();
 
         if (!prop)
@@ -812,15 +847,11 @@ void PropertySheet::addDependencies(CellAddress key)
 
             documentObjectName[docObject] = docObject->Label.getValue();
             documentName[docObject->getDocument()] = docObject->getDocument()->Label.getValue();
-
-            if (docObject != owner) {
-                docDeps.resize(docDeps.size() + 1);
-                docDeps[docDeps.size() - 1] = docObject;
-            }
         }
 
         // Observe document to trach changes to the property
-        owner->observeDocument(docName);
+        if (doc)
+            owner->observeDocument(doc);
 
         // Insert into maps
         propertyNameToCellMap[propName].insert(key);
@@ -879,6 +910,10 @@ void PropertySheet::removeDependencies(CellAddress key)
         assert(k != documentObjectToCellMap.end());
 
         k->second.erase(key);
+
+        if (k->second.size() == 0)
+            documentObjectToCellMap.erase(*j);
+
         ++j;
     }
 
@@ -900,7 +935,7 @@ void PropertySheet::recomputeDependants(const Property *prop)
     assert(name != 0);
 
     if (owner && name) {
-        const char * docName = owner->getDocument()->getName();
+        const char * docName = owner->getDocument()->Label.getValue();
         const char * nameInDoc = owner->getNameInDocument();
 
         if (nameInDoc) {
@@ -924,7 +959,7 @@ void PropertySheet::recomputeDependants(const Property *prop)
 
 void PropertySheet::invalidateDependants(const DocumentObject *docObj)
 {
-    const char * docName = docObj->getDocument()->getName();
+    const char * docName = docObj->getDocument()->Label.getValue();
     const char * docObjName = docObj->getNameInDocument();
 
     // Touch to force recompute
@@ -995,7 +1030,7 @@ void PropertySheet::renamedDocument(const Document * doc)
 
 void PropertySheet::recomputeDependants(const DocumentObject *docObj)
 {
-    const char * docName = docObj->getDocument()->getName();
+    const char * docName = docObj->getDocument()->Label.getValue();
     const char * docObjName = docObj->getNameInDocument();
 
     // Touch to force recompute
@@ -1041,8 +1076,27 @@ const std::set<std::string> &PropertySheet::getDeps(CellAddress pos) const
 
 void PropertySheet::recomputeDependencies(CellAddress key)
 {
+    Signaller signaller(*this);
+
     removeDependencies(key);
     addDependencies(key);
+    rebuildDocDepList();
+}
+
+void PropertySheet::rebuildDocDepList()
+{
+    Signaller signaller(*this);
+
+    docDeps.clear();
+    BuildDocDepsExpressionVisitor v(docDeps);
+
+    std::map<CellAddress, Cell* >::iterator i = data.begin();
+
+    /* Resolve all cells */
+    while (i != data.end()) {
+        i->second->visit(v);
+        ++i;
+    }
 }
 
 PyObject *PropertySheet::getPyObject()

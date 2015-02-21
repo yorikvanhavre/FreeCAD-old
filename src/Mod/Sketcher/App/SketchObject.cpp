@@ -269,17 +269,17 @@ Base::Vector3d SketchObject::getPoint(int GeoId, PointPos PosId) const
     } else if (geo->getTypeId() == Part::GeomArcOfCircle::getClassTypeId()) {
         const Part::GeomArcOfCircle *aoc = dynamic_cast<const Part::GeomArcOfCircle*>(geo);
         if (PosId == start)
-            return aoc->getStartPoint();
+            return aoc->getStartPoint(/*emulateCCW=*/true);
         else if (PosId == end)
-            return aoc->getEndPoint();
+            return aoc->getEndPoint(/*emulateCCW=*/true);
         else if (PosId == mid)
             return aoc->getCenter();
     } else if (geo->getTypeId() == Part::GeomArcOfEllipse::getClassTypeId()) {
         const Part::GeomArcOfEllipse *aoc = dynamic_cast<const Part::GeomArcOfEllipse*>(geo);
         if (PosId == start)
-            return aoc->getStartPoint();
+            return aoc->getStartPoint(/*emulateCCW=*/true);
         else if (PosId == end)
-            return aoc->getEndPoint();
+            return aoc->getEndPoint(/*emulateCCW=*/true);
         else if (PosId == mid)
             return aoc->getCenter();
     }
@@ -699,8 +699,8 @@ int SketchObject::fillet(int GeoId1, int GeoId2,
                 delete arc;
                 return -1;
             }
-            dist1.ProjToLine(arc->getStartPoint()-intersection, dir1);
-            dist2.ProjToLine(arc->getStartPoint()-intersection, dir2);
+            dist1.ProjToLine(arc->getStartPoint(/*emulateCCW=*/true)-intersection, dir1);
+            dist2.ProjToLine(arc->getStartPoint(/*emulateCCW=*/true)-intersection, dir2);
             Part::Geometry *newgeo = dynamic_cast<Part::Geometry* >(arc);
             filletId = addGeometry(newgeo);
             if (filletId < 0) {
@@ -733,14 +733,14 @@ int SketchObject::fillet(int GeoId1, int GeoId2,
             if (dist1.Length() < dist2.Length()) {
                 tangent1->SecondPos = start;
                 tangent2->SecondPos = end;
-                movePoint(GeoId1, PosId1, arc->getStartPoint());
-                movePoint(GeoId2, PosId2, arc->getEndPoint());
+                movePoint(GeoId1, PosId1, arc->getStartPoint(/*emulateCCW=*/true));
+                movePoint(GeoId2, PosId2, arc->getEndPoint(/*emulateCCW=*/true));
             }
             else {
                 tangent1->SecondPos = end;
                 tangent2->SecondPos = start;
-                movePoint(GeoId1, PosId1, arc->getEndPoint());
-                movePoint(GeoId2, PosId2, arc->getStartPoint());
+                movePoint(GeoId1, PosId1, arc->getEndPoint(/*emulateCCW=*/true));
+                movePoint(GeoId2, PosId2, arc->getStartPoint(/*emulateCCW=*/true));
             }
 
             addConstraint(tangent1);
@@ -936,7 +936,7 @@ int SketchObject::trim(int GeoId, const Base::Vector3d& point)
             Part::GeomArcOfCircle *geoNew = new Part::GeomArcOfCircle();
             geoNew->setCenter(center);
             geoNew->setRadius(circle->getRadius());
-            geoNew->setRange(theta1, theta2);
+            geoNew->setRange(theta1, theta2,/*emulateCCW=*/true);
 
             std::vector< Part::Geometry * > newVals(geomlist);
             newVals[GeoId] = geoNew;
@@ -1022,8 +1022,8 @@ int SketchObject::trim(int GeoId, const Base::Vector3d& point)
             geoNew->setCenter(center);
             geoNew->setMajorRadius(ellipse->getMajorRadius());
             geoNew->setMinorRadius(ellipse->getMinorRadius());
-            geoNew->setAngleXU(ellipse->getAngleXU());
-            geoNew->setRange(theta1, theta2);
+            geoNew->setMajorAxisDir(ellipse->getMajorAxisDir());
+            geoNew->setRange(theta1, theta2, /*emulateCCW=*/true);
 
             std::vector< Part::Geometry * > newVals(geomlist);
             newVals[GeoId] = geoNew;
@@ -1083,7 +1083,7 @@ int SketchObject::trim(int GeoId, const Base::Vector3d& point)
         const Part::GeomArcOfCircle *aoc = dynamic_cast<const Part::GeomArcOfCircle*>(geo);
         Base::Vector3d center = aoc->getCenter();
         double startAngle, endAngle;
-        aoc->getRange(startAngle, endAngle);
+        aoc->getRange(startAngle, endAngle, /*emulateCCW=*/true);
         double dir = (startAngle < endAngle) ? 1 : -1; // this is always == 1
         double arcLength = (endAngle - startAngle)*dir;
         double theta0 = Base::fmod(atan2(point.y - center.y, point.x - center.x) - startAngle, 2.f*M_PI); // x0
@@ -1104,8 +1104,8 @@ int SketchObject::trim(int GeoId, const Base::Vector3d& point)
 
                     Part::GeomArcOfCircle *aoc1 = dynamic_cast<Part::GeomArcOfCircle*>(geomlist[GeoId]);
                     Part::GeomArcOfCircle *aoc2 = dynamic_cast<Part::GeomArcOfCircle*>(geomlist[newGeoId]);
-                    aoc1->setRange(startAngle, startAngle + theta1);
-                    aoc2->setRange(startAngle + theta2, endAngle);
+                    aoc1->setRange(startAngle, startAngle + theta1, /*emulateCCW=*/true);
+                    aoc2->setRange(startAngle + theta2, endAngle, /*emulateCCW=*/true);
 
                     // constrain the trimming points on the corresponding geometries
                     Sketcher::Constraint *newConstr = new Sketcher::Constraint();
@@ -1201,7 +1201,7 @@ int SketchObject::trim(int GeoId, const Base::Vector3d& point)
                 if (theta1 > theta0) { // trim arc start
                     delConstraintOnPoint(GeoId, start, false);
                     Part::GeomArcOfCircle *aoc1 = dynamic_cast<Part::GeomArcOfCircle*>(geomlist[GeoId]);
-                    aoc1->setRange(startAngle + theta1, endAngle);
+                    aoc1->setRange(startAngle + theta1, endAngle, /*emulateCCW=*/true);
                     // constrain the trimming point on the corresponding geometry
                     Sketcher::Constraint *newConstr = new Sketcher::Constraint();
                     newConstr->Type = constrType;
@@ -1219,7 +1219,7 @@ int SketchObject::trim(int GeoId, const Base::Vector3d& point)
                 else { // trim arc end
                     delConstraintOnPoint(GeoId, end, false);
                     Part::GeomArcOfCircle *aoc1 = dynamic_cast<Part::GeomArcOfCircle*>(geomlist[GeoId]);
-                    aoc1->setRange(startAngle, startAngle + theta1);
+                    aoc1->setRange(startAngle, startAngle + theta1, /*emulateCCW=*/true);
                     Sketcher::Constraint *newConstr = new Sketcher::Constraint();
                     newConstr->Type = constrType;
                     newConstr->First = GeoId;
@@ -1239,21 +1239,21 @@ int SketchObject::trim(int GeoId, const Base::Vector3d& point)
         const Part::GeomArcOfEllipse *aoe = dynamic_cast<const Part::GeomArcOfEllipse*>(geo);
         Base::Vector3d center = aoe->getCenter();
         double startAngle, endAngle;
-        aoe->getRange(startAngle, endAngle);
+        aoe->getRange(startAngle, endAngle,/*emulateCCW=*/true);
         double dir = (startAngle < endAngle) ? 1 : -1; // this is always == 1
         double arcLength = (endAngle - startAngle)*dir;
         double theta0 = Base::fmod(
-                atan2(-aoe->getMajorRadius()*((point.x-center.x)*sin(aoe->getAngleXU())-(point.y-center.y)*cos(aoe->getAngleXU())),
-                            aoe->getMinorRadius()*((point.x-center.x)*cos(aoe->getAngleXU())+(point.y-center.y)*sin(aoe->getAngleXU()))
+                atan2(-aoe->getMajorRadius()*((point.x-center.x)*aoe->getMajorAxisDir().y-(point.y-center.y)*aoe->getMajorAxisDir().x),
+                            aoe->getMinorRadius()*((point.x-center.x)*aoe->getMajorAxisDir().x+(point.y-center.y)*aoe->getMajorAxisDir().y)
                 )- startAngle, 2.f*M_PI); // x0
         if (GeoId1 >= 0 && GeoId2 >= 0) {
             double theta1 = Base::fmod(
-                atan2(-aoe->getMajorRadius()*((point1.x-center.x)*sin(aoe->getAngleXU())-(point1.y-center.y)*cos(aoe->getAngleXU())),
-                            aoe->getMinorRadius()*((point1.x-center.x)*cos(aoe->getAngleXU())+(point1.y-center.y)*sin(aoe->getAngleXU()))
+                atan2(-aoe->getMajorRadius()*((point1.x-center.x)*aoe->getMajorAxisDir().y-(point1.y-center.y)*aoe->getMajorAxisDir().x),
+                            aoe->getMinorRadius()*((point1.x-center.x)*aoe->getMajorAxisDir().x+(point1.y-center.y)*aoe->getMajorAxisDir().y)
                 )- startAngle, 2.f*M_PI) * dir; // x1
             double theta2 = Base::fmod(
-                atan2(-aoe->getMajorRadius()*((point2.x-center.x)*sin(aoe->getAngleXU())-(point2.y-center.y)*cos(aoe->getAngleXU())),
-                            aoe->getMinorRadius()*((point2.x-center.x)*cos(aoe->getAngleXU())+(point2.y-center.y)*sin(aoe->getAngleXU()))
+                atan2(-aoe->getMajorRadius()*((point2.x-center.x)*aoe->getMajorAxisDir().y-(point2.y-center.y)*aoe->getMajorAxisDir().x),
+                            aoe->getMinorRadius()*((point2.x-center.x)*aoe->getMajorAxisDir().x+(point2.y-center.y)*aoe->getMajorAxisDir().y)
                 )- startAngle, 2.f*M_PI) * dir; // x2
                 
             if (theta1 > theta2) {
@@ -1270,8 +1270,8 @@ int SketchObject::trim(int GeoId, const Base::Vector3d& point)
 
                     Part::GeomArcOfEllipse *aoe1 = dynamic_cast<Part::GeomArcOfEllipse*>(geomlist[GeoId]);
                     Part::GeomArcOfEllipse *aoe2 = dynamic_cast<Part::GeomArcOfEllipse*>(geomlist[newGeoId]);
-                    aoe1->setRange(startAngle, startAngle + theta1);
-                    aoe2->setRange(startAngle + theta2, endAngle);
+                    aoe1->setRange(startAngle, startAngle + theta1, /*emulateCCW=*/true);
+                    aoe2->setRange(startAngle + theta2, endAngle, /*emulateCCW=*/true);
 
                     // constrain the trimming points on the corresponding geometries
                     Sketcher::Constraint *newConstr = new Sketcher::Constraint();
@@ -1362,15 +1362,15 @@ int SketchObject::trim(int GeoId, const Base::Vector3d& point)
             }
             
             double theta1 = Base::fmod(
-                        atan2(-aoe->getMajorRadius()*((point1.x-center.x)*sin(aoe->getAngleXU())-(point1.y-center.y)*cos(aoe->getAngleXU())),
-                              aoe->getMinorRadius()*((point1.x-center.x)*cos(aoe->getAngleXU())+(point1.y-center.y)*sin(aoe->getAngleXU()))
+                        atan2(-aoe->getMajorRadius()*((point1.x-center.x)*aoe->getMajorAxisDir().y-(point1.y-center.y)*aoe->getMajorAxisDir().x),
+                              aoe->getMinorRadius()*((point1.x-center.x)*aoe->getMajorAxisDir().x+(point1.y-center.y)*aoe->getMajorAxisDir().y)
                              )- startAngle, 2.f*M_PI) * dir; // x1
                 
             if (theta1 >= 0.001*arcLength && theta1 <= 0.999*arcLength) {
                 if (theta1 > theta0) { // trim arc start
                     delConstraintOnPoint(GeoId, start, false);
                     Part::GeomArcOfEllipse *aoe1 = dynamic_cast<Part::GeomArcOfEllipse*>(geomlist[GeoId]);
-                    aoe1->setRange(startAngle + theta1, endAngle);
+                    aoe1->setRange(startAngle + theta1, endAngle, /*emulateCCW=*/true);
                     // constrain the trimming point on the corresponding geometry
                     Sketcher::Constraint *newConstr = new Sketcher::Constraint();
                     newConstr->Type = constrType;
@@ -1388,7 +1388,7 @@ int SketchObject::trim(int GeoId, const Base::Vector3d& point)
                 else { // trim arc end
                     delConstraintOnPoint(GeoId, end, false);
                     Part::GeomArcOfEllipse *aoe1 = dynamic_cast<Part::GeomArcOfEllipse*>(geomlist[GeoId]);
-                    aoe1->setRange(startAngle, startAngle + theta1);
+                    aoe1->setRange(startAngle, startAngle + theta1, /*emulateCCW=*/true);
  
                     return 0;
                 }
@@ -1451,7 +1451,7 @@ int SketchObject::ExposeInternalGeometry(int GeoId)
         Base::Vector3d center;
         double majord;
         double minord;
-        double phi;
+        Base::Vector3d majdir;
         
         if(geo->getTypeId() == Part::GeomEllipse::getClassTypeId()){
             const Part::GeomEllipse *ellipse = static_cast<const Part::GeomEllipse *>(geo);
@@ -1459,7 +1459,7 @@ int SketchObject::ExposeInternalGeometry(int GeoId)
             center=ellipse->getCenter();
             majord=ellipse->getMajorRadius();
             minord=ellipse->getMinorRadius();
-            phi=ellipse->getAngleXU();
+            majdir=ellipse->getMajorAxisDir();
         }
         else {
             const Part::GeomArcOfEllipse *aoe = static_cast<const Part::GeomArcOfEllipse *>(geo);
@@ -1467,18 +1467,20 @@ int SketchObject::ExposeInternalGeometry(int GeoId)
             center=aoe->getCenter();
             majord=aoe->getMajorRadius();
             minord=aoe->getMinorRadius();
-            phi=aoe->getAngleXU();                    
+            majdir=aoe->getMajorAxisDir();
         }
+
+        Base::Vector3d mindir = Vector3d(-majdir.y, majdir.x);
   
-        Base::Vector3d majorpositiveend = center + majord * Base::Vector3d(cos(phi),sin(phi),0);
-        Base::Vector3d majornegativeend = center - majord * Base::Vector3d(cos(phi),sin(phi),0);  
-        Base::Vector3d minorpositiveend = center + minord * Base::Vector3d(-sin(phi),cos(phi),0);
-        Base::Vector3d minornegativeend = center - minord * Base::Vector3d(-sin(phi),cos(phi),0);
+        Base::Vector3d majorpositiveend = center + majord * majdir;
+        Base::Vector3d majornegativeend = center - majord * majdir;
+        Base::Vector3d minorpositiveend = center + minord * mindir;
+        Base::Vector3d minornegativeend = center - minord * mindir;
         
         double df= sqrt(majord*majord-minord*minord);
         
-        Base::Vector3d focus1P = center + df * Base::Vector3d(cos(phi),sin(phi),0);
-        Base::Vector3d focus2P = center - df * Base::Vector3d(cos(phi),sin(phi),0);
+        Base::Vector3d focus1P = center + df * majdir;
+        Base::Vector3d focus2P = center - df * majdir;
         
         if(!major)
         {
@@ -1718,7 +1720,7 @@ int SketchObject::delExternal(int ExtGeoId)
     int GeoId = -3 - ExtGeoId;
     for (std::vector<Constraint *>::const_iterator it = constraints.begin();
          it != constraints.end(); ++it) {
-        if ((*it)->First != GeoId && (*it)->Second != GeoId) {
+        if ((*it)->First != GeoId && (*it)->Second != GeoId && (*it)->Third != GeoId) {
             Constraint *copiedConstr = (*it)->clone();
             if (copiedConstr->First < GeoId &&
                 copiedConstr->First != Constraint::GeoUndef)
@@ -1726,6 +1728,10 @@ int SketchObject::delExternal(int ExtGeoId)
             if (copiedConstr->Second < GeoId &&
                 copiedConstr->Second != Constraint::GeoUndef)
                 copiedConstr->Second += 1;
+            if (copiedConstr->Third < GeoId &&
+                copiedConstr->Third != Constraint::GeoUndef)
+                copiedConstr->Third += 1;
+
             newConstraints.push_back(copiedConstr);
         }
     }
@@ -1754,7 +1760,11 @@ int SketchObject::delConstraintsToExternal()
     int GeoId = -3, NullId = -2000;
     for (std::vector<Constraint *>::const_iterator it = constraints.begin();
          it != constraints.end(); ++it) {
-        if ((*it)->First > GeoId && ((*it)->Second > GeoId || (*it)->Second == NullId) && ((*it)->Third > GeoId || (*it)->Third == NullId)) {
+        if (    (*it)->First > GeoId
+                &&
+                ((*it)->Second > GeoId || (*it)->Second == NullId)
+                &&
+                ((*it)->Third > GeoId || (*it)->Third == NullId)) {
             newConstraints.push_back(*it);
         }
     }
@@ -1981,16 +1991,15 @@ void SketchObject::rebuildExternalGeometry(void)
                                     gp_Pnt P1 = projCurve.Value(projCurve.FirstParameter());
                                     gp_Pnt P2 = projCurve.Value(projCurve.LastParameter());
                                     
-                                    gp_Dir normal = e.Axis().Direction();
+                                    //gp_Dir normal = e.Axis().Direction();
+                                    gp_Dir normal = gp_Dir(0,0,1);
                                     gp_Dir xdir = e.XAxis().Direction();
                                     gp_Ax2 xdirref(p, normal);
 
                                     if (P1.SquareDistance(P2) < Precision::Confusion()) {
                                         Part::GeomEllipse* ellipse = new Part::GeomEllipse();
-                                        ellipse->setMajorRadius(e.MajorRadius());
-                                        ellipse->setMinorRadius(e.MinorRadius());
-                                        ellipse->setCenter(Base::Vector3d(p.X(),p.Y(),p.Z()));
-                                        ellipse->setAngleXU(-xdir.AngleWithRef(xdirref.XDirection(),normal));
+                                        Handle_Geom_Ellipse curve = new Geom_Ellipse(e);
+                                        ellipse->setHandle(curve);
                                         ellipse->Construction = true;
                                         ExternalGeo.push_back(ellipse);
                                     }
@@ -2509,6 +2518,8 @@ int SketchObject::changeConstraintsLocking(bool bLock)
             if (ret) cntSuccess++;
             tbd.push_back(constNew);
             newVals[i] = constNew;
+            Base::Console().Log("Constraint%i will be affected\n",
+                                i+1);
         }
     }
 
@@ -2523,6 +2534,86 @@ int SketchObject::changeConstraintsLocking(bool bLock)
                         cntSuccess, cntToBeAffected);
 
     return cntSuccess;
+}
+
+
+/*!
+ * \brief SketchObject::port_reversedExternalArcs finds constraints that link to endpoints of external-geometry arcs, and swaps the endpoints in the constraints. This is needed after CCW emulation was introduced, to port old sketches.
+ * \param justAnalyze if true, nothing is actually done - only the number of constraints to be affected is returned.
+ * \return the number of constraints changed/to be changed.
+ */
+int SketchObject::port_reversedExternalArcs(bool justAnalyze)
+{
+    int cntSuccess = 0;
+    int cntToBeAffected = 0;//==cntSuccess+cntFail
+    const std::vector< Constraint * > &vals = this->Constraints.getValues();
+
+    std::vector< Constraint * > newVals(vals);//modifiable copy of pointers array
+
+    std::vector< Constraint * > tbd;//list of temporary Constraint copies that need to be deleted later
+
+    for(int ic = 0; ic<newVals.size(); ic++){//ic = index of constraint
+        bool affected=false;
+        Constraint *constNew = 0;
+        for(int ig=1; ig<=3; ig++){//cycle through constraint.first, second, third
+            int geoId;
+            Sketcher::PointPos posId;
+            switch (ig){
+                case 1: geoId=newVals[ic]->First; posId = newVals[ic]->FirstPos; break;
+                case 2: geoId=newVals[ic]->Second; posId = newVals[ic]->SecondPos; break;
+                case 3: geoId=newVals[ic]->Third; posId = newVals[ic]->ThirdPos; break;
+            }
+
+            if ( geoId <= -3 &&
+                 (posId==Sketcher::start || posId==Sketcher::end)){
+                //we are dealing with a link to an endpoint of external geom
+                Part::Geometry* g = this->ExternalGeo[-geoId-1];
+                if (g->getTypeId() == Part::GeomArcOfCircle::getClassTypeId()){
+                    const Part::GeomArcOfCircle *segm = dynamic_cast<const Part::GeomArcOfCircle*>(g);
+                    if(segm->isReversedInXY()){
+                        //Gotcha! a link to an endpoint of external arc that is reversed.
+                        //create a constraint copy, affect it, replace the pointer
+                        if (!affected)
+                            constNew = newVals[ic]->clone();
+                        affected=true;
+                        //Do the fix on temp vars
+                        if(posId == Sketcher::start)
+                            posId = Sketcher::end;
+                        else if (posId == Sketcher::end)
+                            posId = Sketcher::start;
+                    }
+                }
+            }
+            if (!affected) continue;
+            //Propagate the fix made on temp vars to the constraint
+            switch (ig){
+                case 1: constNew->First = geoId; constNew->FirstPos = posId; break;
+                case 2: constNew->Second = geoId; constNew->SecondPos = posId; break;
+                case 3: constNew->Third = geoId; constNew->ThirdPos = posId; break;
+            }
+        }
+        if (affected){
+            cntToBeAffected++;
+            tbd.push_back(constNew);
+            newVals[ic] = constNew;
+            Base::Console().Log("Constraint%i will be affected\n",
+                                ic+1);
+        };
+    }
+
+    if(!justAnalyze){
+        this->Constraints.setValues(newVals);
+        Base::Console().Log("Swapped start/end of reversed external arcs in %i constraints\n",
+                            cntToBeAffected);
+    }
+
+    //clean up - delete temporary copies of constraints that were made to affect the constraints
+    for(int i=0; i<tbd.size(); i++){
+        delete (tbd[i]);
+    }
+
+
+    return cntToBeAffected;
 }
 
 ///Locks tangency/perpendicularity type of such a constraint.
