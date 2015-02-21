@@ -43,7 +43,8 @@ class ToolLenOffset:
         obj.addProperty("App::PropertyFloat", "Height", "HeightOffset", translate("Height","The first height value in Z, to rapid to, before making a feed move in Z"))
         obj.addProperty("App::PropertyBool","Active","HeightOffset",translate("Active","Make False, to prevent operation from generating code"))
         obj.Proxy = self
-
+        mode = 2
+        obj.setEditorMode('Placement',mode)
 
     def execute(self,obj):
 
@@ -58,8 +59,20 @@ class ToolLenOffset:
             obj.ViewObject.Visibility = False
 
 class _ViewProviderTLO:
-    def __init__(self,obj): #mandatory
-        obj.Proxy = self
+    def __init__(self,vobj): #mandatory
+        vobj.Proxy = self
+        mode = 2
+        vobj.setEditorMode('LineWidth',mode)
+        vobj.setEditorMode('MarkerColor',mode)
+        vobj.setEditorMode('NormalColor',mode)
+        vobj.setEditorMode('ShowFirstRapid',mode)
+        vobj.setEditorMode('DisplayMode',mode)
+        vobj.setEditorMode('BoundingBox',mode)
+        vobj.setEditorMode('Selectable',mode)
+        vobj.setEditorMode('ShapeColor',mode)
+        vobj.setEditorMode('Transparency',mode)
+        vobj.setEditorMode('Visibility',mode)
+
 
     def __getstate__(self): #mandatory
         return None

@@ -21,5 +21,6 @@
         <file>icons/Path-LoadTool.svg</file>
         <file>icons/Path-Comment.svg</file>
         <file>icons/Path-Stop.svg</file>
+        <file>icons/Path-Machine.svg</file>
     </qresource>
 </RCC> 

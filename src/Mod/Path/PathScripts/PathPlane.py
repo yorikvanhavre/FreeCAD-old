@@ -59,8 +59,20 @@ class Plane:
 
 
 class _ViewProviderPlane:
-    def __init__(self,obj): #mandatory
-        obj.Proxy = self
+    def __init__(self,vobj): #mandatory
+        vobj.Proxy = self
+        mode = 2
+        vobj.setEditorMode('LineWidth',mode)
+        vobj.setEditorMode('MarkerColor',mode)
+        vobj.setEditorMode('NormalColor',mode)
+        vobj.setEditorMode('ShowFirstRapid',mode)
+        vobj.setEditorMode('DisplayMode',mode)
+        vobj.setEditorMode('BoundingBox',mode)
+        vobj.setEditorMode('Selectable',mode)
+        vobj.setEditorMode('ShapeColor',mode)
+        vobj.setEditorMode('Transparency',mode)
+        vobj.setEditorMode('Visibility',mode)
+
 
     def __getstate__(self): #mandatory
         return None
@@ -71,11 +83,11 @@ class _ViewProviderPlane:
     def getIcon(self): #optional
         return ":/icons/Path-Plane.svg"
 
-    def onChanged(self,obj,prop): #optional
+    def onChanged(self,vobj,prop): #optional
         # this is executed when a property of the VIEW PROVIDER changes
         pass
 
-    def updateData(self,obj,prop): #optional
+    def updateData(self,vobj,prop): #optional
         # this is executed when a property of the APP OBJECT changes
         pass
 

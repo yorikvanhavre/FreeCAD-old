@@ -79,6 +79,7 @@ class PathWorkbench ( Workbench ):
         from PathScripts import PathLoadTool
         from PathScripts import PathComment
         from PathScripts import PathStop
+        from PathScripts import PathMachine
 
         # build commands list
         commands =["Path_Stock","Path_Plane","Path_Fixture","Path_ToolTableEdit","Path_Profile","Path_Pocket","Path_Drilling",\
