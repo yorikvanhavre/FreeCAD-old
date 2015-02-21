@@ -85,3 +85,14 @@ QIcon ViewProviderPathCompound::getIcon() const
 {
     return Gui::BitmapFactory().pixmap("Path-Compound");
 }
+
+// Python object -----------------------------------------------------------------------
+
+namespace Gui {
+/// @cond DOXERR
+PROPERTY_SOURCE_TEMPLATE(PathGui::ViewProviderPathCompoundPython, PathGui::ViewProviderPathCompound)
+/// @endcond
+
+// explicit template instantiation
+template class PathGuiExport ViewProviderPythonFeatureT<PathGui::ViewProviderPathCompound>;
+}

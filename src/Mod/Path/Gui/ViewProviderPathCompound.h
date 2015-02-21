@@ -48,6 +48,8 @@ protected:
 
 };
 
+typedef Gui::ViewProviderPythonFeatureT<ViewProviderPathCompound> ViewProviderPathCompoundPython;
+
 } //namespace PathGui
 
 
