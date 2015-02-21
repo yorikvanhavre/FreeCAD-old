@@ -168,7 +168,14 @@ class CommandPathDrilling:
                 if isinstance(point, Part.Vertex):
                     #vec = FreeCAD.Vector(point.X, point.Y, point.Z)
                     myList.append(FreeCAD.Vector(point.X, point.Y, point.Z))
-            obj.locations = myList        
+            obj.locations = myList
+        if selection['circles']:
+            myList = obj.locations
+            for circle in selection['circles']:
+                print "circle!"
+                center = circle.Curve.Center
+                myList.append(FreeCAD.Vector(center.x,center.y,center.z))
+            obj.locations = myList
 
         PathDrilling._ViewProviderDrill(obj.ViewObject)
 #        obj.ViewObject.Proxy = 0
