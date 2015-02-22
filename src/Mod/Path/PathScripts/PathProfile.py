@@ -104,9 +104,11 @@ class ObjectProfile:
         
     def getTool(self,obj,number=0):
         "retrieves a tool from a hosting object with a tooltable, if any"
-        for o in obj.InList[0].Group:
-            if hasattr(o,"Tooltable"):
-                return o.Tooltable.getTool(number)
+        for o in obj.InList:
+            if o.TypeId == "Path::FeatureCompoundPython":
+                for m in o.Group:
+                    if hasattr(m,"Tooltable"):
+                        return m.Tooltable.getTool(number)
         # not found? search one level up
         for o in obj.InList:
             return self.getTool(o,number)
