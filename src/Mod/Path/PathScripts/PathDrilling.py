@@ -47,16 +47,14 @@ class ObjectDrilling:
         obj.addProperty("App::PropertyLinkSub","Base","Path",translate("Parent Object","The base geometry of this toolpath"))
         obj.addProperty("App::PropertyVectorList","locations","Path","The drilling locations")
 
-        obj.addProperty("App::PropertyFloatConstraint", "PeckDepth", "Drilling", translate("PeckDepth","Incremental Drill depth before retracting to clear chips"))
-        obj.PeckDepth = (0,0,1000,1)
-        obj.addProperty("App::PropertyFloat", "ClearanceHeight", "Drilling", translate("Clearance Height","The height needed to clear clamps and obstructions"))
-        obj.addProperty("App::PropertyFloat", "FinalDepth", "Drilling", translate("Final Depth","Final Depth of Tool- lowest value in Z"))
-        obj.addProperty("App::PropertyFloat", "RetractHeight", "Drilling", translate("Retract Height","The height where feed starts and height during retract tool when path is finished"))
-        obj.addProperty("App::PropertyFloatConstraint", "VertFeed", "Feed",translate("Vert Feed","Feed rate for vertical moves in Z"))
-        obj.VertFeed = (0,0,100000,1)
+        obj.addProperty("App::PropertyLength", "PeckDepth", "Drilling", translate("PeckDepth","Incremental Drill depth before retracting to clear chips"))
+        #obj.PeckDepth = (0,0,1000,1)
+        obj.addProperty("App::PropertyDistance", "ClearanceHeight", "Drilling", translate("Clearance Height","The height needed to clear clamps and obstructions"))
+        obj.addProperty("App::PropertyDistance", "FinalDepth", "Drilling", translate("Final Depth","Final Depth of Tool- lowest value in Z"))
+        obj.addProperty("App::PropertyDistance", "RetractHeight", "Drilling", translate("Retract Height","The height where feed starts and height during retract tool when path is finished"))
+        obj.addProperty("App::PropertySpeed", "VertFeed", "Feed",translate("Vert Feed","Feed rate for vertical moves in Z"))
 
-        obj.addProperty("App::PropertyFloatConstraint", "HorizFeed", "Feed",translate("Horiz Feed","Feed rate for horizontal moves"))
-        obj.HorizFeed = (0,0,100000,1)
+        obj.addProperty("App::PropertySpeed", "HorizFeed", "Feed",translate("Horiz Feed","Feed rate for horizontal moves"))
 
         obj.addProperty("App::PropertyString","Comment","Path",translate("PathProject","An optional comment for this profile"))
         obj.addProperty("App::PropertyBool","Active","Path",translate("Active","Make False, to prevent operation from generating code"))
@@ -80,16 +78,16 @@ class ObjectDrilling:
 
     def execute(self,obj):
         output = "G90 G98\n"
-        output += "G0 Z" + str(obj.ClearanceHeight) + "\n"
-        if obj.PeckDepth > 0:
+        output += "G0 Z" + str(obj.ClearanceHeight.Value) + "\n"
+        if obj.PeckDepth.Value > 0:
             cmd = "G83"
-            qword = " Q"+ str(obj.PeckDepth)
+            qword = " Q"+ str(obj.PeckDepth.Value)
         else:
             cmd = "G81"
             qword = ""
             
         for p in obj.locations:
-            output += cmd + " X" + str(p.x) + " Y" + str(p.y) + " Z" + str(obj.FinalDepth) + qword + " R" + str(obj.RetractHeight) + " F" + str(obj.VertFeed) + "\n"
+            output += cmd + " X" + str(p.x) + " Y" + str(p.y) + " Z" + str(obj.FinalDepth.Value) + qword + " R" + str(obj.RetractHeight.Value) + " F" + str(obj.VertFeed.Value) + "\n"
 
         output += "G80\n"
 
