@@ -47,14 +47,15 @@ COMMAND_SPACE = " "
 LINENR = 100 #line number starting value
 
 #These globals will be reflected in the Machine configuration of the project
-UNITS = "Inch"
+UNITS = "G21" #G21 for metric, G20 for us standard
 MACHINE_NAME = "Millstone"
 CORNER_MIN = {'x':0, 'y':0, 'z':0 }
 CORNER_MAX = {'x':500, 'y':300, 'z':300 }
 
 #Preamble text will appear at the beginning of the GCODE output file.
-PREAMBLE = '''G17 G21 G90
+PREAMBLE = '''G17 G90
 '''
+
 #Postamble text will appear following the last operation.
 POSTAMBLE = '''M05
 G00 X-1.0 Y1.0
@@ -79,15 +80,31 @@ if open.__module__ == '__builtin__':
 
 
 def export(objectslist,filename):
+    global UNITS
     for obj in objectslist:
-
         if not hasattr(obj,"Path"):
             print "the object " + obj.Name + " is not a path. Please select only path and Compounds."
             return
-    
 
     print "postprocessing..."
     gcode = ""
+
+    #Find the machine.  
+    #The user my have overriden post processor defaults in the GUI.  Make sure we're using the current values in the Machine Def.
+    myMachine = None
+    for pathobj in objectslist:
+        if hasattr(pathobj,"Group"): #We have a compound or project.
+            for p in pathobj.Group:
+                if p.Name == "Machine":
+                    myMachine = p
+    if myMachine is None: 
+        print "No machine found in this project"
+    else:
+        if myMachine.MachineUnits == "Metric":
+           UNITS = "G21"
+        else:
+           UNITS = "G20"
+            
 
     # write header
     if OUTPUT_HEADER:
@@ -99,6 +116,7 @@ def export(objectslist,filename):
     if OUTPUT_COMMENTS: gcode += linenumber() + "(begin preamble)\n"
     for line in PREAMBLE.splitlines(True):
         gcode += linenumber() + line
+    gcode += linenumber() + UNITS + "\n" 
 
     for obj in objectslist:
         
