@@ -46,13 +46,18 @@ class Machine:
         obj.addProperty("Path::PropertyTooltable","Tooltable",  "Machine",translate("Tool Table","The tooltable used for this CNC program")) #will implement later
         obj.addProperty("App::PropertyVector",    "CornerMin",  "Machine",translate("CornerMin","The lower left corner of the machine travel"))
         obj.addProperty("App::PropertyVector",    "CornerMax",  "Machine",translate("CornerMax","The upper right corner of the machine travel"))
+        obj.addProperty("App::PropertyDistance", "XHomePos", "Machine", translate("X Home Position","Home position of machine, in X (mainly for visualization)"))
+        obj.addProperty("App::PropertyDistance", "YHomePos", "Machine", translate("Y Home Position","Home position of machine, in Y (mainly for visualization)"))
+        obj.addProperty("App::PropertyDistance", "ZHomePos", "Machine", translate("Z Home Position","Home position of machine, in Z (mainly for visualization)"))
+
         obj.Proxy = self
         mode = 2
         obj.setEditorMode('Placement',mode)
 
     def execute(self,obj):
         obj.Label = "Machine_"+str(obj.MachineName)
-
+        gcode = 'G0 X'+str(obj.XHomePos.Value)+' Y'+str(obj.YHomePos.Value)+' Z'+str(obj.ZHomePos.Value)
+        obj.Path = Path.Path(gcode)
 
 class _ViewProviderMachine:
     def __init__(self,vobj):
