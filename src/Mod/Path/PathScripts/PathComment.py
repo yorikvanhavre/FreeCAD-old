@@ -40,6 +40,9 @@ class Comment:
     def __init__(self,obj):
         obj.addProperty("App::PropertyString","Comment","Path",translate("Comment","Comment or note for CNC program"))
         obj.Proxy = self
+        mode = 2
+        obj.setEditorMode('Placement',mode)
+
 
     def __getstate__(self):
         return None
@@ -58,10 +61,21 @@ class Comment:
             obj.Path = path
 
 class _ViewProviderComment:
-
-    def __init__(self,obj): #mandatory
+    def __init__(self,vobj): #mandatory
 #        obj.addProperty("App::PropertyFloat","SomePropertyName","PropertyGroup","Description of this property")
-        obj.Proxy = self
+        vobj.Proxy = self
+        mode = 2
+        vobj.setEditorMode('LineWidth',mode)
+        vobj.setEditorMode('MarkerColor',mode)
+        vobj.setEditorMode('NormalColor',mode)
+        vobj.setEditorMode('ShowFirstRapid',mode)
+        vobj.setEditorMode('DisplayMode',mode)
+        vobj.setEditorMode('BoundingBox',mode)
+        vobj.setEditorMode('Selectable',mode)
+        vobj.setEditorMode('ShapeColor',mode)
+        vobj.setEditorMode('Transparency',mode)
+        vobj.setEditorMode('Visibility',mode)
+
 
     def __getstate__(self): #mandatory
         return None
@@ -71,6 +85,20 @@ class _ViewProviderComment:
 
     def getIcon(self): #optional
         return ":/icons/Path-Comment.svg"
+
+    def onChanged(self,vobj,prop): #optional
+        mode = 2
+        vobj.setEditorMode('LineWidth',mode)
+        vobj.setEditorMode('MarkerColor',mode)
+        vobj.setEditorMode('NormalColor',mode)
+        vobj.setEditorMode('ShowFirstRapid',mode)
+        vobj.setEditorMode('DisplayMode',mode)
+        vobj.setEditorMode('BoundingBox',mode)
+        vobj.setEditorMode('Selectable',mode)
+        vobj.setEditorMode('ShapeColor',mode)
+        vobj.setEditorMode('Transparency',mode)
+        vobj.setEditorMode('Visibility',mode)
+
 
 class CommandPathComment:
     def GetResources(self):

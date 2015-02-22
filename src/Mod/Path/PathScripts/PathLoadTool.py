@@ -44,6 +44,9 @@ class LoadTool:
         obj.addProperty("App::PropertyEnumeration", "SpindleDir", "Tool", translate("Spindle Dir","Direction of spindle rotation"))
         obj.SpindleDir = ['Forward','Reverse']
         obj.Proxy = self
+        mode = 2
+        obj.setEditorMode('Placement',mode)
+
 
 
     def execute(self,obj):
@@ -62,8 +65,19 @@ class LoadTool:
         obj.Label = "Tool"+str(obj.ToolNumber)
 
 class _ViewProviderLoadTool:
-    def __init__(self,obj): #mandatory
-        obj.Proxy = self
+    def __init__(self,vobj): #mandatory
+        vobj.Proxy = self
+        mode = 2
+        vobj.setEditorMode('LineWidth',mode)
+        vobj.setEditorMode('MarkerColor',mode)
+        vobj.setEditorMode('NormalColor',mode)
+        vobj.setEditorMode('ShowFirstRapid',mode)
+        vobj.setEditorMode('DisplayMode',mode)
+        vobj.setEditorMode('BoundingBox',mode)
+        vobj.setEditorMode('Selectable',mode)
+        vobj.setEditorMode('ShapeColor',mode)
+        vobj.setEditorMode('Transparency',mode)
+        vobj.setEditorMode('Visibility',mode)
 
     def __getstate__(self): #mandatory
         return None
@@ -74,11 +88,20 @@ class _ViewProviderLoadTool:
     def getIcon(self): #optional
         return ":/icons/Path-LoadTool.svg"
 
-    def onChanged(self,obj,prop): #optional
-        # this is executed when a property of the VIEW PROVIDER changes
-        pass
+    def onChanged(self,vobj,prop): #optional
+        mode = 2
+        vobj.setEditorMode('LineWidth',mode)
+        vobj.setEditorMode('MarkerColor',mode)
+        vobj.setEditorMode('NormalColor',mode)
+        vobj.setEditorMode('ShowFirstRapid',mode)
+        vobj.setEditorMode('DisplayMode',mode)
+        vobj.setEditorMode('BoundingBox',mode)
+        vobj.setEditorMode('Selectable',mode)
+        vobj.setEditorMode('ShapeColor',mode)
+        vobj.setEditorMode('Transparency',mode)
+        vobj.setEditorMode('Visibility',mode)
 
-    def updateData(self,obj,prop): #optional
+    def updateData(self,vobj,prop): #optional
         # this is executed when a property of the APP OBJECT changes
         pass
 

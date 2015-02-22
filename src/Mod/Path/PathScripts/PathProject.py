@@ -41,12 +41,10 @@ class ObjectPathProject:
     
 
     def __init__(self,obj):
-        obj.addProperty("App::PropertyFile", "PostProcessor", "CodeOutput", translate("PostProcessor","Select the Post Processor file for this project"))
+#        obj.addProperty("App::PropertyFile", "PostProcessor", "CodeOutput", translate("PostProcessor","Select the Post Processor file for this project"))
         obj.addProperty("App::PropertyFile", "OutputFile", "CodeOutput", translate("OutputFile","The NC output file for this project"))
         obj.addProperty("App::PropertyBool","Editor","CodeOutput",translate("Show Editor","Show G-Code in simple editor after posting code"))
-        obj.addProperty("Path::PropertyTooltable","Tooltable",  "Path",translate("PathProject","The tooltable of this feature"))
-        obj.addProperty("App::PropertyVector",    "CornerMin",  "Path",translate("PathProject","The lower left corner of the machine extents"))
-        obj.addProperty("App::PropertyVector",    "CornerMax",  "Path",translate("PathProject","The upper right corner of the machine extents"))
+#        obj.addProperty("Path::PropertyTooltable","Tooltable",  "Path",translate("PathProject","The tooltable of this feature"))
         obj.addProperty("App::PropertyString",    "Description","Path",translate("PathProject","An optional description for this project"))
         obj.Proxy = self
 
@@ -66,14 +64,23 @@ class ObjectPathProject:
                 cmds.extend(child.Path.Commands)
         if cmds:
             path = Path.Path(cmds)
-            obj.Path = path
+            #obj.Path = path
 
 class ViewProviderProject:
-    
-    
+
     def __init__(self,vobj):
         vobj.Proxy = self
-        vobj.addProperty("App::PropertyBool","ShowExtents","Path",translate("PathProject","Switch the machine extents bounding box on/off"))
+        mode = 2
+        vobj.setEditorMode('LineWidth',mode)
+        vobj.setEditorMode('MarkerColor',mode)
+        vobj.setEditorMode('NormalColor',mode)
+        vobj.setEditorMode('ShowFirstRapid',mode)
+        vobj.setEditorMode('BoundingBox',mode)
+        vobj.setEditorMode('DisplayMode',mode)
+        vobj.setEditorMode('Selectable',mode)
+        vobj.setEditorMode('ShapeColor',mode)
+        vobj.setEditorMode('Transparency',mode)
+        vobj.setEditorMode('Visibility',mode)
 
     def __getstate__(self): #mandatory
         return None
@@ -83,42 +90,20 @@ class ViewProviderProject:
 
     def getIcon(self):
         return ":/icons/Path-Project.svg"
-        
-    def attach(self,vobj):
-        from pivy import coin
-        self.extentsBox = coin.SoSeparator()
-        vobj.RootNode.addChild(self.extentsBox)
-        
+
     def onChanged(self,vobj,prop):
-        if prop == "ShowExtents":
-            self.extentsBox.removeAllChildren()
-            if vobj.ShowExtents and hasattr(vobj,"Object"):
-                from pivy import coin
-                parent = coin.SoType.fromName("SoSkipBoundingGroup").createInstance()
-                self.extentsBox.addChild(parent)
-                # set pattern
-                pattern = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/Part").GetInt("GridLinePattern",0x0f0f)
-                defStyle = coin.SoDrawStyle()
-                defStyle.lineWidth = 1
-                defStyle.linePattern = pattern
-                parent.addChild(defStyle)
-                # set color
-                c = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/Path").GetUnsigned("DefaultExtentsColor",3418866943)
-                r = float((c>>24)&0xFF)/255.0
-                g = float((c>>16)&0xFF)/255.0
-                b = float((c>>8)&0xFF)/255.0
-                color = coin.SoBaseColor()
-                parent.addChild(color)
-                # set boundbox
-                extents = coin.SoType.fromName("SoFCBoundingBox").createInstance()
-                extents.coordsOn.setValue(False)
-                extents.dimensionsOn.setValue(True)
-                p1 = vobj.Object.CornerMin
-                p2 = vobj.Object.CornerMax
-                extents.minBounds.setValue(p1.x,p1.y,p1.z)
-                extents.maxBounds.setValue(p2.x,p2.y,p2.z)
-                parent.addChild(extents)
-                
+        mode = 2
+        vobj.setEditorMode('LineWidth',mode)
+        vobj.setEditorMode('MarkerColor',mode)
+        vobj.setEditorMode('NormalColor',mode)
+        vobj.setEditorMode('ShowFirstRapid',mode)
+        vobj.setEditorMode('BoundingBox',mode)
+        vobj.setEditorMode('DisplayMode',mode)
+        vobj.setEditorMode('Selectable',mode)
+        vobj.setEditorMode('ShapeColor',mode)
+        vobj.setEditorMode('Transparency',mode)
+        vobj.setEditorMode('Visibility',mode)
+
 
 class CommandProject:
 
@@ -148,6 +133,44 @@ class CommandProject:
                 FreeCADGui.doCommand('children.append(FreeCAD.ActiveDocument.'+obj.Name+')')
             FreeCADGui.doCommand('obj.Group = children')
         FreeCADGui.doCommand('PathScripts.PathProject.ViewProviderProject(obj.ViewObject)')
+
+        addmachine = '''
+import Path
+import PathScripts
+from PathScripts import PathProject
+prjexists = False
+obj = FreeCAD.ActiveDocument.addObject("Path::FeaturePython","Machine")
+PathScripts.PathMachine.Machine(obj)
+
+PathScripts.PathMachine._ViewProviderMachine(obj.ViewObject)
+for o in FreeCAD.ActiveDocument.Objects:
+    if "Proxy" in o.PropertiesList:
+        if isinstance(o.Proxy,PathProject.ObjectPathProject):
+            g = o.Group
+            g.append(obj)
+            o.Group = g
+            prjexists = True
+
+if prjexists:
+    pass
+else: #create a new path object
+    project = FreeCAD.ActiveDocument.addObject("Path::FeatureCompoundPython","Project")
+    PathProject.ObjectPathProject(project)
+    PathProject.ViewProviderProject(project.ViewObject)
+    g = project.Group
+    g.append(obj)
+    project.Group = g
+UnitParams = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Units")
+if UnitParams.GetInt('UserSchema') == 0:
+    obj.MachineUnits = 'Metric'
+     #metric mode
+else:
+    obj.MachineUnits = 'Inch'
+
+'''
+
+        FreeCADGui.doCommand(addmachine)
+
         FreeCAD.ActiveDocument.commitTransaction()
         FreeCAD.ActiveDocument.recompute()
 
