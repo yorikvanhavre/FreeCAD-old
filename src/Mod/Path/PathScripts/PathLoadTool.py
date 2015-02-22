@@ -39,7 +39,7 @@ except AttributeError:
 class LoadTool:
     def __init__(self,obj):
         obj.addProperty("App::PropertyIntegerConstraint", "ToolNumber","Tool", translate( "Tool Number",  "The active tool"))
-        obj.ToolNumber = (0,0,10000,1)
+        obj.ToolNumber = (1,1,10000,1)
         obj.addProperty("App::PropertyFloat", "SpindleSpeed", "Tool", translate("Spindle Speed","The speed of the cutting spindle in RPM"))
         obj.addProperty("App::PropertyEnumeration", "SpindleDir", "Tool", translate("Spindle Dir","Direction of spindle rotation"))
         obj.SpindleDir = ['Forward','Reverse']

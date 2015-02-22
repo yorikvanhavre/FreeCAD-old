@@ -52,7 +52,6 @@ class Comment:
 
     def onChanged(self,obj,prop):
         pass
-#        FreeCAD.ActiveDocument.recompute()
 
     def execute(self,obj):
             output =""
