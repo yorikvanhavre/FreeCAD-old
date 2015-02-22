@@ -79,7 +79,11 @@ class Machine:
             postname = os.path.split(lessextn)[1]
 
             exec "import %s as current_post" % postname
-            if hasattr (current_post, "UNITS"): obj.MachineUnits = current_post.UNITS
+            if hasattr (current_post, "UNITS"): 
+                if current_post.UNITS == "G21":
+                    obj.MachineUnits = "Metric"
+                else:
+                    obj.MachineUnits = "Inch"
             if hasattr (current_post, "MACHINE_NAME"): obj.MachineName = current_post.MACHINE_NAME
 
             if hasattr (current_post, "CORNER_MAX"):
