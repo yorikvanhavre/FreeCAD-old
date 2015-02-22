@@ -55,23 +55,28 @@ class CommandPathPost:
         #select the PathProject that you want to post output from
         obj = FreeCADGui.Selection.getSelection()
 
-        if hasattr(obj[0],"Group") and hasattr(obj[0],"Path"): 
-            if hasattr(obj[0].Group[0],"PostProcessor"): #A project selected.  Use the post specified int the Machine object.
-                proj = obj[0]
-                postobj = obj[0].Group[0]
-                #need to check for existance of these: obj.PostProcessor, obj.OutputFile
-                if postobj.PostProcessor and proj.OutputFile:
-                    sys.path.append(os.path.split(postobj.PostProcessor)[0])
-                    lessextn = os.path.splitext(postobj.PostProcessor)[0]
-                    postname = os.path.split(lessextn)[1]
-                    filename = proj.OutputFile
-                else:
-                    postname = "dumper_post"
-                    filename = "tmp.tap"
-        elif hasattr(obj[0], "Path"):
-            postname = "dumper_post"
-            filename = "tmp.tap"
+        #default to the dumper post and default .tap file
+        postname = "dumper_post"
+        filename = "tmp.tap"
 
+        #check if the user has a project and has set the default post and output filename
+        if hasattr(obj[0],"Group") and hasattr(obj[0],"Path"):
+            #Check for a machine and use the post processor if it's set
+            proj = obj[0]
+            postobj = None
+            for p in obj[0].Group:
+                if p.Name == "Machine":
+                    postobj = p
+                
+            #need to check for existance of these: obj.PostProcessor, obj.OutputFile
+            if postobj and postobj.PostProcessor:
+                sys.path.append(os.path.split(postobj.PostProcessor)[0])
+                lessextn = os.path.splitext(postobj.PostProcessor)[0]
+                postname = os.path.split(lessextn)[1]
+    
+            if proj.OutputFile:
+                filename = proj.OutputFile
+        
         exec "import %s as current_post" % postname
         current_post.export(obj,filename)
 
