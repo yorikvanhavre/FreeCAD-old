@@ -46,6 +46,11 @@ MODAL = False #if true commands are suppressed if the same as previous line.
 COMMAND_SPACE = " "
 LINENR = 100 #line number starting value
 
+#These globals will be reflected in the Machine configuration of the project
+UNITS = "Inch"
+MACHINE_NAME = "Millstone"
+CORNER_MIN = {'x':0, 'y':0, 'z':0 }
+CORNER_MAX = {'x':500, 'y':300, 'z':300 }
 
 #Preamble text will appear at the beginning of the GCODE output file.
 PREAMBLE = '''G17 G21 G90
@@ -56,7 +61,8 @@ G00 X-1.0 Y1.0
 G17 G90
 M2
 '''
- 
+
+
 #Pre operation text will be inserted before every operation
 PRE_OPERATION = ''''''
  
