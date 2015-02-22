@@ -26,6 +26,7 @@
 import FreeCAD,FreeCADGui,Path,PathGui
 from PathScripts import PathProject
 from PySide import QtCore,QtGui
+import os, sys
 
 # Qt tanslation handling
 try:
@@ -63,6 +64,26 @@ class Machine:
         mode = 2
         obj.setEditorMode('Placement',mode)
 
+        if prop == "PostProcessor":
+            sys.path.append(os.path.split(obj.PostProcessor)[0])
+            lessextn = os.path.splitext(obj.PostProcessor)[0]
+            postname = os.path.split(lessextn)[1]
+
+            exec "import %s as current_post" % postname
+            if hasattr (current_post, "UNITS"): obj.MachineUnits = current_post.UNITS
+            if hasattr (current_post, "MACHINE_NAME"): obj.MachineName = current_post.MACHINE_NAME
+
+            if hasattr (current_post, "CORNER_MAX"):
+                obj.CornerMax.x = current_post.CORNER_MAX['x']
+                obj.CornerMax.y = current_post.CORNER_MAX['y']
+                obj.CornerMax.z = current_post.CORNER_MAX['z']
+
+            if hasattr (current_post, "CORNER_MIN"): 
+                obj.CornerMin.x = current_post.CORNER_MIN['x']
+                obj.CornerMin.y = current_post.CORNER_MIN['y']
+                obj.CornerMin.z = current_post.CORNER_MIN['z']
+
+
 class _ViewProviderMachine:
     def __init__(self,vobj):
         vobj.Proxy = self
@@ -92,6 +113,7 @@ class _ViewProviderMachine:
         vobj.RootNode.addChild(self.extentsBox)
         
     def onChanged(self,vobj,prop):
+
         if prop == "ShowMinMaxTravel":
             self.extentsBox.removeAllChildren()
             if vobj.ShowMinMaxTravel and hasattr(vobj,"Object"):
@@ -134,6 +156,8 @@ class _ViewProviderMachine:
         vobj.setEditorMode('DisplayMode',mode)
         vobj.setEditorMode('BoundingBox',mode)
         vobj.setEditorMode('Selectable',mode)
+
+
 
 
     def updateData(self,vobj,prop): #optional
