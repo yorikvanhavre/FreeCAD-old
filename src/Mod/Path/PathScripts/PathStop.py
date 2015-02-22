@@ -93,6 +93,20 @@ class _ViewProviderStop:
     def getIcon(self): #optional
         return ":/icons/Path-Stop.svg"
 
+    def onChanged(self,vobj,prop): #optional
+        mode = 2
+        vobj.setEditorMode('LineWidth',mode)
+        vobj.setEditorMode('MarkerColor',mode)
+        vobj.setEditorMode('NormalColor',mode)
+        vobj.setEditorMode('ShowFirstRapid',mode)
+        vobj.setEditorMode('DisplayMode',mode)
+        vobj.setEditorMode('BoundingBox',mode)
+        vobj.setEditorMode('Selectable',mode)
+        vobj.setEditorMode('ShapeColor',mode)
+        vobj.setEditorMode('Transparency',mode)
+        vobj.setEditorMode('Visibility',mode)
+
+
 class CommandPathStop:
     def GetResources(self):
         return {'Pixmap'  : 'Path-Stop',

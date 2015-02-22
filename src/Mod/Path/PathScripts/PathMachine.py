@@ -59,6 +59,10 @@ class Machine:
         gcode = 'G0 X'+str(obj.XHomePos.Value)+' Y'+str(obj.YHomePos.Value)+' Z'+str(obj.ZHomePos.Value)
         obj.Path = Path.Path(gcode)
 
+    def onChanged(self,obj,prop):
+        mode = 2
+        obj.setEditorMode('Placement',mode)
+
 class _ViewProviderMachine:
     def __init__(self,vobj):
         vobj.Proxy = self
@@ -122,6 +126,15 @@ class _ViewProviderMachine:
                     extents.minBounds.setValue(p1.x*scale,p1.y*scale,p1.z*scale)
                     extents.maxBounds.setValue(p2.x*scale,p2.y*scale,p2.z*scale)
                 parent.addChild(extents)
+        mode = 2
+        vobj.setEditorMode('LineWidth',mode)
+        vobj.setEditorMode('MarkerColor',mode)
+        vobj.setEditorMode('NormalColor',mode)
+        vobj.setEditorMode('ShowFirstRapid',mode)
+        vobj.setEditorMode('DisplayMode',mode)
+        vobj.setEditorMode('BoundingBox',mode)
+        vobj.setEditorMode('Selectable',mode)
+
 
     def updateData(self,vobj,prop): #optional
         # this is executed when a property of the APP OBJECT changes
