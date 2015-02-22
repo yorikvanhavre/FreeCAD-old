@@ -48,36 +48,50 @@ class ObjectProfile:
         obj.addProperty("App::PropertyBool","PathClosed","Path",translate("Path Closed","If the toolpath is a closed polyline this is True"))
         obj.addProperty("App::PropertyLinkSub","Edge1","Path",translate("Edge 1","First Selected Edge to help determine which geometry to make a toolpath around"))
         obj.addProperty("App::PropertyLinkSub","Edge2","Path",translate("Edge 2","Second Selected Edge to help determine which geometry to make a toolpath around"))
+        obj.addProperty("App::PropertyBool","Active","Path",translate("Active","Make False, to prevent operation from generating code"))
+    
+
         obj.addProperty("App::PropertyIntegerConstraint","ToolNum","Tool",translate("PathProfile","The tool number in use"))
         obj.ToolNum = (0,0,1000,1)
 #        obj.addProperty("App::PropertyFloat", "SpindleSpeed", "Tool", translate("Spindle Speed","The speed of the cutting spindle in RPM"))
 #        obj.addProperty("App::PropertyEnumeration", "SpindleDir", "Tool", translate("Spindle Dir","Direction of spindle rotation"))
 #        obj.SpindleDir = ['Forward','Reverse']
-        obj.addProperty("App::PropertyDistance", "ClearanceHeight", "Depth Parameters", translate("Clearance Height","The height needed to clear clamps and obstructions"))
-        obj.addProperty("App::PropertyDistance", "StepDown", "Depth Parameters", translate("StepDown","Incremental Step Down of Tool"))
-        obj.addProperty("App::PropertyDistance", "StartDepth", "Depth Parameters", translate("Start Depth","Starting Depth of Tool- first cut depth in Z"))
-        obj.addProperty("App::PropertyBool","UseStartDepth","Depth Parameters",translate("Use Start Depth","make True, if manually specifying a Start Start Depth"))
-        obj.addProperty("App::PropertyDistance", "FinalDepth", "Depth Parameters", translate("Final Depth","Final Depth of Tool- lowest value in Z"))
-        obj.addProperty("App::PropertyDistance", "RetractHeight", "Depth Parameters", translate("Retract Height","The height desired to retract tool when path is finished"))
-        obj.addProperty("App::PropertyString","Comment","Profile Parameters",translate("PathProject","An optional comment for this profile"))
-        obj.addProperty("App::PropertyVector","StartPoint","Profile Parameters",translate("Start Point","The start point of this path"))
-        obj.addProperty("App::PropertyBool","UseStartPoint","Profile Parameters",translate("Use Start Point","make True, if specifying a Start Point"))
-        obj.addProperty("App::PropertyEnumeration", "Direction", "Profile Parameters",translate("Direction", "The direction that the toolpath should go around the part ClockWise CW or CounterClockWise CCW"))
+
+        #Depth Properties
+        obj.addProperty("App::PropertyDistance", "ClearanceHeight", "Depth", translate("Clearance Height","The height needed to clear clamps and obstructions"))
+        obj.addProperty("App::PropertyLength", "StepDown", "Depth", translate("StepDown","Incremental Step Down of Tool"))
+        obj.addProperty("App::PropertyBool","UseStartDepth","Depth",translate("Use Start Depth","make True, if manually specifying a Start Start Depth"))
+        obj.addProperty("App::PropertyDistance", "StartDepth", "Depth", translate("Start Depth","Starting Depth of Tool- first cut depth in Z"))
+        obj.addProperty("App::PropertyDistance", "FinalDepth", "Depth", translate("Final Depth","Final Depth of Tool- lowest value in Z"))
+        obj.addProperty("App::PropertyDistance", "RetractHeight", "Depth", translate("Retract Height","The height desired to retract tool when path is finished"))
+        obj.addProperty("App::PropertyString","Comment","Path",translate("PathProject","An optional comment for this profile"))
+        obj.addProperty("App::PropertyEnumeration", "Direction", "Profile",translate("Direction", "The direction that the toolpath should go around the part ClockWise CW or CounterClockWise CCW"))
         obj.Direction = ['CW','CCW']
-        obj.addProperty("App::PropertyVector","EndPoint","Profile Parameters",translate("End Point","The end point of this path"))
-        obj.addProperty("App::PropertyFloat", "FeedVert", "Profile Parameters",translate("Vert Feed","Feed rate for vertical moves in Z"))
-        obj.addProperty("App::PropertyFloat", "FeedHoriz", "Profile Parameters",translate("Horiz Feed","Feed rate for horizontal moves"))
-        obj.addProperty("App::PropertyBool","UseEndPoint","Profile Parameters",translate("Use End Point","make True, if specifying an End Point"))
-        obj.addProperty("App::PropertyEnumeration", "Side", "Profile Parameters", translate("Side","Side of edge that tool should cut"))
+
+        #Feed Properties
+        obj.addProperty("App::PropertySpeed", "VertFeed", "Feed",translate("Vert Feed","Feed rate for vertical moves in Z"))
+        obj.addProperty("App::PropertySpeed", "HorizFeed", "Feed",translate("Horiz Feed","Feed rate for horizontal moves"))
+       
+        #Start Point Properties
+        obj.addProperty("App::PropertyVector","StartPoint","Start Point",translate("Start Point","The start point of this path"))
+        obj.addProperty("App::PropertyBool","UseStartPoint","Start Point",translate("Use Start Point","make True, if specifying a Start Point"))
+        obj.addProperty("App::PropertyLength", "ExtendAtStart", "Start Point", translate("extend at start", "extra length of tool path before start of part edge"))
+        obj.addProperty("App::PropertyLength", "LeadInLineLen", "Start Point", translate("lead in length","length of straight segment of toolpath that comes in at angle to first part edge"))
+
+
+        #End Point Properties
+        obj.addProperty("App::PropertyBool","UseEndPoint","End Point",translate("Use End Point","make True, if specifying an End Point"))
+        obj.addProperty("App::PropertyLength", "ExtendAtEnd", "End Point", translate("extend at end","extra length of tool path after end of part edge"))
+        obj.addProperty("App::PropertyLength", "LeadOutLineLen", "End Point", translate("lead_out_line_len","length of straight segment of toolpath that comes in at angle to last part edge"))
+        obj.addProperty("App::PropertyVector","EndPoint","End Point",translate("End Point","The end point of this path"))
+
+        #Profile Properties
+        obj.addProperty("App::PropertyEnumeration", "Side", "Profile", translate("Side","Side of edge that tool should cut"))
         obj.Side = ['Left','Right','On']
-        obj.addProperty("App::PropertyDistance", "RollRadius", "Profile Parameters", translate("Roll Radius","Radius at start and end"))
-        obj.addProperty("App::PropertyDistance", "OffsetExtra", "Profile Parameters",translate("OffsetExtra","Extra value to stay away from final profile- good for roughing toolpath"))
-        obj.addProperty("App::PropertyLength", "ExtendAtStart", "Profile Parameters", translate("extend at start", "extra length of tool path before start of part edge"))
-        obj.addProperty("App::PropertyLength", "ExtendAtEnd", "Profile Parameters", translate("extend at end","extra length of tool path after end of part edge"))
-        obj.addProperty("App::PropertyLength", "LeadInLineLen", "Profile Parameters", translate("lead in length","length of straight segment of toolpath that comes in at angle to first part edge"))
-        obj.addProperty("App::PropertyLength", "LeadOutLineLen", "Profile Parameters", translate("lead_out_line_len","length of straight segment of toolpath that comes in at angle to last part edge"))
-        obj.addProperty("App::PropertyLength", "SegLen", "Profile Parameters",translate("Seg Len","Tesselation  value for tool paths made from beziers, bsplines, and ellipses"))
-        obj.addProperty("App::PropertyBool","Active","Sequence Parameters",translate("Active","Make False, to prevent operation from generating code"))
+
+        obj.addProperty("App::PropertyDistance", "RollRadius", "Profile", translate("Roll Radius","Radius at start and end"))
+        obj.addProperty("App::PropertyDistance", "OffsetExtra", "Profile",translate("OffsetExtra","Extra value to stay away from final profile- good for roughing toolpath"))
+        obj.addProperty("App::PropertyLength", "SegLen", "Profile",translate("Seg Len","Tesselation  value for tool paths made from beziers, bsplines, and ellipses"))
 
         obj.Proxy = self
 #        obj.Closed = True
@@ -160,9 +174,9 @@ class ObjectProfile:
             #while ZCurrent >= obj.FinalDepth.Value:
             #                   approach(wire,Side,radius,clockwise,ZClearance,StepDown,ZFinalDepth)
             if obj.UseStartDepth:
-                output += PathUtils.SortPath(wire,obj.Side,radius,clockwise,obj.ClearanceHeight.Value,obj.StepDown.Value,obj.StartDepth.Value, obj.FinalDepth.Value,FirstEdge,obj.PathClosed,obj.SegLen.Value,obj.FeedVert,obj.FeedHoriz)
+                output += PathUtils.SortPath(wire,obj.Side,radius,clockwise,obj.ClearanceHeight.Value,obj.StepDown.Value,obj.StartDepth.Value, obj.FinalDepth.Value,FirstEdge,obj.PathClosed,obj.SegLen.Value,obj.VertFeed.Value,obj.HorizFeed.Value)
             else:
-                output += PathUtils.SortPath(wire,obj.Side,radius,clockwise,obj.ClearanceHeight.Value,obj.StepDown.Value,ZMax, obj.FinalDepth.Value,FirstEdge,obj.PathClosed,obj.SegLen.Value,obj.FeedVert,obj.FeedHoriz)
+                output += PathUtils.SortPath(wire,obj.Side,radius,clockwise,obj.ClearanceHeight.Value,obj.StepDown.Value,ZMax, obj.FinalDepth.Value,FirstEdge,obj.PathClosed,obj.SegLen.Value,obj.VertFeed.Value,obj.HorizFeed.Value)
                 #ZCurrent = ZCurrent-abs(obj.StepDown.Value)
 
 #            path = Path.Path(output)
