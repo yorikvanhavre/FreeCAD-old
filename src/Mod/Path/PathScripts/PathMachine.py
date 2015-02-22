@@ -40,16 +40,25 @@ except AttributeError:
 class Machine:
     def __init__(self,obj):
 
-        obj.addProperty("App::PropertyString",    "MachineName","Machine",translate("Machine Name","Name of the Machine that will use the CNC program"))
+        obj.addProperty("App::PropertyString",    "MachineName","Base",translate("Machine Name","Name of the Machine that will use the CNC program"))
+
         obj.addProperty("App::PropertyFile", "PostProcessor", "CodeOutput", translate("Post Processor","Select the Post Processor file for this machine"))
-        obj.addProperty("App::PropertyEnumeration", "MachineUnits","Machine", translate( "Machine Units",  "Units that the machine works in, ie Metric or Inch"))
+        obj.addProperty("App::PropertyEnumeration", "MachineUnits","CodeOutput", translate( "Machine Units",  "Units that the machine works in, ie Metric or Inch"))
         obj.MachineUnits=['Metric', 'Inch']
-        obj.addProperty("Path::PropertyTooltable","Tooltable",  "Machine",translate("Tool Table","The tooltable used for this CNC program")) #will implement later
-        obj.addProperty("App::PropertyVector",    "CornerMin",  "Machine",translate("CornerMin","The lower left corner of the machine travel"))
-        obj.addProperty("App::PropertyVector",    "CornerMax",  "Machine",translate("CornerMax","The upper right corner of the machine travel"))
-        obj.addProperty("App::PropertyDistance", "XHomePos", "Machine", translate("X Home Position","Home position of machine, in X (mainly for visualization)"))
-        obj.addProperty("App::PropertyDistance", "YHomePos", "Machine", translate("Y Home Position","Home position of machine, in Y (mainly for visualization)"))
-        obj.addProperty("App::PropertyDistance", "ZHomePos", "Machine", translate("Z Home Position","Home position of machine, in Z (mainly for visualization)"))
+
+        obj.addProperty("Path::PropertyTooltable","Tooltable", "Base",translate("Tool Table","The tooltable used for this CNC program")) 
+
+        obj.addProperty("App::PropertyDistance", "X_Max", "Limits", translate("X Maximum Limit","The Maximum distance in X the machine can travel"))
+        obj.addProperty("App::PropertyDistance", "Y_Max", "Limits", translate("Y Maximum Limit","The Maximum distance in X the machine can travel"))
+        obj.addProperty("App::PropertyDistance", "Z_Max", "Limits", translate("Y Maximum Limit","The Maximum distance in X the machine can travel"))
+
+        obj.addProperty("App::PropertyDistance", "X_Min", "Limits", translate("X Minimum Limit","The Minimum distance in X the machine can travel"))
+        obj.addProperty("App::PropertyDistance", "Y_Min", "Limits", translate("Y Minimum Limit","The Minimum distance in X the machine can travel"))
+        obj.addProperty("App::PropertyDistance", "Z_Min", "Limits", translate("Y Minimum Limit","The Minimum distance in X the machine can travel"))
+
+        obj.addProperty("App::PropertyDistance", "X", "HomePosition", translate("X Home Position","Home position of machine, in X (mainly for visualization)"))
+        obj.addProperty("App::PropertyDistance", "Y", "HomePosition", translate("Y Home Position","Home position of machine, in Y (mainly for visualization)"))
+        obj.addProperty("App::PropertyDistance", "Z", "HomePosition", translate("Z Home Position","Home position of machine, in Z (mainly for visualization)"))
 
         obj.Proxy = self
         mode = 2
@@ -57,7 +66,7 @@ class Machine:
 
     def execute(self,obj):
         obj.Label = "Machine_"+str(obj.MachineName)
-        gcode = 'G0 X'+str(obj.XHomePos.Value)+' Y'+str(obj.YHomePos.Value)+' Z'+str(obj.ZHomePos.Value)
+        gcode = 'G0 X'+str(obj.X.Value)+' Y'+str(obj.Y.Value)+' Z'+str(obj.Z.Value) #need to filter this path out in post- only for visualization
         obj.Path = Path.Path(gcode)
 
     def onChanged(self,obj,prop):
@@ -74,25 +83,25 @@ class Machine:
             if hasattr (current_post, "MACHINE_NAME"): obj.MachineName = current_post.MACHINE_NAME
 
             if hasattr (current_post, "CORNER_MAX"):
-                obj.CornerMax.x = current_post.CORNER_MAX['x']
-                obj.CornerMax.y = current_post.CORNER_MAX['y']
-                obj.CornerMax.z = current_post.CORNER_MAX['z']
+                obj.X_Max = current_post.CORNER_MAX['x']
+                obj.Y_Max = current_post.CORNER_MAX['y']
+                obj.Z_Max = current_post.CORNER_MAX['z']
 
             if hasattr (current_post, "CORNER_MIN"): 
-                obj.CornerMin.x = current_post.CORNER_MIN['x']
-                obj.CornerMin.y = current_post.CORNER_MIN['y']
-                obj.CornerMin.z = current_post.CORNER_MIN['z']
+                obj.X_Min = current_post.CORNER_MIN['x']
+                obj.Y_Min = current_post.CORNER_MIN['y']
+                obj.Z_Min = current_post.CORNER_MIN['z']
 
 
 class _ViewProviderMachine:
     def __init__(self,vobj):
         vobj.Proxy = self
-        vobj.addProperty("App::PropertyBool","ShowMinMaxTravel","Machine",translate("ShowMinMaxTravel","Switch the machine max and minimum travel bounding box on/off"))
+        vobj.addProperty("App::PropertyBool","ShowLimits","Path",translate("ShowMinMaxTravel","Switch the machine max and minimum travel bounding box on/off"))
         mode = 2
         vobj.setEditorMode('LineWidth',mode)
         vobj.setEditorMode('MarkerColor',mode)
         vobj.setEditorMode('NormalColor',mode)
-        vobj.setEditorMode('ShowFirstRapid',mode)
+        vobj.setEditorMode('ShowFirstRapid',0)
         vobj.setEditorMode('DisplayMode',mode)
         vobj.setEditorMode('BoundingBox',mode)
         vobj.setEditorMode('Selectable',mode)
@@ -114,9 +123,9 @@ class _ViewProviderMachine:
         
     def onChanged(self,vobj,prop):
 
-        if prop == "ShowMinMaxTravel":
+        if prop == "ShowLimits":
             self.extentsBox.removeAllChildren()
-            if vobj.ShowMinMaxTravel and hasattr(vobj,"Object"):
+            if vobj.ShowLimits and hasattr(vobj,"Object"):
                 from pivy import coin
                 parent = coin.SoType.fromName("SoSkipBoundingGroup").createInstance()
                 self.extentsBox.addChild(parent)
@@ -137,22 +146,20 @@ class _ViewProviderMachine:
                 extents = coin.SoType.fromName("SoFCBoundingBox").createInstance()
                 extents.coordsOn.setValue(False)
                 extents.dimensionsOn.setValue(False)
-                p1 = vobj.Object.CornerMin
-                p2 = vobj.Object.CornerMax
+
+                XMax, YMax, ZMax =vobj.Object.X_Max.Value , vobj.Object.Y_Max.Value , vobj.Object.Z_Max.Value
+                XMin, YMin, ZMin =vobj.Object.X_Min.Value , vobj.Object.Y_Min.Value , vobj.Object.Z_Min.Value
                 UnitParams = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Units")
-                if UnitParams.GetInt('UserSchema') == 0:
-                    extents.minBounds.setValue(p1.x,p1.y,p1.z)
-                    extents.maxBounds.setValue(p2.x,p2.y,p2.z)
-                else:
-                    scale = 25.4
-                    extents.minBounds.setValue(p1.x*scale,p1.y*scale,p1.z*scale)
-                    extents.maxBounds.setValue(p2.x*scale,p2.y*scale,p2.z*scale)
+
+                extents.minBounds.setValue(XMax, YMax, ZMax)
+                extents.maxBounds.setValue(XMin, YMin, ZMin)
+
                 parent.addChild(extents)
         mode = 2
         vobj.setEditorMode('LineWidth',mode)
         vobj.setEditorMode('MarkerColor',mode)
         vobj.setEditorMode('NormalColor',mode)
-        vobj.setEditorMode('ShowFirstRapid',mode)
+        vobj.setEditorMode('ShowFirstRapid',0)
         vobj.setEditorMode('DisplayMode',mode)
         vobj.setEditorMode('BoundingBox',mode)
         vobj.setEditorMode('Selectable',mode)
