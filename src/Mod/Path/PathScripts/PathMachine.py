@@ -40,7 +40,7 @@ class Machine:
     def __init__(self,obj):
 
         obj.addProperty("App::PropertyString",    "MachineName","Machine",translate("Machine Name","Name of the Machine that will use the CNC program"))
-        obj.addProperty("App::PropertyFile", "PostProcessor", "Machine", translate("Post Processor","Select the Post Processor file for this machine"))
+        obj.addProperty("App::PropertyFile", "PostProcessor", "CodeOutput", translate("Post Processor","Select the Post Processor file for this machine"))
         obj.addProperty("App::PropertyEnumeration", "MachineUnits","Machine", translate( "Machine Units",  "Units that the machine works in, ie Metric or Inch"))
         obj.MachineUnits=['Metric', 'Inch']
         obj.addProperty("Path::PropertyTooltable","Tooltable",  "Machine",translate("Tool Table","The tooltable used for this CNC program")) #will implement later

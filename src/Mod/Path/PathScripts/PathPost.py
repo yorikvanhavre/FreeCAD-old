@@ -57,24 +57,17 @@ class CommandPathPost:
         filename = "tmp.tap"
 
         obj = FreeCADGui.Selection.getSelection()
-        if len(obj) == 0:
-            FreeCAD.Console.PrintError('Select a single project or select one or more paths and try again. \n')
+        if len(obj) <> 1: #
+            FreeCAD.Console.PrintError('Select only a single project or select one or more paths and try again. \n')
             return
-          
-        if len(obj) != 1: #
-            for i in obj:
-                if hasattr(i, "PostProcessor"): #Can't do projects and paths
-                    FreeCAD.Console.PrintError('Select only a single project or select one or more paths and try again. \n')
-                    return
-            #processing multiple paths
-
         else: #processing a single selection
-            if hasattr(obj[0], "PostProcessor"): #A project selected.  Use the selected post.
+            if hasattr(obj[0].Group[0], "PostProcessor"): #A project selected.  Use the post specified int the Machine object.
                 proj = obj[0]
+                postobj = obj[0].Group[0]
                 #need to check for existance of these: obj.PostProcessor, obj.OutputFile
-                if proj.PostProcessor and proj.OutputFile:
-                    sys.path.append(os.path.split(proj.PostProcessor)[0])
-                    lessextn = os.path.splitext(proj.PostProcessor)[0]
+                if postobj.PostProcessor and proj.OutputFile:
+                    sys.path.append(os.path.split(postobj.PostProcessor)[0])
+                    lessextn = os.path.splitext(postobj.PostProcessor)[0]
                     postname = os.path.split(lessextn)[1]
                     filename = proj.OutputFile
 
