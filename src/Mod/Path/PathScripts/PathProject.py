@@ -64,7 +64,7 @@ class ObjectPathProject:
                 cmds.extend(child.Path.Commands)
         if cmds:
             path = Path.Path(cmds)
-            #obj.Path = path
+#            obj.Path = path
 
 class ViewProviderProject:
 
