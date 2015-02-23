@@ -69,16 +69,7 @@ class CommandPathCopy:
         return not FreeCAD.ActiveDocument is None
         
     def Activated(self):
-        
-        # check that the selection contains exactly what we want
-        selection = FreeCADGui.Selection.getSelection()
-        if len(selection) != 1:
-            FreeCAD.Console.PrintError(translate("PathCopy","Please select one path object\n"))
-            return
-        if not selection[0].isDerivedFrom("Path::Feature"):
-            FreeCAD.Console.PrintError(translate("PathCopy","The selected object is not a path\n"))
-            return
-        
+
         FreeCAD.ActiveDocument.openTransaction(translate("PathCopy","Create Copy"))
         FreeCADGui.addModule("PathScripts.PathCopy")
 
@@ -87,6 +78,7 @@ import Path
 import PathScripts
 from PathScripts import PathCopy
 selGood = True
+# check that the selection contains exactly what we want
 selection = FreeCADGui.Selection.getSelection()
 proj = sel[0].InList[0] #get the group that the selectied object is inside
 
