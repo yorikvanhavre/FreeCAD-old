@@ -105,6 +105,11 @@ class PathWorkbench ( Workbench ):
         self.appendMenu([QT_TRANSLATE_NOOP("PathWorkbench","Path"),QT_TRANSLATE_NOOP("Path","Prepatory Commands")],prepcmdlist)
         self.appendMenu([QT_TRANSLATE_NOOP("PathWorkbench","Path"),QT_TRANSLATE_NOOP("Path","New Operation")],opcmdlist)
         self.appendMenu([QT_TRANSLATE_NOOP("PathWorkbench","Path"),QT_TRANSLATE_NOOP("Path","Path Modification")],modcmdlist)
+        
+        # Add preferences pages
+        import os
+        FreeCADGui.addPreferencePage(FreeCAD.getHomePath()+os.sep+"Mod"+os.sep+"Path"+os.sep+"PathScripts"+os.sep+"DlgSettingsPath.ui","Path")
+        
         Log ('Loading Path workbench... done\n')
 
     def GetClassName(self):

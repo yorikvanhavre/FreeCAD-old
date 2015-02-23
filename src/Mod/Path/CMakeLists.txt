@@ -44,6 +44,7 @@ SET(PathScripts_SRCS
     PathScripts/PathStop.py
     PathScripts/PathMachine.py
     PathScripts/PathFromShape.py
+    PathScripts/DlgSettingsPath.ui
 )
 
 ADD_CUSTOM_TARGET(PathScripts ALL
