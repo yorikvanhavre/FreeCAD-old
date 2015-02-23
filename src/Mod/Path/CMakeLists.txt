@@ -43,6 +43,7 @@ SET(PathScripts_SRCS
     PathScripts/PathComment.py
     PathScripts/PathStop.py
     PathScripts/PathMachine.py
+    PathScripts/PathFromShape.py
 )
 
 ADD_CUSTOM_TARGET(PathScripts ALL
