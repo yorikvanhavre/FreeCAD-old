@@ -81,10 +81,38 @@ class CommandPathCopy:
         
         FreeCAD.ActiveDocument.openTransaction(translate("PathCopy","Create Copy"))
         FreeCADGui.addModule("PathScripts.PathCopy")
-        FreeCADGui.doCommand('obj = FreeCAD.ActiveDocument.addObject("Path::FeaturePython","' + selection[0].Name+'_Copy")')
-        FreeCADGui.doCommand('PathScripts.PathCopy.ObjectPathCopy(obj)')
-        FreeCADGui.doCommand('obj.Base = FreeCAD.ActiveDocument.' + selection[0].Name)
-        FreeCADGui.doCommand('obj.ViewObject.Proxy = 0')
+
+        consolecode = '''
+import Path
+import PathScripts
+from PathScripts import PathCopy
+selGood = True
+selection = FreeCADGui.Selection.getSelection()
+proj = sel[0].InList[0] #get the group that the selectied object is inside
+
+if len(selection) != 1:
+    FreeCAD.Console.PrintError(translate("PathCopy","Please select one path object\\n"))
+    selGood = False
+
+if not selection[0].isDerivedFrom("Path::Feature"):
+    FreeCAD.Console.PrintError(translate("PathCopy","The selected object is not a path\\n"))
+    selGood = False
+
+if selGood:
+    obj = FreeCAD.ActiveDocument.addObject("Path::FeaturePython", str(selection[0].Name)+'_Copy')
+    PathScripts.PathCopy.ObjectPathCopy(obj)
+    obj.Base = FreeCAD.ActiveDocument.getObject(selection[0].Name)
+    obj.ViewObject.Proxy = 0
+
+g = proj.Group
+g.append(obj)
+proj.Group = g
+
+FreeCAD.ActiveDocument.recompute()
+
+'''
+
+        FreeCADGui.doCommand(consolecode)
         FreeCAD.ActiveDocument.commitTransaction()
         FreeCAD.ActiveDocument.recompute()
 
