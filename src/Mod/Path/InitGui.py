@@ -87,8 +87,8 @@ class PathWorkbench ( Workbench ):
 
         projcmdlist = ["Path_Project", "Path_Stock","Path_ToolTableEdit","Path_Post"]
         prepcmdlist = ["Path_Plane","Path_Fixture","Path_LoadTool","Path_ToolLenOffset","Path_Comment","Path_Stop"]
-        opcmdlist = ["Path_Profile","Path_Pocket","Path_Drilling"]
-        modcmdlist = ["Path_Copy","Path_CompoundExtended","Path_Dressup","Path_Hop","Path_Shape"]
+        opcmdlist = ["Path_Profile","Path_Pocket","Path_Drilling","Path_Shape"]
+        modcmdlist = ["Path_Copy","Path_CompoundExtended","Path_Dressup","Path_Hop"]
 
 
         # Add commands to menu and toolbar
