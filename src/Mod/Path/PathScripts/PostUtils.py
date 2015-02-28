@@ -23,8 +23,7 @@
 
 
 '''
-This is a postprocessor file for the Path workbench. It offers an editor
-to manually edit the GCode output.
+These are a common functions and classes for creating custom post processors.  
 '''
 
 from PySide import QtCore, QtGui
@@ -101,16 +100,15 @@ class GCodeEditorDialog(QtGui.QDialog):
         self.buttons.accepted.connect(self.accept)
         self.buttons.rejected.connect(self.reject)
 
-def parse(inputstring):
-    "parse(inputstring): returns a parsed output string"
-    dia = GCodeEditorDialog()
-    dia.editor.setText(inputstring)
-    result = dia.exec_()
-    # exec_() returns 0 or 1 depending on the button pressed (Ok or Cancel)
-    if result:
-        return dia.editor.toPlainText()
+def stringsplit(commandline):
+    returndict = {'command':None, 'X':None, 'Y':None, 'Z':None, 'A':None, 'B':None, 'F':None, 'T':None, 'S':None, 'I':None, 'J':None,'K':None, 'txt': None}
+    wordlist = [a.strip() for a in commandline.split(" ")]
+    if wordlist[0][0] == '(':
+        returndict['command'] = 'message'
+        returndict['txt'] = wordlist[0]
     else:
-        return inputstring
+        returndict['command'] = wordlist[0]
+    for word in wordlist[1:]:
+        returndict[word[0]] = word[1:]
 
-print __name__ + " gcode postprocessor loaded."
-
+    return returndict 
