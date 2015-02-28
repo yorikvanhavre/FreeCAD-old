@@ -1,0 +1,55 @@
+; Standard Wood Material
+; (c) 2015 Bernd Hahnebach (CC-BY 3.0)
+; information about the content of this card can be found here:
+; http://www.freecadweb.org/wiki/index.php?title=Material
+
+[General]
+Vendor=
+Name=Wood
+SpecificPrice=
+Father=Aggregate
+ProductURL=http://en.wikipedia.org/wiki/Wood
+SpecificWeight=500
+Description=A standard construction wood
+
+[Mechanical]
+UltimateTensileStrength=
+CompressiveStrength=
+YoungsModulus=1.2e+4 MPa
+Elasticity=
+FractureToughness=
+
+[FEM]
+PoissonRatio=0.05
+
+[Architectural]
+StandardCode=
+EnvironmentalEfficiencyClass=
+FireResistanceClass=
+Finish=
+Color=
+ExecutionInstructions=
+SoundTransmissionClass=
+UnitsPerQuantity=
+ThermalConductivity=
+Model=
+
+[Rendering]
+TextureScaling=
+FragmentShader=
+AmbientColor=
+EmissiveColor=
+DiffuseColor=
+Shininess=
+SpecularColor=
+Transparency=
+VertexShader=
+TexturePath=
+
+[Vector rendering]
+ViewLinewidth=
+ViewFillPattern=
+SectionLinewidth=
+SectionFillPattern=
+ViewColor=
+

@@ -213,8 +213,13 @@ class _JobControlTaskPanel:
         # for the subcomponents, such as additions, subtractions.
         # the categories are shown only if they are not empty.
         self.form=FreeCADGui.PySideUic.loadUi(FreeCAD.getHomePath() + "Mod/Fem/MechanicalAnalysis.ui")
-
-        self.CalculixBinary = FreeCAD.getHomePath() +'bin/ccx.exe'
+        from platform import system
+        if system == 'Linux':
+          self.CalculixBinary = 'ccx'
+        elif  system == 'Windows':
+          self.CalculixBinary = FreeCAD.getHomePath() + 'bin/ccx.exe'
+        else:
+          self.CalculixBinary = 'ccx'
         self.TempDir = FreeCAD.ActiveDocument.TransientDir.replace('\\','/') + '/FemAnl_'+ object.Uid[-4:]
         if not os.path.isdir(self.TempDir):
             os.mkdir(self.TempDir)
@@ -229,7 +234,9 @@ class _JobControlTaskPanel:
         
         #Connect Signals and Slots
         QtCore.QObject.connect(self.form.toolButton_chooseOutputDir, QtCore.SIGNAL("clicked()"), self.chooseOutputDir)
-        QtCore.QObject.connect(self.form.pushButton_generate, QtCore.SIGNAL("clicked()"), self.run)
+        QtCore.QObject.connect(self.form.pushButton_write, QtCore.SIGNAL("clicked()"), self.writeCalculixInputFile)
+        QtCore.QObject.connect(self.form.pushButton_edit, QtCore.SIGNAL("clicked()"), self.editCalculixInputFile)
+        QtCore.QObject.connect(self.form.pushButton_generate, QtCore.SIGNAL("clicked()"), self.runCalculix)
 
         QtCore.QObject.connect(self.Calculix, QtCore.SIGNAL("started()"), self.calculixStarted)
         QtCore.QObject.connect(self.Calculix, QtCore.SIGNAL("finished(int)"), self.calculixFinished)
@@ -306,12 +313,13 @@ class _JobControlTaskPanel:
             self.params.SetString("JobDir",str(dirname))
             self.form.lineEdit_outputDir.setText(dirname)
         
-    def run(self):
+    def writeCalculixInputFile(self):
+        print 'writeCalculixInputFile'
         self.Start = time.time()
         
         #dirName = self.form.lineEdit_outputDir.text()
         dirName = self.TempDir
-        print 'run() dir:',dirName
+        print 'CalculiX run directory: ',dirName
         self.OutStr = self.OutStr + '<font color="#0000FF">{0:4.1f}:</font> '.format(time.time() - self.Start) + 'Check dependencies...<br>'
         self.form.textEdit_Output.setText(self.OutStr)
         self.form.label_Time.setText('Time: {0:4.1f}: '.format(time.time() - self.Start) )
@@ -399,11 +407,12 @@ class _JobControlTaskPanel:
         if YM.Unit.Type == '':
             print 'Material "Mechanical_youngsmodulus" has no Unit, asuming kPa!'
             YM = FreeCAD.Units.Quantity(YM.Value, FreeCAD.Units.Unit('Pa') )
-        
-        print YM
+        else:
+            print 'YM unit: ', YM.Unit.Type 
+        print 'YM = ', YM
         
         PR = float( MathObject.Material['FEM_poissonratio'] )
-        print PR
+        print 'PR= ', PR
         
         # now open again and write the setup:
         inpfile.write('*MATERIAL, Name='+matmap['General_name'] + '\n')
@@ -411,7 +420,6 @@ class _JobControlTaskPanel:
         inpfile.write('{0:.3f}, '.format(YM.Value) )
         inpfile.write('{0:.3f}\n'.format(PR) )
         inpfile.write('*SOLID SECTION, Elset=Eall, Material='+matmap['General_name'] + '\n')
-        inpfile.write('*INITIAL CONDITIONS, TYPE=STRESS, USER\n')
         inpfile.write('*STEP\n')
         inpfile.write('*STATIC\n')
         inpfile.write('*BOUNDARY\n')
@@ -420,7 +428,7 @@ class _JobControlTaskPanel:
         #inpfile.write('Eall,NEWTON\n')
         
         Force = (ForceObject.Force * 1000.0) / NbrForceNods
-        vec = ForceObject.NormalDirection
+        vec = ForceObject.DirectionVector
         inpfile.write('*CLOAD\n')
         inpfile.write(NodeSetNameForce + ',1,' + `vec.x * Force` + '\n')
         inpfile.write(NodeSetNameForce + ',2,' + `vec.y * Force` + '\n')
@@ -436,6 +444,24 @@ class _JobControlTaskPanel:
         inpfile.write('S \n')
         inpfile.write('*END STEP \n')
         
+
+        #do not run Calculix
+
+        QApplication.restoreOverrideCursor()
+
+    
+    def editCalculixInputFile(self):
+        print 'editCalculixInputFile'
+        print self.Basename + '.inp'
+        import webbrowser
+        # If inp-file extension is assigned the os will use the appropriate binary (normaly an Editor) to open the file. Works perfectly on Windows if SciTE is installed. 
+        webbrowser.open(self.Basename + '.inp')
+
+
+    def runCalculix(self):
+        print 'runCalculix'
+        self.Start = time.time()
+
         self.OutStr = self.OutStr + '<font color="#0000FF">{0:4.1f}:</font> '.format(time.time() - self.Start) + self.CalculixBinary + '<br>'
         self.form.textEdit_Output.setText(self.OutStr)
         
@@ -443,7 +469,7 @@ class _JobControlTaskPanel:
         self.form.textEdit_Output.setText(self.OutStr)
 
         # run Claculix
-        print 'run Calclulix at:', self.CalculixBinary , '  with: ', self.Basename
+        print 'run Calclulix at: ', self.CalculixBinary , '  with: ', self.Basename
         self.Calculix.start(self.CalculixBinary, ['-i',self.Basename])
         
         

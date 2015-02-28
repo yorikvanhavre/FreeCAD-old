@@ -15,13 +15,13 @@ Description=A standard C-25 construction concrete
 
 [Mechanical]
 UltimateTensileStrength=
-CompressiveStrength=25 Mpa
-YoungsModulus=
+CompressiveStrength=25 MPa
+YoungsModulus=3.2e+4 MPa
 Elasticity=
 FractureToughness=
 
 [FEM]
-PoissonRatio=
+PoissonRatio=0.17
 
 [Architectural]
 StandardCode=Masterformat 03 33 13
