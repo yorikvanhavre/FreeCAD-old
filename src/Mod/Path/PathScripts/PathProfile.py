@@ -42,20 +42,16 @@ class ObjectProfile:
 
     def __init__(self,obj):
         obj.addProperty("App::PropertyLinkSub","Base","Path",translate("Parent Object","The base geometry of this toolpath"))
-        #obj.addProperty("App::PropertyString", "ObjName", "Path",translate("Part Name", "The name of the part being processed"))
         obj.addProperty("App::PropertyLinkSub","Face1","Path",translate("Face1","First Selected Face to help determine where final depth of tool path is"))
         obj.addProperty("App::PropertyLinkSub","Face2","Path",translate("Face2","Second Selected Face to help determine where the upper level of tool path is"))
         obj.addProperty("App::PropertyBool","PathClosed","Path",translate("Path Closed","If the toolpath is a closed polyline this is True"))
         obj.addProperty("App::PropertyLinkSub","Edge1","Path",translate("Edge 1","First Selected Edge to help determine which geometry to make a toolpath around"))
         obj.addProperty("App::PropertyLinkSub","Edge2","Path",translate("Edge 2","Second Selected Edge to help determine which geometry to make a toolpath around"))
         obj.addProperty("App::PropertyBool","Active","Path",translate("Active","Make False, to prevent operation from generating code"))
-    
+        obj.addProperty("App::PropertyBool","UsePlacements","Path",translate("Use Placements","make True, if using the profile operation placement properties to transform toolpath in post processor"))
 
         obj.addProperty("App::PropertyIntegerConstraint","ToolNum","Tool",translate("PathProfile","The tool number in use"))
-        obj.ToolNum = (0,0,1000,1)
-#        obj.addProperty("App::PropertyFloat", "SpindleSpeed", "Tool", translate("Spindle Speed","The speed of the cutting spindle in RPM"))
-#        obj.addProperty("App::PropertyEnumeration", "SpindleDir", "Tool", translate("Spindle Dir","Direction of spindle rotation"))
-#        obj.SpindleDir = ['Forward','Reverse']
+        obj.ToolNum = (0,0,1000,1) 
 
         #Depth Properties
         obj.addProperty("App::PropertyDistance", "ClearanceHeight", "Depth", translate("Clearance Height","The height needed to clear clamps and obstructions"))
@@ -64,9 +60,7 @@ class ObjectProfile:
         obj.addProperty("App::PropertyDistance", "StartDepth", "Depth", translate("Start Depth","Starting Depth of Tool- first cut depth in Z"))
         obj.addProperty("App::PropertyDistance", "FinalDepth", "Depth", translate("Final Depth","Final Depth of Tool- lowest value in Z"))
         obj.addProperty("App::PropertyDistance", "RetractHeight", "Depth", translate("Retract Height","The height desired to retract tool when path is finished"))
-        obj.addProperty("App::PropertyString","Comment","Path",translate("PathProject","An optional comment for this profile"))
-        obj.addProperty("App::PropertyEnumeration", "Direction", "Profile",translate("Direction", "The direction that the toolpath should go around the part ClockWise CW or CounterClockWise CCW"))
-        obj.Direction = ['CW','CCW']
+        obj.addProperty("App::PropertyString","Comment","Path",translate("Comment","An optional comment for this profile"))
 
         #Feed Properties
         obj.addProperty("App::PropertySpeed", "VertFeed", "Feed",translate("Vert Feed","Feed rate for vertical moves in Z"))
@@ -78,7 +72,6 @@ class ObjectProfile:
         obj.addProperty("App::PropertyLength", "ExtendAtStart", "Start Point", translate("extend at start", "extra length of tool path before start of part edge"))
         obj.addProperty("App::PropertyLength", "LeadInLineLen", "Start Point", translate("lead in length","length of straight segment of toolpath that comes in at angle to first part edge"))
 
-
         #End Point Properties
         obj.addProperty("App::PropertyBool","UseEndPoint","End Point",translate("Use End Point","make True, if specifying an End Point"))
         obj.addProperty("App::PropertyLength", "ExtendAtEnd", "End Point", translate("extend at end","extra length of tool path after end of part edge"))
@@ -87,31 +80,22 @@ class ObjectProfile:
 
         #Profile Properties
         obj.addProperty("App::PropertyEnumeration", "Side", "Profile", translate("Side","Side of edge that tool should cut"))
-        obj.Side = ['Left','Right','On']
+        obj.Side = ['Left','Right','On'] #side of profile that cutter is on in relation to direction of profile
+        obj.addProperty("App::PropertyEnumeration", "Direction", "Profile",translate("Direction", "The direction that the toolpath should go around the part ClockWise CW or CounterClockWise CCW"))
+        obj.Direction = ['CW','CCW'] #this is the direction that the profile runs
 
         obj.addProperty("App::PropertyDistance", "RollRadius", "Profile", translate("Roll Radius","Radius at start and end"))
         obj.addProperty("App::PropertyDistance", "OffsetExtra", "Profile",translate("OffsetExtra","Extra value to stay away from final profile- good for roughing toolpath"))
         obj.addProperty("App::PropertyLength", "SegLen", "Profile",translate("Seg Len","Tesselation  value for tool paths made from beziers, bsplines, and ellipses"))
 
+
+
         obj.Proxy = self
-#        obj.Closed = True
 
     def __getstate__(self):
         return None
 
     def __setstate__(self,state):
-        return None
-        
-    def getTool(self,obj,number=0):
-        "retrieves a tool from a hosting object with a tooltable, if any"
-        for o in obj.InList:
-            if o.TypeId == "Path::FeatureCompoundPython":
-                for m in o.Group:
-                    if hasattr(m,"Tooltable"):
-                        return m.Tooltable.getTool(number)
-        # not found? search one level up
-        for o in obj.InList:
-            return self.getTool(o,number)
         return None
 
     def execute(self,obj):
@@ -154,41 +138,27 @@ class ObjectProfile:
                 clockwise=True
             output =""
             output += '('+ str(obj.Comment)+')\n'
-#            output += "M6 T"
-#            output += str(obj.ToolNum)+"\n"
-#            output +="M"
-#            if obj.SpindleDir =='Forward':
-#                output +="3"
-#            else:
-#                output +="4"
-#            output += " \n"
-#            output +="S"+str(obj.SpindleSpeed) +"\n" #going to just use spindle forward for the moment
 
-#            output += "\n"
             FirstEdge= None
             if obj.Edge1:
                 ename = obj.Edge1[1][0]
                 edgeNumber = int(ename[4:])-1
                 FirstEdge = obj.Base[0].Shape.Edges[edgeNumber]
             ZMax = obj.Base[0].Shape.BoundBox.ZMax
-            #ZCurrent = ZMax- obj.StepDown.Value
+
             ZCurrent = obj.ClearanceHeight.Value
-            #while ZCurrent >= obj.FinalDepth.Value:
-            #                   approach(wire,Side,radius,clockwise,ZClearance,StepDown,ZFinalDepth)
+
             if obj.UseStartDepth:
                 output += PathUtils.SortPath(wire,obj.Side,radius,clockwise,obj.ClearanceHeight.Value,obj.StepDown.Value,obj.StartDepth.Value, obj.FinalDepth.Value,FirstEdge,obj.PathClosed,obj.SegLen.Value,obj.VertFeed.Value,obj.HorizFeed.Value)
             else:
                 output += PathUtils.SortPath(wire,obj.Side,radius,clockwise,obj.ClearanceHeight.Value,obj.StepDown.Value,ZMax, obj.FinalDepth.Value,FirstEdge,obj.PathClosed,obj.SegLen.Value,obj.VertFeed.Value,obj.HorizFeed.Value)
-                #ZCurrent = ZCurrent-abs(obj.StepDown.Value)
 
-#            path = Path.Path(output)
-#            obj.Path = path
 
             if obj.Active:
                 path = Path.Path(output)
                 obj.Path = path
                 obj.ViewObject.Visibility = True
-#                FreeCAD.Console.PrintMessage(output)
+
             else:
                 path = Path.Path("(inactive operation)")
                 obj.Path = path
@@ -262,8 +232,6 @@ class CommandPathProfile:
         obj.StartDepth.Value = ZMax- obj.StepDown.Value
         obj.FinalDepth.Value = ZMin-1.0
         obj.ClearanceHeight.Value =  ZMax + 5.0
-#        obj.SpindleDir = 'Forward'
-#        obj.SpindleSpeed = 2000.00
         obj.SegLen.Value = 0.5
         obj.ViewObject.Proxy = 0
         obj.Active = True
