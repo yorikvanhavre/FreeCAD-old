@@ -116,7 +116,7 @@ class ObjectProfile:
 
     def execute(self,obj):
         if obj.Base:
-            tool = self.getTool(obj,obj.ToolNum)
+            tool = PathUtils.getTool(obj,obj.ToolNum)
             if tool:
                 radius = tool.Diameter/2
             else:

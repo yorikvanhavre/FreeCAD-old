@@ -302,3 +302,16 @@ def findProj():
         if "Proxy" in o.PropertiesList:
             if isinstance(o.Proxy,PathProject.ObjectPathProject):
                 return o
+
+def getTool(obj,number=0):
+    "retrieves a tool from a hosting object with a tooltable, if any"
+    for o in obj.InList:
+        if o.TypeId == "Path::FeatureCompoundPython":
+            for m in o.Group:
+                if hasattr(m,"Tooltable"):
+                    return m.Tooltable.getTool(number)
+    # not found? search one level up
+    for o in obj.InList:
+        return getTool(o,number)
+    return None
+
