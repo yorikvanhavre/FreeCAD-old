@@ -315,3 +315,13 @@ def getTool(obj,number=0):
         return getTool(o,number)
     return None
 
+def getLastZ(obj):
+    ''' find the last z value in the project '''
+    lastZ = ""
+    for g in obj.Group:
+        for c in g.Path.Commands:
+            for n in c.Parameters:
+                if n == 'Z':
+                    lastZ= c.Parameters['Z']
+    return lastZ
+
