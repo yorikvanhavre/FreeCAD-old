@@ -21,220 +21,121 @@
 #*   USA                                                                   *
 #*                                                                         *
 #***************************************************************************
-''' Example Post, using Path.Commands instead of Path.toGCode strings for Path gcode output. '''
+''' example post for Centroid CNC mill'''
 import FreeCAD
 import Path, PathScripts
 from PathScripts import PostUtils
 
-class saveVars(object):
-    ''' save settings for moves,feeds,spindle speeds,modal, etc'''
-    def __init__(self,value):
-        self.val = value
-    def retVal(self):
-        return self.val
+import datetime
+now = datetime.datetime.now()
 
-# the following variables help set things up:
-moveformat = saveVars(3)    #number of digits behind decimal for xyzijk moves
-feedformat = saveVars(1)    #number of digits behind decimal for F feedrate
-rpmformat  = saveVars(0)    #number of digits behind decimal for spindle rpm
-modalbool  = saveVars(True) #set modal commands ie don't repeat commands and axis moves if they are already in effect
-commentsym = saveVars(';')  #comment symbol or symbols change this to the format that your control uses ie '()' or ';'
-tlret = '''M5M25
+originfile = FreeCAD.ActiveDocument.FileName
+
+#***************************************************************************
+# user editable stuff here
+
+UNITS = "G20" #old style inch units for this shop
+MACHINE_NAME = "BigMill"
+CORNER_MIN = {'x':-609.6, 'y':-152.4, 'z':0 } #use metric for internal units
+CORNER_MAX = {'x':609.6, 'y':152.4, 'z':304.8 } #use metric for internal units
+
+SHOW_EDITOR = True
+MODAL = True
+COMMENT= ';' #centroid control comment symbol
+
+HEADER = ""
+HEADER += ";Exported by FreeCAD\n"
+HEADER += ";Post Processor: " + __name__ +"\n"
+HEADER += ";CAM file: "+originfile+"\n"
+HEADER += ";Output Time:"+str(now)+"\n"
+
+TOOLRETURN = '''M5M25
 G49H0\n''' #spindle off,height offset canceled,spindle retracted (M25 is centroid command)
-toolRet = saveVars(tlret) #line for retracting tool and turning off spindle 
-zret = '''G91G28X0Z50
+
+ZAXISRETURN = '''G91G28X0Z50
 G90\n'''
-zeroRet = saveVars(zret) # line for zero return 
-safetyblock = saveVars('G90G40G49\n') 
-#oldtl = saveVars(0) # load tool 0 
-#oldtoolno = saveVars(0)
 
-def fmt(num):
-    ''' used for axis moves'''
-    dec = moveformat.retVal()
-    fnum = '%.*f' % (dec, num)
-    return fnum
+SAFETYBLOCK = 'G90 G40 G49\n'
 
-def ffmt(num):
-    ''' used for feedrate'''
-    dec = feedformat.retVal()
-    fnum = '%.*f' % (dec, num)
-    return fnum
+AXIS_DECIMALS = 4
+FEED_DECIMALS = 1
+SPINDLE_DECIMALS = 0
 
-def sfmt(num):
-    ''' used for spindle rpm'''
-    dec = rpmformat.retVal()
-    fnum = '%.*f' % (dec, num)
-    return fnum
 
-def fcoms(string):
-    ''' filter and rebuild comments'''
-    com = commentsym.retVal()
-    if len(com)==1:
-        s1 = string.replace('(', com)
-        comment = s1.replace(')', '')
+# don't screw with the stuff below the next line
+#***************************************************************************
+
+if open.__module__ == '__builtin__':
+    pythonopen = open
+
+def export(selection,filename):
+    params = ['X','Y','Z','A','B','I','J','F','S','T','Q','R','L'] #Using XY plane most of the time so skipping K
+    for obj in selection:
+        if not hasattr(obj,"Path"):
+            print "the object " + obj.Name + " is not a path. Please select only path and Compounds."
+            return
+    myMachine = None
+    for pathobj in selection:
+        if hasattr(pathobj,"Group"): #We have a compound or selection.
+            for p in pathobj.Group:
+                if p.Name == "Machine":
+                    myMachine = p
+    if myMachine is None: 
+        print "No machine found in this selection"
     else:
-        return string
-    return comment
-
-class saveVals(object):
-    ''' save commands info for modal output'''
-    def __init__(self, command):
-        self.com = command.Name
-        self.params = command.Parameters
-
-    def retVals(self):
-        return self.com, self.params
-
-def lineout(command, oldvals):
-    modal=modalbool.retVal()
-    line = ""
-    if modal and (oldvals.com == command.Name):
-        line +=""
-    else:
-        if command.Name == 'M6':
-            line+= toolRet.retVal()
-            line+= zeroRet.retVal()
-            line+= 'M6T'+str(int(command.Parameters['T']))
-        elif '(' in command.Name: 
-            line+= str(fcoms(command.Name))
-        elif command.Name == 'G43':
-            line+= 'G43H'+str(int(command.Parameters['H']))
+        if myMachine.MachineUnits == "Metric":
+           UNITS = "G21"
         else:
-            line += str(command.Name)
-    if command.Name == 'M3':
-        line+= 'S'+str(sfmt(command.Parameters['S']))
-    if command.Name == 'M4':
-        line+= 'S'+str(sfmt(command.Parameters['S']))
+           UNITS = "G20"
 
 
-    if 'X' in command.Parameters:
-        if oldvals.params and (oldvals.com == command.Name) and modal:
-            d =oldvals.params 
-            if 'X' in d.keys():
-                if d['X']==command.Parameters['X']:
-                    pass
-                else:
-                    line += "X"+str(fmt(command.Parameters['X']))
-            else:
-                line += "X"+str(fmt(command.Parameters['X']))
-        else:
-            line += "X"+str(fmt(command.Parameters['X']))
+        
+    gcode =''
+    gcode+= HEADER
+    gcode+= SAFETYBLOCK
+    gcode+= UNITS+'\n'
 
-    if 'Y' in command.Parameters:
-        if oldvals.params and (oldvals.com == command.Name) and modal:
-            d =oldvals.params 
-            if 'Y' in d.keys():
-                if d['Y']==command.Parameters['Y']:
-                    pass
-                else:
-                    line += "Y"+str(fmt(command.Parameters['Y']))
-            else:
-                line += "Y"+str(fmt(command.Parameters['Y']))
-        else:
-            line += "Y"+str(fmt(command.Parameters['Y']))
-
-    if 'Z' in command.Parameters:
-        if oldvals.params and (oldvals.com == command.Name) and modal:
-            d =oldvals.params 
-            if 'Z' in d.keys():
-                if d['Z']==command.Parameters['Z']:
-                    pass
-                else:
-                    line += "Z"+str(fmt(command.Parameters['Z']))
-            else:
-                line += "Z"+str(fmt(command.Parameters['Z']))
-        else:
-            line += "Z"+str(fmt(command.Parameters['Z']))
-
-    if 'I' in command.Parameters:
-        line += "I"+str(fmt(command.Parameters['I']))
-    if 'J' in command.Parameters:
-        line += "J"+str(fmt(command.Parameters['J']))
-
-    if 'F' in command.Parameters:
-        if oldvals.params and modal:
-            d =oldvals.params 
-            if 'F' in d.keys():
-                if d['F']==command.Parameters['F']:
-                    pass
-                else:
-                    line += "F"+str(ffmt(command.Parameters['F']))
-            else:
-                line += "F"+str(ffmt(command.Parameters['F']))
-        else:
-            line += "F"+str(ffmt(command.Parameters['F']))
-    return line
-
-def firstZ(commands):
-    # find first Z move- usefule later for height offsets
-    for c in commands:
-        if 'Z' in c.Parameters:
-            return c
+    lastcommand = None
+    gcode+= COMMENT+ selection[0].Description +'\n'
+    for obj in selection[0].Group:
+        if hasattr(obj,"Comment"):
+            gcode+=COMMENT+ obj.Comment+'\n'
+        for c in obj.Path.Commands:
+            outstring = []
+            command = c.Name
+#            if command[0]=='(': #comments aren't working well in the Path.Command
+#                pass
+#            else:
+#                outstring.append(command) 
+            if command[0]=='(':
+                command = PostUtils.fcoms(command, COMMENT)
 
 
-def export(obj,filename):
-    commands = obj[0]
-    gcode = ''
-    oldtoolno = saveVars(0)
-    oldtool = False
-    if obj[0].Description: #use the Project description for a comment, if there is one
-        pcom = '(' +obj[0].Description+ ')'
-        projcomment = Path.Command(pcom)
-        gcode+= fcoms(projcomment.Name)+'\n'
-
-    # add the so called 'safety block':
-    gcode+=safetyblock.retVal()
-    # metric or imperial units will be automatically pulled from FreeCAD preferences
-    units = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Units")
-    if units.GetInt('UserSchema') == 0:
-        firstcommand = Path.Command('G21') #metric mode
-    else:
-        firstcommand = Path.Command('G20') #inch mode
-
-    oldvals = saveVals(firstcommand) #save first command for modal use
-    fp = obj[0]
-    gcode+= firstcommand.Name
-
-    if hasattr(fp,"Path"):
-        for c in fp.Path.Commands:
-            if c.Name == 'M6':
-                if c.Parameters['T']== oldtoolno.retVal():
-                    oldtool = True
-                else:
-                    boguscommand = Path.Command('G999')
-                    oldvals = saveVals(boguscommand)
-                    gcode+= lineout(c, oldvals)+'\n'
-                oldtoolno = saveVars(c.Parameters['T'])
-            elif (c.Name == 'M3') or (c.Name == 'M4'):
-                if oldtool:
-                    pass
-                else:
-                    gcode+= lineout(c, oldvals)+'\n'
-            elif c.Name == 'G43':
-                if oldtool:
-                    pass
-                else:
-                    strcom = 'G43 H'+str(int(oldtoolno.retVal()))
-                    tooloffset = Path.Command(strcom)
-                    gcode+= lineout(tooloffset, oldvals)
-            else:
-                gcode+= lineout(c, oldvals)+'\n'
-                oldvals = saveVals(c)
-        gcode+=toolRet.retVal() #turn off spindle and retract it
-        gcode+= zeroRet.retVal() #return to reference 
-        gcode+=safetyblock.retVal() #safety block for good measure
-        gcode+='M2\n' #end program
-        gfile = open(filename,"wb")
-        gfile.write(gcode)
-        gfile.close()
-    else:
-        FreeCAD.Console.PrintError('Select a path object and try again\n')
-    if obj[0].Editor:
-        FreeCAD.Console.PrintMessage('Editor Activated\n')
-        dia = PostUtils.GCodeEditorDialog()
-        dia.editor.setText(gcode)
-        dia.exec_()
-
-
+            outstring.append(command)
+            if MODAL == True:
+                if command == lastcommand:
+                    outstring.pop(0) 
+            if c.Parameters >= 1:
+                for param in params:
+                    if param in c.Parameters:
+                        if param == 'F': 
+                            outstring.append(param + PostUtils.fmt(c.Parameters['F'], FEED_DECIMALS,UNITS))
+                        elif param == 'T':
+                            outstring.append(param + str(int(c.Parameters['T'])))
+                        else:
+                            outstring.append(param + PostUtils.fmt(c.Parameters[param],AXIS_DECIMALS,UNITS))
+            outstr = str(outstring)
+            outstr =outstr.replace('[','')
+            outstr =outstr.replace(']','')
+            outstr =outstr.replace("'",'')
+            outstr =outstr.replace(",",'')
+            gcode+= outstr + '\n'
+            lastcommand = c.Name
+    
+    
+    if SHOW_EDITOR:
+        PostUtils.editor(gcode)
+    gfile = pythonopen(filename,"wb")
+    gfile.write(gcode)
+    gfile.close()
 

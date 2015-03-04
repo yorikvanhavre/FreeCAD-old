@@ -112,3 +112,29 @@ def stringsplit(commandline):
         returndict[word[0]] = word[1:]
 
     return returndict 
+
+def fmt(num,dec,units):
+    ''' used to format axis moves, feedrate, etc for decimal places and units'''
+    if units == 'G21': #metric
+        fnum = '%.*f' % (dec, num)
+    else: #inch
+        fnum = '%.*f' % (dec, num/25.4) #since FreeCAD uses metric units internally
+    return fnum
+
+def editor(gcode):
+    '''pops up a handy little editor to look at the code output '''
+    dia = GCodeEditorDialog()
+    dia.editor.setText(gcode)
+    result = dia.exec_()
+
+def fcoms(string,commentsym):
+    ''' filter and rebuild comments with user preferred comment symbol'''
+    if len(commentsym)==1:
+        s1 = string.replace('(', commentsym)
+        comment = s1.replace(')', '')
+    else:
+        return string
+    return comment
+
+
+
