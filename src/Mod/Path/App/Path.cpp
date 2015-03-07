@@ -317,8 +317,10 @@ void Toolpath::RestoreDocFile(Base::Reader &reader)
 {
     std::string gcode;
     std::string line;
-    while (reader >> line)
+    while (reader >> line) { 
         gcode += line;
+        gcode += " ";
+    }
     setFromGCode(gcode);
 
 }
