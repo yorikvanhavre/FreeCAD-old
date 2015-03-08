@@ -40,7 +40,7 @@ class ToolLenOffset:
     def __init__(self,obj):
         obj.addProperty("App::PropertyIntegerConstraint", "HeightNumber","HeightOffset", translate( "Height Offset Number",  "The Height offset number of the active tool"))
         obj.HeightNumber = (0,0,10000,1)
-        obj.addProperty("App::PropertyFloat", "Height", "HeightOffset", translate("Height","The first height value in Z, to rapid to, before making a feed move in Z"))
+        obj.addProperty("App::PropertyLength", "Height", "HeightOffset", translate("Height","The first height value in Z, to rapid to, before making a feed move in Z"))
         obj.addProperty("App::PropertyBool","Active","HeightOffset",translate("Active","Make False, to prevent operation from generating code"))
         obj.Proxy = self
         mode = 2
@@ -48,7 +48,7 @@ class ToolLenOffset:
 
     def execute(self,obj):
 
-        command = 'G43H'+str(obj.HeightNumber)+'G0Z'+str(obj.Height)
+        command = 'G43H'+str(obj.HeightNumber)+'G0Z'+str(obj.Height.Value)
         obj.Path = Path.Path(command)
         obj.Label = "Height"+str(obj.HeightNumber)
         if obj.Active:

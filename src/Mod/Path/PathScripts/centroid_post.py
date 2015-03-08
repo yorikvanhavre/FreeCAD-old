@@ -23,13 +23,12 @@
 #***************************************************************************
 ''' example post for Centroid CNC mill'''
 import FreeCAD
+import datetime
+now = datetime.datetime.now()
+originfile = FreeCAD.ActiveDocument.FileName
 import Path, PathScripts
 from PathScripts import PostUtils
 
-import datetime
-now = datetime.datetime.now()
-
-originfile = FreeCAD.ActiveDocument.FileName
 
 #***************************************************************************
 # user editable stuff here
@@ -49,27 +48,29 @@ HEADER += ";Post Processor: " + __name__ +"\n"
 HEADER += ";CAM file: "+originfile+"\n"
 HEADER += ";Output Time:"+str(now)+"\n"
 
-TOOLRETURN = '''M5M25
-G49H0\n''' #spindle off,height offset canceled,spindle retracted (M25 is centroid command)
+TOOLRETURN = '''M5 M25
+G49 H0\n''' #spindle off,height offset canceled,spindle retracted (M25 is a centroid command to retract spindle)
 
-ZAXISRETURN = '''G91G28X0Z50
+ZAXISRETURN = '''G91 G28 X0 Z0
 G90\n'''
 
-SAFETYBLOCK = 'G90 G40 G49\n'
+SAFETYBLOCK = 'G90 G80 G40 G49\n'
 
 AXIS_DECIMALS = 4
 FEED_DECIMALS = 1
 SPINDLE_DECIMALS = 0
 
+FOOTER = 'M99'+'\n'
 
-# don't screw with the stuff below the next line
+# don't edit with the stuff below the next line unless you know what you're doing :)
 #***************************************************************************
+
 
 if open.__module__ == '__builtin__':
     pythonopen = open
 
 def export(selection,filename):
-    params = ['X','Y','Z','A','B','I','J','F','S','T','Q','R','L'] #Using XY plane most of the time so skipping K
+    params = ['X','Y','Z','A','B','I','J','F','H','S','T','Q','R','L'] #Using XY plane most of the time so skipping K
     for obj in selection:
         if not hasattr(obj,"Path"):
             print "the object " + obj.Name + " is not a path. Please select only path and Compounds."
@@ -98,8 +99,8 @@ def export(selection,filename):
     lastcommand = None
     gcode+= COMMENT+ selection[0].Description +'\n'
     for obj in selection[0].Group:
-        if hasattr(obj,"Comment"):
-            gcode+=COMMENT+ obj.Comment+'\n'
+#        if hasattr(obj,"Comment"):
+#            gcode+=COMMENT+ obj.Comment+'\n'
         for c in obj.Path.Commands:
             outstring = []
             command = c.Name
@@ -119,7 +120,11 @@ def export(selection,filename):
                 for param in params:
                     if param in c.Parameters:
                         if param == 'F': 
-                            outstring.append(param + PostUtils.fmt(c.Parameters['F'], FEED_DECIMALS,UNITS))
+                            outstring.append(param + PostUtils.fmt(c.Parameters['F'], FEED_DECIMALS,'G21'))
+                        elif param == 'H':
+                            outstring.append(param + str(int(c.Parameters['H'])))
+                        elif param == 'S':
+                            outstring.append(param + PostUtils.fmt(c.Parameters['S'], SPINDLE_DECIMALS,'G21')) #rpm is unitless-therefore I had to 'fake it out' by using metric units which don't get converted from entered value
                         elif param == 'T':
                             outstring.append(param + str(int(c.Parameters['T'])))
                         else:
@@ -131,8 +136,9 @@ def export(selection,filename):
             outstr =outstr.replace(",",'')
             gcode+= outstr + '\n'
             lastcommand = c.Name
-    
-    
+    gcode+= TOOLRETURN
+    gcode+= SAFETYBLOCK
+    gcode+= FOOTER
     if SHOW_EDITOR:
         PostUtils.editor(gcode)
     gfile = pythonopen(filename,"wb")
