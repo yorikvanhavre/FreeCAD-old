@@ -584,8 +584,8 @@ def getMovableChildren(objectslist,recursive=False):
     recursive is True, all descendents are considered, otherwise only direct children.'''
     added = []
     for obj in objectslist:
-        if getType(obj) != "Clone":
-            # clones should never move their children
+        if not (getType(obj) in ["Clone","SectionPlane"]):
+            # objects that should never move their children
             children = obj.OutList
             if  hasattr(obj,"Proxy"):
                 if obj.Proxy:
@@ -1742,9 +1742,12 @@ def getSVG(obj,scale=1,linewidth=0.35,fontsize=12,fillstyle="shape color",direct
 
     def getPath(edges=[],wires=[],pathname=None):
         import DraftGeomUtils
+        svg = "<path "
         if pathname is None:
-            pathname = obj.Name
-        svg ='<path id="%s" d="' % pathname
+            svg += 'id="%s" ' % obj.Name
+        elif pathname != "":
+            svg += 'id="%s" ' % pathname
+        svg += ' d="'
         if not wires:
             egroups = (DraftGeomUtils.sortEdges(edges),)
         else:
@@ -1807,7 +1810,8 @@ def getSVG(obj,scale=1,linewidth=0.35,fontsize=12,fillstyle="shape color",direct
                     flag_large_arc = (((e.ParameterRange[1] - \
                             e.ParameterRange[0]) / math.pi) % 2) > 1
                     flag_sweep = (c.Axis * drawing_plane_normal >= 0) \
-                            == (e.Orientation == "Forward")
+                             == (e.LastParameter > e.FirstParameter)
+                    #        == (e.Orientation == "Forward")
                     for v in endpoints:
                         svg += 'A %s %s %s %s %s %s %s ' % \
                                 (str(rx),str(ry),str(rot),\
@@ -1963,7 +1967,13 @@ def getSVG(obj,scale=1,linewidth=0.35,fontsize=12,fillstyle="shape color",direct
         
     if not obj:
         pass
-
+        
+    elif isinstance(obj,Part.Shape):
+        fill = 'url(#'+fillstyle+')'
+        lstyle = getLineStyle()
+        svg += getPath(obj.Edges,pathname="")
+        
+        
     elif getType(obj) == "Dimension":
         if obj.ViewObject.Proxy:
             if hasattr(obj.ViewObject.Proxy,"p1"):
@@ -4187,7 +4197,7 @@ class _Wire(_DraftObject):
                     pts[-1] = realfpend
                     obj.Points = pts
         elif prop == "Length":
-            if obj.Shape:
+            if obj.Shape and not obj.Shape.isNull():
                 if obj.Length.Value != obj.Shape.Length:
                     if len(obj.Points) == 2:
                         v = obj.Points[-1].sub(obj.Points[0])

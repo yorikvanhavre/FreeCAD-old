@@ -49,6 +49,7 @@
 
 #include "FemMesh.h"
 
+#include <boost/assign/list_of.hpp>
 #include <SMESH_Gen.hxx>
 #include <SMESH_Mesh.hxx>
 #include <SMDS_PolyhedralVolumeOfNodes.hxx>
@@ -643,10 +644,10 @@ void FemMesh::read(const char *FileName)
         // read brep-file
         myMesh->DATToMesh(File.filePath().c_str());
     }
-	else if (File.hasExtension("bdf") ) {
-		// read Nastran-file
-		readNastran(File.filePath());
-	}
+    else if (File.hasExtension("bdf") ) {
+        // read Nastran-file
+        readNastran(File.filePath());
+    }
     else{
         throw Base::Exception("Unknown extension");
     }
@@ -654,65 +655,182 @@ void FemMesh::read(const char *FileName)
 
 void FemMesh::writeABAQUS(const std::string &Filename) const
 {
+    static std::map<std::string, std::vector<int> > elemOrderMap;
+    static std::map<int, std::string> edgeTypeMap;
+    static std::map<int, std::string> faceTypeMap;
+    static std::map<int, std::string> volTypeMap;
+    if (elemOrderMap.empty()) {
+        // dimension 1
+        //
+        // FIXME: get the right order
+        std::vector<int> b31 = boost::assign::list_of(0)(1);
+        std::vector<int> b32 = boost::assign::list_of(0)(1)(2);
+#if 0
+        elemOrderMap.insert(std::make_pair("B31", b31));
+        edgeTypeMap.insert(std::make_pair(elemOrderMap["B31"].size(), "B31"));
+        elemOrderMap.insert(std::make_pair("B32", b32));
+        edgeTypeMap.insert(std::make_pair(elemOrderMap["B32"].size(), "B32"));
+#endif
+
+        // dimension 2
+        //
+        // FIXME: get the right order
+        std::vector<int> s3;
+        std::vector<int> s6;
+        std::vector<int> s4r;
+        std::vector<int> s8r;
+#if 0
+        elemOrderMap.insert(std::make_pair("S3", s3));
+        faceTypeMap.insert(std::make_pair(elemOrderMap["S3"].size(), "S3"));
+        elemOrderMap.insert(std::make_pair("S6", s6));
+        faceTypeMap.insert(std::make_pair(elemOrderMap["S6"].size(), "S6"));
+        elemOrderMap.insert(std::make_pair("S4R", s4r));
+        faceTypeMap.insert(std::make_pair(elemOrderMap["S4R"].size(), "S4R"));
+        elemOrderMap.insert(std::make_pair("S8R", s8r));
+        faceTypeMap.insert(std::make_pair(elemOrderMap["S8R"].size(), "S8R"));
+#endif
+
+        // dimension 3
+        //
+      //std::vector<int> c3d4  = boost::assign::list_of(0)(3)(1)(2);
+      //std::vector<int> c3d10 = boost::assign::list_of(0)(2)(1)(3)(6)(5)(4)(7)(9)(8);
+        std::vector<int> c3d4  = boost::assign::list_of(1)(0)(2)(3);
+        std::vector<int> c3d10 = boost::assign::list_of(1)(0)(2)(3)(4)(6)(5)(8)(7)(9);
+        // FIXME: get the right order
+        std::vector<int> c3d6;
+        std::vector<int> c3d8;
+        std::vector<int> c3d15;
+        std::vector<int> c3d20;
+
+        elemOrderMap.insert(std::make_pair("C3D4", c3d4));
+        volTypeMap.insert(std::make_pair(elemOrderMap["C3D4"].size(), "C3D4"));
+        elemOrderMap.insert(std::make_pair("C3D10", c3d10));
+        volTypeMap.insert(std::make_pair(elemOrderMap["C3D10"].size(), "C3D10"));
+#if 0
+        elemOrderMap.insert(std::make_pair("C3D6", c3d6));
+        volTypeMap.insert(std::make_pair(elemOrderMap["C3D6"].size(), "C3D6"));
+        elemOrderMap.insert(std::make_pair("C3D8", c3d8));
+        volTypeMap.insert(std::make_pair(elemOrderMap["C3D8"].size(), "C3D8"));
+        elemOrderMap.insert(std::make_pair("C3D15", c3d15));
+        volTypeMap.insert(std::make_pair(elemOrderMap["C3D15"].size(), "C3D15"));
+        elemOrderMap.insert(std::make_pair("C3D20", c3d20));
+        volTypeMap.insert(std::make_pair(elemOrderMap["C3D20"].size(), "C3D20"));
+#endif
+    }
+
     std::ofstream anABAQUS_Output;
     anABAQUS_Output.open(Filename.c_str());
-    anABAQUS_Output << "*Node , NSET=Nall" << std::endl;
+    anABAQUS_Output << "*Node, NSET=Nall" << std::endl;
 
     //Extract Nodes and Elements of the current SMESH datastructure
     SMDS_NodeIteratorPtr aNodeIter = myMesh->GetMeshDS()->nodesIterator();
 
     Base::Vector3d current_node;
-    for (;aNodeIter->more();) {
+    while (aNodeIter->more()) {
         const SMDS_MeshNode* aNode = aNodeIter->next();
         current_node.Set(aNode->X(),aNode->Y(),aNode->Z());
         current_node = _Mtrx * current_node;
-        anABAQUS_Output << aNode->GetID() << ","
-            << current_node.x << "," 
-            << current_node.y << ","
+        anABAQUS_Output << aNode->GetID() << ", "
+            << current_node.x << ", "
+            << current_node.y << ", "
             << current_node.z << std::endl;
     }
 
-	anABAQUS_Output << "*Element, TYPE=C3D10, ELSET=Eall" << std::endl;
-	SMDS_VolumeIteratorPtr aVolIter = myMesh->GetMeshDS()->volumesIterator();
+    typedef std::map<int, std::vector<int> > NodesMap;
+    typedef std::map<std::string, NodesMap> ElementsMap;
+    ElementsMap elementsMap;
 
-	std::map<int,std::vector<int> > temp_map;
-	std::pair<int,std::vector<int> > apair;
-	temp_map.clear();
-	for (;aVolIter->more();) 
-	{
-		const SMDS_MeshVolume* aVol = aVolIter->next();
-		//Dont ask about the order in which we have to output the SMESH structure
-		//I absolute dont understand the scheme behind it but somehow its working like this
-		apair.first = aVol->GetID();
-		apair.second.clear();
+    // add volumes
+    //
+    SMDS_VolumeIteratorPtr aVolIter = myMesh->GetMeshDS()->volumesIterator();
+    while (aVolIter->more()) {
+        const SMDS_MeshVolume* aVol = aVolIter->next();
+        std::pair<int, std::vector<int> > apair;
+        apair.first = aVol->GetID();
 
-		//Neuer Versuch
-		apair.second.push_back(aVol->GetNode(1)->GetID());
-		apair.second.push_back(aVol->GetNode(0)->GetID());
-		apair.second.push_back(aVol->GetNode(2)->GetID());
-		apair.second.push_back(aVol->GetNode(3)->GetID());
-		apair.second.push_back(aVol->GetNode(4)->GetID());
-		apair.second.push_back(aVol->GetNode(6)->GetID());
-		apair.second.push_back(aVol->GetNode(5)->GetID());
-		apair.second.push_back(aVol->GetNode(8)->GetID());
-		apair.second.push_back(aVol->GetNode(7)->GetID());
-		apair.second.push_back(aVol->GetNode(9)->GetID());
-	
-        temp_map.insert(apair);
-	}
+        int numNodes = aVol->NbNodes();
+        std::map<int, std::string>::iterator it = volTypeMap.find(numNodes);
+        if (it != volTypeMap.end()) {
+            const std::vector<int>& order = elemOrderMap[it->second];
+            for (std::vector<int>::const_iterator jt = order.begin(); jt != order.end(); ++jt)
+                apair.second.push_back(aVol->GetNode(*jt)->GetID());
+            elementsMap[it->second].insert(apair);
+        }
+    }
 
-	std::map<int,std::vector<int> >::iterator it_map;
-	std::vector<int>::iterator it_vector;
-	for(it_map = temp_map.begin();it_map!=temp_map.end();it_map++)
-	{
-		anABAQUS_Output << it_map->first << ",";
-		for(it_vector = it_map->second.begin();it_vector!=it_map->second.end();it_vector++)
-		{
-			anABAQUS_Output << *it_vector << ",";
-		}
-		anABAQUS_Output << std::endl;
-	}
-	anABAQUS_Output.close();
+    for (ElementsMap::iterator it = elementsMap.begin(); it != elementsMap.end(); ++it) {
+        anABAQUS_Output << "*Element, TYPE=" << it->first << ", ELSET=Eall" << std::endl;
+        for (NodesMap::iterator jt = it->second.begin(); jt != it->second.end(); ++jt) {
+            anABAQUS_Output << jt->first << ", ";
+            for (std::vector<int>::iterator kt = jt->second.begin(); kt != jt->second.end(); ++kt) {
+                anABAQUS_Output << *kt << ", ";
+            }
+            anABAQUS_Output << std::endl;
+        }
+    }
+    elementsMap.clear();
+
+    // add faces
+    //
+    SMDS_FaceIteratorPtr aFaceIter = myMesh->GetMeshDS()->facesIterator();
+    while (aFaceIter->more()) {
+        const SMDS_MeshFace* aFace = aFaceIter->next();
+        std::pair<int, std::vector<int> > apair;
+        apair.first = aFace->GetID();
+
+        int numNodes = aFace->NbNodes();
+        std::map<int, std::string>::iterator it = faceTypeMap.find(numNodes);
+        if (it != faceTypeMap.end()) {
+            const std::vector<int>& order = elemOrderMap[it->second];
+            for (std::vector<int>::const_iterator jt = order.begin(); jt != order.end(); ++jt)
+                apair.second.push_back(aFace->GetNode(*jt)->GetID());
+            elementsMap[it->second].insert(apair);
+        }
+    }
+
+    for (ElementsMap::iterator it = elementsMap.begin(); it != elementsMap.end(); ++it) {
+        anABAQUS_Output << "*Element, TYPE=" << it->first << ", ELSET=Eall" << std::endl;
+        for (NodesMap::iterator jt = it->second.begin(); jt != it->second.end(); ++jt) {
+            anABAQUS_Output << jt->first << ", ";
+            for (std::vector<int>::iterator kt = jt->second.begin(); kt != jt->second.end(); ++kt) {
+                anABAQUS_Output << *kt << ", ";
+            }
+            anABAQUS_Output << std::endl;
+        }
+    }
+    elementsMap.clear();
+
+    // add edges
+    //
+    SMDS_EdgeIteratorPtr aEdgeIter = myMesh->GetMeshDS()->edgesIterator();
+    while (aEdgeIter->more()) {
+        const SMDS_MeshEdge* aEdge = aEdgeIter->next();
+        std::pair<int, std::vector<int> > apair;
+        apair.first = aEdge->GetID();
+
+        int numNodes = aEdge->NbNodes();
+        std::map<int, std::string>::iterator it = edgeTypeMap.find(numNodes);
+        if (it != edgeTypeMap.end()) {
+            const std::vector<int>& order = elemOrderMap[it->second];
+            for (std::vector<int>::const_iterator jt = order.begin(); jt != order.end(); ++jt)
+                apair.second.push_back(aEdge->GetNode(*jt)->GetID());
+            elementsMap[it->second].insert(apair);
+        }
+    }
+
+    for (ElementsMap::iterator it = elementsMap.begin(); it != elementsMap.end(); ++it) {
+        anABAQUS_Output << "*Element, TYPE=" << it->first << ", ELSET=Eall" << std::endl;
+        for (NodesMap::iterator jt = it->second.begin(); jt != it->second.end(); ++jt) {
+            anABAQUS_Output << jt->first << ", ";
+            for (std::vector<int>::iterator kt = jt->second.begin(); kt != jt->second.end(); ++kt) {
+                anABAQUS_Output << *kt << ", ";
+            }
+            anABAQUS_Output << std::endl;
+        }
+    }
+    elementsMap.clear();
+
+    anABAQUS_Output.close();
 }
 
 void FemMesh::write(const char *FileName) const
@@ -734,10 +852,10 @@ void FemMesh::write(const char *FileName) const
         // read brep-file
         myMesh->ExportDAT(File.filePath().c_str());
     }
-	else if (File.hasExtension("inp") ) {
-		// write ABAQUS Output
-		writeABAQUS(File.filePath());
-	}
+    else if (File.hasExtension("inp") ) {
+        // write ABAQUS Output
+        writeABAQUS(File.filePath());
+    }
     else{
         throw Base::Exception("Unknown extension");
     }
@@ -752,21 +870,28 @@ unsigned int FemMesh::getMemSize (void) const
 
 void FemMesh::Save (Base::Writer &writer) const
 {
-    //See SaveDocFile(), RestoreDocFile()
-    writer.Stream() << writer.ind() << "<FemMesh file=\"" ;
-    writer.Stream() << writer.addFile("FemMesh.unv", this) << "\"";
-    writer.Stream() << " a11=\"" <<  _Mtrx[0][0] << "\" a12=\"" <<  _Mtrx[0][1] << "\" a13=\"" <<  _Mtrx[0][2] << "\" a14=\"" <<  _Mtrx[0][3] << "\"";
-    writer.Stream() << " a21=\"" <<  _Mtrx[1][0] << "\" a22=\"" <<  _Mtrx[1][1] << "\" a23=\"" <<  _Mtrx[1][2] << "\" a24=\"" <<  _Mtrx[1][3] << "\"";
-    writer.Stream() << " a31=\"" <<  _Mtrx[2][0] << "\" a32=\"" <<  _Mtrx[2][1] << "\" a33=\"" <<  _Mtrx[2][2] << "\" a34=\"" <<  _Mtrx[2][3] << "\"";
-    writer.Stream() << " a41=\"" <<  _Mtrx[3][0] << "\" a42=\"" <<  _Mtrx[3][1] << "\" a43=\"" <<  _Mtrx[3][2] << "\" a44=\"" <<  _Mtrx[3][3] << "\"";
-    writer.Stream() << "/>" << std::endl;
-
-
+    if (!writer.isForceXML()) {
+        //See SaveDocFile(), RestoreDocFile()
+        writer.Stream() << writer.ind() << "<FemMesh file=\"" ;
+        writer.Stream() << writer.addFile("FemMesh.unv", this) << "\"";
+        writer.Stream() << " a11=\"" <<  _Mtrx[0][0] << "\" a12=\"" <<  _Mtrx[0][1] << "\" a13=\"" <<  _Mtrx[0][2] << "\" a14=\"" <<  _Mtrx[0][3] << "\"";
+        writer.Stream() << " a21=\"" <<  _Mtrx[1][0] << "\" a22=\"" <<  _Mtrx[1][1] << "\" a23=\"" <<  _Mtrx[1][2] << "\" a24=\"" <<  _Mtrx[1][3] << "\"";
+        writer.Stream() << " a31=\"" <<  _Mtrx[2][0] << "\" a32=\"" <<  _Mtrx[2][1] << "\" a33=\"" <<  _Mtrx[2][2] << "\" a34=\"" <<  _Mtrx[2][3] << "\"";
+        writer.Stream() << " a41=\"" <<  _Mtrx[3][0] << "\" a42=\"" <<  _Mtrx[3][1] << "\" a43=\"" <<  _Mtrx[3][2] << "\" a44=\"" <<  _Mtrx[3][3] << "\"";
+        writer.Stream() << "/>" << std::endl;
+    }
+    else {
+        writer.Stream() << writer.ind() << "<FemMesh file=\"\"" ;
+        writer.Stream() << " a11=\"" <<  _Mtrx[0][0] << "\" a12=\"" <<  _Mtrx[0][1] << "\" a13=\"" <<  _Mtrx[0][2] << "\" a14=\"" <<  _Mtrx[0][3] << "\"";
+        writer.Stream() << " a21=\"" <<  _Mtrx[1][0] << "\" a22=\"" <<  _Mtrx[1][1] << "\" a23=\"" <<  _Mtrx[1][2] << "\" a24=\"" <<  _Mtrx[1][3] << "\"";
+        writer.Stream() << " a31=\"" <<  _Mtrx[2][0] << "\" a32=\"" <<  _Mtrx[2][1] << "\" a33=\"" <<  _Mtrx[2][2] << "\" a34=\"" <<  _Mtrx[2][3] << "\"";
+        writer.Stream() << " a41=\"" <<  _Mtrx[3][0] << "\" a42=\"" <<  _Mtrx[3][1] << "\" a43=\"" <<  _Mtrx[3][2] << "\" a44=\"" <<  _Mtrx[3][3] << "\"";
+        writer.Stream() << "/>" << std::endl;
+    }
 }
 
 void FemMesh::Restore(Base::XMLReader &reader)
 {
-
     reader.readElement("FemMesh");
     std::string file (reader.getAttribute("file") );
 
