@@ -23,22 +23,35 @@
 
 
 '''
-This is an example postprocessor file for the Path workbench. It is used to
-take a pseudo-gcode fragment outputted by a Path object, and output
-real GCode suitable for a particular machine. This postprocessor, once placed 
-in the appropriate PathScripts folder, can be used directly from inside FreeCAD,
-via the GUI importer or via python scripts with:
+This is an example postprocessor file for the Path workbench. It is used
+to save a list of FreeCAD Path objects to a file.
 
-import Path
-Path.write(object,"/path/to/file.ncc","post_example")
-
-It must contain at least a parse() function, that takes a string as 
-argument, which is the pseudo-GCode data from a Path object, and return
-another string, which is properly formatted GCode.
+Read the Path Workbench documentation to know how to convert Path objects
+to GCode.
 '''
 
 import datetime
 now = datetime.datetime.now()
+
+
+# to distinguish python built-in open function from the one declared below
+if open.__module__ == '__builtin__':
+    pythonopen = open
+
+
+def export(objectslist,filename):
+    "called when freecad exports a list of objects"
+    if len(objectslist) > 1:
+        print "This script is unable to write more than one Path object"
+        return
+    obj = objectslist[0]
+    if not hasattr(obj,"Path"):
+        print "the given object is not a path"
+    gcode = obj.Path.toGCode()
+    gcode = parse(gcode)
+    gfile = pythonopen(filename,"wb")
+    gfile.write(gcode)
+    gfile.close()
 
 
 def parse(inputstring):
