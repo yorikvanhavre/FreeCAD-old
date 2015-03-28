@@ -235,6 +235,7 @@ class CommandPathProfile:
         obj.SegLen.Value = 0.5
         obj.ViewObject.Proxy = 0
         obj.Active = True
+        obj.ViewObject.ShowFirstRapid = False
 
         for o in FreeCAD.ActiveDocument.Objects:
             if "Proxy" in o.PropertiesList:
