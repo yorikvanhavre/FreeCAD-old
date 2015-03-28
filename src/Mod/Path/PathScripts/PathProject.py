@@ -74,7 +74,7 @@ class ViewProviderProject:
         vobj.setEditorMode('LineWidth',mode)
         vobj.setEditorMode('MarkerColor',mode)
         vobj.setEditorMode('NormalColor',mode)
-        vobj.setEditorMode('ShowFirstRapid',mode)
+#        vobj.setEditorMode('ShowFirstRapid',mode)
         vobj.setEditorMode('BoundingBox',mode)
         vobj.setEditorMode('DisplayMode',mode)
         vobj.setEditorMode('Selectable',mode)
@@ -96,7 +96,7 @@ class ViewProviderProject:
         vobj.setEditorMode('LineWidth',mode)
         vobj.setEditorMode('MarkerColor',mode)
         vobj.setEditorMode('NormalColor',mode)
-        vobj.setEditorMode('ShowFirstRapid',mode)
+#        vobj.setEditorMode('ShowFirstRapid',mode)
         vobj.setEditorMode('BoundingBox',mode)
         vobj.setEditorMode('DisplayMode',mode)
         vobj.setEditorMode('Selectable',mode)
@@ -166,6 +166,7 @@ if UnitParams.GetInt('UserSchema') == 0:
      #metric mode
 else:
     obj.MachineUnits = 'Inch'
+obj.ViewObject.ShowFirstRapid = False
 
 '''
 

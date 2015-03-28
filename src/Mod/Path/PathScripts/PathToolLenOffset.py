@@ -152,6 +152,7 @@ else: #create a new path object
 tl = PathUtils.changeTool(obj,project)
 if tl:
     obj.HeightNumber = tl
+obj.ViewObject.ShowFirstRapid = False
 FreeCAD.ActiveDocument.recompute()
 '''
         FreeCADGui.doCommand(snippet)

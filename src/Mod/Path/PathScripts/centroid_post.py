@@ -89,8 +89,6 @@ def export(selection,filename):
         else:
            UNITS = "G20"
 
-
-        
     gcode =''
     gcode+= HEADER
     gcode+= SAFETYBLOCK
@@ -98,19 +96,19 @@ def export(selection,filename):
 
     lastcommand = None
     gcode+= COMMENT+ selection[0].Description +'\n'
-    for obj in selection[0].Group:
-#        if hasattr(obj,"Comment"):
-#            gcode+=COMMENT+ obj.Comment+'\n'
+
+    gobjects = []
+    for g in selection[0].Group:
+        if g.Name <>'Machine': #filtering out gcode home position from Machine object
+            gobjects.append(g)
+
+    for obj in gobjects:
         for c in obj.Path.Commands:
             outstring = []
             command = c.Name
-#            if command[0]=='(': #comments aren't working well in the Path.Command
-#                pass
-#            else:
-#                outstring.append(command) 
+
             if command[0]=='(':
                 command = PostUtils.fcoms(command, COMMENT)
-
 
             outstring.append(command)
             if MODAL == True:

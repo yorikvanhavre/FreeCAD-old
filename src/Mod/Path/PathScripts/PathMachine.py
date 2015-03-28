@@ -229,6 +229,8 @@ if UnitParams.GetInt('UserSchema') == 0:
 else:
     obj.MachineUnits = 'Inch'
 
+obj.ViewObject.ShowFirstRapid = False
+
 '''
 
         FreeCADGui.doCommand(snippet)
