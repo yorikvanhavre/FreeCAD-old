@@ -39,7 +39,6 @@
 #include <Mod/Path/App/FeaturePathCompound.h>
 #include <Mod/Path/App/FeaturePathShape.h>
 #include <Mod/Part/App/PartFeature.h>
-#include <Mod/Path/App/FeaturePathProject.h>
 
 
 // Path compound #####################################################################################################
@@ -96,60 +95,6 @@ bool CmdPathCompound::isActive(void)
 }
 
 
-// Path project #####################################################################################################
-
-
-DEF_STD_CMD_A(CmdPathProject);
-
-CmdPathProject::CmdPathProject()
-    :Command("Path_Project")
-{
-    sAppModule      = "Path";
-    sGroup          = QT_TR_NOOP("Path");
-    sMenuText       = QT_TR_NOOP("Project");
-    sToolTipText    = QT_TR_NOOP("Creates a project from selected paths");
-    sWhatsThis      = "Path_Project";
-    sStatusTip      = sToolTipText;
-    sPixmap         = "Path-Project";
-    sAccel          = "P,T";
-
-}
-
-void CmdPathProject::activated(int iMsg)
-{
-    std::vector<Gui::SelectionSingleton::SelObj> Sel = getSelection().getSelection();
-    if (Sel.size() > 0) {
-        std::ostringstream cmd;
-        cmd << "[";
-        Path::Feature *pcPathObject;
-        for (std::vector<Gui::SelectionSingleton::SelObj>::const_iterator it=Sel.begin();it!=Sel.end();it++) {
-            if ((*it).pObject->getTypeId().isDerivedFrom(Path::Feature::getClassTypeId())) {
-                pcPathObject = dynamic_cast<Path::Feature*>((*it).pObject);
-                cmd << "FreeCAD.activeDocument()." << pcPathObject->getNameInDocument() << ",";
-            } else {
-                Base::Console().Error("Only Path objects must be selected before running this command\n");
-                return;
-            }
-        }
-        cmd << "]";
-        std::string FeatName = getUniqueObjectName("PathProject");
-        openCommand("Create Path Project");
-        doCommand(Doc,"FreeCAD.activeDocument().addObject('Path::FeatureProject','%s')",FeatName.c_str());
-        doCommand(Doc,"FreeCAD.activeDocument().%s.Group = %s",FeatName.c_str(),cmd.str().c_str());
-        commitCommand();
-        updateActive();
-    } else {
-        Base::Console().Error("At least one Path object must be selected\n");
-        return;
-    }
-}
-
-bool CmdPathProject::isActive(void)
-{
-    return hasActiveDocument();
-}
-
-
  // Path Shape #####################################################################################################
 
 
@@ -201,6 +146,5 @@ void CreatePathCommands(void)
 {
     Gui::CommandManager &rcCmdMgr = Gui::Application::Instance->commandManager();
     rcCmdMgr.addCommand(new CmdPathCompound());
-    rcCmdMgr.addCommand(new CmdPathProject());
     rcCmdMgr.addCommand(new CmdPathShape());
 }
