@@ -246,7 +246,7 @@ def SortPath(wire,Side,radius,clockwise,firstedge=None,SegLen =0.5):
         if wire.isClosed():
             offset = newwire.makeOffset(0.0)
         else:
-            offset = wire
+            offset = newwire
 
     return offset
 
