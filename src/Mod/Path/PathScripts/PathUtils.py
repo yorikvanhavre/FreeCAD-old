@@ -186,10 +186,8 @@ def convert(toolpath,Side,radius,clockwise=False,Z=0.0,firstedge=None,vf=1.0,hf=
             #FreeCAD.Console.PrintMessage("last pt line= " + str(last)+ "\n")
     return output
 
-def SortPath(wire,Side,radius,clockwise,ZClearance,StepDown,ZStart,ZFinalDepth,firstedge=None,PathClosed=True,SegLen =0.5,VertFeed=1.0,HorizFeed=2.0):
-    '''SortPath(wire,Side,radius,clockwise,ZClearance,StepDown,ZStart, ZFinalDepth,firstedge=None) Sorts the wire and reverses it, if needed. Splits arcs over 180 degrees in two. '''
-
-
+def SortPath(wire,Side,radius,clockwise,firstedge=None,SegLen =0.5):
+    '''SortPath(wire,Side,radius,clockwise,firstedge=None,SegLen =0.5) Sorts the wire and reverses it, if needed. Splits arcs over 180 degrees in two. Returns the reordered offset of the wire. '''
     if firstedge:
         edgelist =[]
         for edge in wire.Edges:
@@ -225,8 +223,6 @@ def SortPath(wire,Side,radius,clockwise,ZClearance,StepDown,ZStart,ZFinalDepth,f
             sortedpreoff = DraftGeomUtils.sortEdgesOld(edgelist)
             wire = Part.Wire(sortedpreoff)
 
-
-    SegLen =0.5
     edgelist =[]
     for e in wire.Edges:
         if geomType(e) == "Circle":
@@ -240,7 +236,6 @@ def SortPath(wire,Side,radius,clockwise,ZClearance,StepDown,ZStart,ZFinalDepth,f
                  geomType(e) == "Ellipse":
                  edgelist.append(Part.Wire(curvetowire(e,(SegLen))))
 
-
     newwire = Part.Wire(edgelist)
     if Side == 'Left':
     # we use the OCC offset feature
@@ -253,13 +248,15 @@ def SortPath(wire,Side,radius,clockwise,ZClearance,StepDown,ZStart,ZFinalDepth,f
         else:
             offset = wire
 
+    return offset
+
+def MakePath(wire,Side,radius,clockwise,ZClearance,StepDown,ZStart,ZFinalDepth,firstedge=None,PathClosed=True,SegLen =0.5,VertFeed=1.0,HorizFeed=2.0):
+    ''' makes the path - just a simple profile for now '''
+    offset = SortPath(wire,Side,radius,clockwise,firstedge,SegLen=0.5)
     toolpath =[]
     for edge in offset.Edges:
         toolpath.append(edge)
     paths ="" 
-#    paths +="G0 Z" 
-#    paths += str(ZClearance)
-#    paths += "\n"
     first = toolpath[0].Vertexes[0].Point
     paths += "G0 X"+str(fmt(first.x))+"Y"+str(fmt(first.y))+"\n"
     ZCurrent = ZStart- StepDown

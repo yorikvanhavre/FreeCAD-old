@@ -149,9 +149,9 @@ class ObjectProfile:
             ZCurrent = obj.ClearanceHeight.Value
 
             if obj.UseStartDepth:
-                output += PathUtils.SortPath(wire,obj.Side,radius,clockwise,obj.ClearanceHeight.Value,obj.StepDown.Value,obj.StartDepth.Value, obj.FinalDepth.Value,FirstEdge,obj.PathClosed,obj.SegLen.Value,obj.VertFeed.Value,obj.HorizFeed.Value)
+                output += PathUtils.MakePath(wire,obj.Side,radius,clockwise,obj.ClearanceHeight.Value,obj.StepDown.Value,obj.StartDepth.Value, obj.FinalDepth.Value,FirstEdge,obj.PathClosed,obj.SegLen.Value,obj.VertFeed.Value,obj.HorizFeed.Value)
             else:
-                output += PathUtils.SortPath(wire,obj.Side,radius,clockwise,obj.ClearanceHeight.Value,obj.StepDown.Value,ZMax, obj.FinalDepth.Value,FirstEdge,obj.PathClosed,obj.SegLen.Value,obj.VertFeed.Value,obj.HorizFeed.Value)
+                output += PathUtils.MakePath(wire,obj.Side,radius,clockwise,obj.ClearanceHeight.Value,obj.StepDown.Value,ZMax, obj.FinalDepth.Value,FirstEdge,obj.PathClosed,obj.SegLen.Value,obj.VertFeed.Value,obj.HorizFeed.Value)
 
 
             if obj.Active:
@@ -194,13 +194,13 @@ class CommandPathProfile:
         obj.Base = (FreeCAD.ActiveDocument.getObject(selection['objname']))
 
         if selection['facenames']:
-            FreeCAD.Console.PrintMessage('There are edges selected\n')
+            #FreeCAD.Console.PrintMessage('There are edges selected\n')
             obj.Face1 = (FreeCAD.ActiveDocument.getObject(selection['objname']),selection['facenames'][0])
             if len(selection['facenames'])>1:
                 obj.Face2 = (FreeCAD.ActiveDocument.getObject(selection['objname']),selection['facenames'][-1])
 
         if selection['edgenames']:
-            FreeCAD.Console.PrintMessage('There are edges selected\n')
+            #FreeCAD.Console.PrintMessage('There are edges selected\n')
             
             obj.Edge1 =(FreeCAD.ActiveDocument.getObject(selection['objname']),(selection['edgenames'][0]))
             if len(selection['edgenames'])>1:
