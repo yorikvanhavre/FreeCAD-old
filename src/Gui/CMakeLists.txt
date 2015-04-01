@@ -657,6 +657,7 @@ SET(View3D_CPP_SRCS
     CADNavigationStyle.cpp
     BlenderNavigationStyle.cpp
     TouchpadNavigationStyle.cpp
+    GestureNavigationStyle.cpp
     SplitView3DInventor.cpp
     View.cpp
     View3DInventor.cpp
@@ -769,6 +770,7 @@ SET(Inventor_CPP_SRCS
     SoNavigationDragger.cpp
     SoAxisCrossKit.cpp
     SoTextLabel.cpp
+    SoTouchEvents.cpp
 )
 SET(Inventor_SRCS
     ${Inventor_CPP_SRCS}
@@ -790,6 +792,7 @@ SET(Inventor_SRCS
     SoNavigationDragger.h
     SoAxisCrossKit.h
     SoTextLabel.h
+    SoTouchEvents.h
 )
 SOURCE_GROUP("View3D\\Inventor" FILES ${Inventor_SRCS})
 
@@ -897,6 +900,7 @@ SET(FreeCADGui_CPP_SRCS
     Utilities.cpp
     WaitCursor.cpp
     ManualAlignment.cpp
+    WinNativeGestureRecognizers.cpp
 )
 SET(FreeCADGui_SRCS 
     Application.h
@@ -918,6 +922,7 @@ SET(FreeCADGui_SRCS
     Utilities.h
     WaitCursor.h
     ManualAlignment.h
+    WinNativeGestureRecognizers.h
 )
 
 SET(FreeCADGui_SRCS
