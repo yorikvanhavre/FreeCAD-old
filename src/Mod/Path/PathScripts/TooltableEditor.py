@@ -25,7 +25,7 @@
 
 import FreeCAD,Path, xml.sax, os
 from PySide import QtCore, QtGui
-
+import DraftGui
 
 # convenience functions
 
@@ -148,7 +148,8 @@ class Editor(QtGui.QDialog):
         self.verticalLayout.setObjectName(_fromUtf8("verticalLayout"))
         self.horizontalLayout = QtGui.QHBoxLayout()
         self.horizontalLayout.setObjectName(_fromUtf8("horizontalLayout"))
-        
+        self.DECIMALS = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Units").GetInt("Decimals",2)
+        self.FORMAT = DraftGui.makeFormatSpec(self.DECIMALS,'Length')
         # left groupbox
         self.groupBox = QtGui.QGroupBox(self)
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum)
@@ -421,7 +422,7 @@ class Editor(QtGui.QDialog):
         self.MaterialField.setItemText(7, _translate("TooltableEditor", "Sialon", None))
         self.label_4.setText(_translate("TooltableEditor", "Properties", None))
         self.label_5.setText(_translate("TooltableEditor", "Diameter", None))
-        self.DiameterField.setSuffix(_translate("TooltableEditor", "mm", None))
+#        self.DiameterField.setSuffix(_translate("TooltableEditor", "mm", None))
         self.label_6.setText(_translate("TooltableEditor", "Length offset", None))
         self.LengthOffsetField.setSuffix(_translate("TooltableEditor", "mm", None))
         self.label_7.setText(_translate("TooltableEditor", "Flat radius", None))

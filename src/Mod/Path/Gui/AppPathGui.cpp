@@ -35,7 +35,6 @@
 #include "DlgSettingsPathColor.h"
 #include "ViewProviderPathCompound.h"
 #include "ViewProviderPathShape.h"
-#include "ViewProviderPathProject.h"
 
 // use a different name to CreateCommand()
 void CreatePathCommands(void);
@@ -75,8 +74,8 @@ void PathGuiExport initPathGui()
     // addition objects
     PathGui::ViewProviderPath               ::init();
     PathGui::ViewProviderPathCompound       ::init();
+    PathGui::ViewProviderPathCompoundPython ::init();
     PathGui::ViewProviderPathShape          ::init();
-    PathGui::ViewProviderPathProject        ::init();
     PathGui::ViewProviderPathPython         ::init();
 
      // add resources and reloads the translators
