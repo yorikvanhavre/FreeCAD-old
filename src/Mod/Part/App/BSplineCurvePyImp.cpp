@@ -558,7 +558,6 @@ PyObject* BSplineCurvePy::setPeriodic(PyObject * args)
 {
     if (!PyArg_ParseTuple(args, ""))
         return 0;
-        std::list<Geometry*> new_spans;
     try {
         Handle_Geom_BSplineCurve curve = Handle_Geom_BSplineCurve::DownCast
             (getGeometryPtr()->handle());
@@ -724,7 +723,7 @@ PyObject* BSplineCurvePy::toBiArcs(PyObject * args)
 
         Py::List list;
         for (std::list<Geometry*>::iterator it = arcs.begin(); it != arcs.end(); ++it) {
-            list.append(Py::Object((*it)->getPyObject()));
+            list.append(Py::asObject((*it)->getPyObject()));
             delete (*it);
         }
 
