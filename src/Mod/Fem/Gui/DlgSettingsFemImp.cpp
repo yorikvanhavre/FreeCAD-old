@@ -1,6 +1,7 @@
 /***************************************************************************
- *   Copyright (c) Victor Titov (DeepSOIC)                                 *
- *                                           (vv.titov@gmail.com) 2015     *
+ *   Copyright (c) 2015 FreeCAD Developers                                 *
+ *   Author: Przemo Firszt <przemo@firszt.eu>                              *
+ *   Based on src/Mod/Raytracing/Gui/DlgSettingsRayImp.cpp                 *
  *                                                                         *
  *   This file is part of the FreeCAD CAx development system.              *
  *                                                                         *
@@ -21,52 +22,48 @@
  *                                                                         *
  ***************************************************************************/
 
-/*! This file adds support for pinch gestures in Windows 8 to Qt4.8. I think it
- * may not be necessary for Qt5. I also think this was actually not absolutely
- * necessary, and it may be possible to force Qt gesture recognition from plain
- * touch input.          --DeepSOIC
- */
 
-#ifndef WINNATIVEGESTURERECOGNIZERS_H
-#define WINNATIVEGESTURERECOGNIZERS_H
+#include "PreCompiled.h"
 
-#include <QGestureRecognizer>
-#include <QPinchGesture>
+#include "DlgSettingsFemImp.h"
+#include <Gui/PrefWidgets.h>
 
-#ifdef Q_WS_WIN
-#if QT_VERSION < 0x050000
-#if(WINVER >= 0x0601) // need Windows 7
-#define GESTURE_MESS
-#endif
-#endif // QT_VERSION < 0x050000
-#endif // Q_WS_WIN
+using namespace FemGui;
 
-#ifdef GESTURE_MESS
-
-/*!
- * \brief The QPinchGestureN class is a special version of QPinchGesture,
- * containing a few extra fields for state tracking.
- */
-class QPinchGestureN: public QPinchGesture
+DlgSettingsFemImp::DlgSettingsFemImp( QWidget* parent )
+  : PreferencePage( parent )
 {
-public:
-    int lastFingerDistance;//distance between fingers, in pixels
-    int fingerDistance;    
-    double myRotationAngle;
-    double myLastRotationAngle;
-};
+    this->setupUi(this);
+}
 
-class WinNativeGestureRecognizerPinch : public QGestureRecognizer
+DlgSettingsFemImp::~DlgSettingsFemImp()
 {
-public:
-    WinNativeGestureRecognizerPinch(){}
-    virtual QGesture* create ( QObject* target );
-    virtual Result recognize ( QGesture* gesture, QObject* watched, QEvent* event );
-    virtual void reset ( QGesture* gesture );
-    static void TuneWindowsGestures(QWidget* target);
-    static double unbranchAngle(double ang);
-};
+    // no need to delete child widgets, Qt does it all for us
+}
 
-#endif //GESTUREMESS
+void DlgSettingsFemImp::saveSettings()
+{
+    cb_int_editor->onSave();
+    fc_ext_editor->onSave();
+}
 
-#endif // WINNATIVEGESTURERECOGNIZERS_H
+void DlgSettingsFemImp::loadSettings()
+{
+    cb_int_editor->onRestore();
+    fc_ext_editor->onRestore();
+}
+
+/**
+ * Sets the strings of the subwidgets using the current language.
+ */
+void DlgSettingsFemImp::changeEvent(QEvent *e)
+{
+    if (e->type() == QEvent::LanguageChange) {
+        retranslateUi(this);
+    }
+    else {
+        QWidget::changeEvent(e);
+    }
+}
+
+#include "moc_DlgSettingsFemImp.cpp"
