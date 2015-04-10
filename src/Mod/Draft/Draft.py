@@ -247,6 +247,9 @@ def isClone(obj,objtype,recursive=False):
                 return True
             elif recursive and (getType(obj.Objects[0]) == "Clone"):
                 return isClone(obj.Objects[0],objtype,recursive)
+    elif hasattr(obj,"CloneOf"):
+        if obj.CloneOf:
+            return True
     return False
     
 def getGroupNames():
@@ -2430,6 +2433,14 @@ def clone(obj,delta=None):
     if (len(obj) == 1) and obj[0].isDerivedFrom("Part::Part2DObject"):
         cl = FreeCAD.ActiveDocument.addObject("Part::Part2DObjectPython","Clone2D")
         cl.Label = "Clone of " + obj[0].Label + " (2D)"
+    elif (len(obj) == 1) and hasattr(obj[0],"CloneOf"):
+        # arch objects can be clones
+        import Arch
+        cl = getattr(Arch,"make"+obj[0].Proxy.Type)()
+        base = getCloneBase(obj[0])
+        cl.Label = "Clone of " + base.Label
+        cl.CloneOf = base
+        return cl
     else:
         cl = FreeCAD.ActiveDocument.addObject("Part::FeaturePython","Clone")
         cl.Label = "Clone of " + obj[0].Label
@@ -2441,6 +2452,16 @@ def clone(obj,delta=None):
         cl.Placement.move(delta)
     formatObject(cl,obj[0])
     return cl
+    
+def getCloneBase(obj):
+    '''getCloneBase(obj): returns the object cloned by this object, if
+    any, or this object if it is no clone'''
+    if hasattr(obj,"CloneOf"):
+        if obj.CloneOf:
+            return getCloneBase(obj.CloneOf)
+    if getType(obj) == "Clone":
+        return obj.Objects[0]
+    return obj
 
 def heal(objlist=None,delete=True,reparent=True):
     '''heal([objlist],[delete],[reparent]) - recreates Draft objects that are damaged,
@@ -4764,11 +4785,8 @@ class _Array(_DraftObject):
                         nshape = shape.copy()
                         nshape.translate(currentzvector)
                         base.append(nshape)
-        if fuse:
-            fshape = base.pop()
-            for s in base:
-                fshape = fshape.fuse(s)
-            return fshape.removeSplitter()
+        if fuse and len(base) > 1:
+            return base[0].multiFuse(base[1:]).removeSplitter()
         else:
             return Part.makeCompound(base)
 
@@ -4790,11 +4808,8 @@ class _Array(_DraftObject):
                 if not DraftVecUtils.isNull(axisvector):
                     nshape.translate(FreeCAD.Vector(axisvector).multiply(i+1))
             base.append(nshape)
-        if fuse:
-            fshape = base.pop()
-            for s in base:
-                fshape = fshape.fuse(s)
-            return fshape.removeSplitter()
+        if fuse and len(base) > 1:
+            return base[0].multiFuse(base[1:]).removeSplitter()
         else:
             return Part.makeCompound(base)
 
