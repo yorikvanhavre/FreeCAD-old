@@ -46,5 +46,10 @@ pairs, or a placement, or a vector</UserDocu>
                 <UserDocu>toGCode(): returns a GCode representation of the command</UserDocu>
             </Documentation>
         </Methode>
+        <Methode Name="transform">
+            <Documentation>
+                <UserDocu>transform(Placement): returns a copy of this command transformed by the given placement</UserDocu>
+            </Documentation>
+        </Methode>
     </PythonExport>
 </GenerateModel>
