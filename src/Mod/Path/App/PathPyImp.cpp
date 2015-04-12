@@ -119,6 +119,14 @@ Py::Int PathPy::getSize(void) const
 
 // specific methods
 
+PyObject* PathPy::copy(PyObject * args)
+{
+    if (PyArg_ParseTuple(args, "")) {
+        return new PathPy(new Path::Toolpath(*getToolpathPtr()));
+    }
+    throw Py::Exception("This method accepts no argument");
+}
+
 PyObject* PathPy::addCommands(PyObject * args)
 {
     PyObject* o;
