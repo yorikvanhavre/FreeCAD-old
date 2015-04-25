@@ -296,7 +296,7 @@ class Component:
         obj.addProperty("App::PropertyString","Description","Arch",translate("Arch","An optional description for this component"))
         obj.addProperty("App::PropertyString","Tag","Arch",translate("Arch","An optional tag for this component"))
         obj.addProperty("App::PropertyMap","IfcAttributes","Arch",translate("Arch","Custom IFC properties and attributes"))
-        obj.addProperty("App::PropertyMap","Material","Arch",translate("Arch","A material for this object"))
+        obj.addProperty("App::PropertyLink","BaseMaterial","Material",translate("Arch","A material for this object"))
         obj.addProperty("App::PropertyEnumeration","Role","Arch",translate("Arch","The role of this object"))
         obj.addProperty("App::PropertyBool","MoveWithHost","Arch",translate("Arch","Specifies if this object must move together when its host is moved"))
         obj.Proxy = self
@@ -306,7 +306,8 @@ class Component:
         obj.Role = Roles
 
     def execute(self,obj):
-        return
+        if obj.Base:
+            obj.Shape = obj.Base.Shape
 
     def __getstate__(self):
         return self.Type
@@ -326,6 +327,9 @@ class Component:
                     pl = obj.Placement
                     obj.Shape = obj.CloneOf.Shape.copy()
                     obj.Placement = pl
+                    if hasattr(obj,"BaseMaterial"):
+                        if hasattr(obj.CloneOf,"BaseMaterial"):
+                            obj.BaseMaterial = obj.CloneOf.BaseMaterial
                     return True
         return False
         
@@ -375,7 +379,13 @@ class Component:
         wires = []
         n,l,w,h = self.getDefaultValues(obj)
         if obj.Base:
-            if obj.Base.isDerivedFrom("Part::Feature"):
+            if obj.Base.isDerivedFrom("Part::Extrusion"):
+                if obj.Base.Base:
+                    base = obj.Base.Base.Shape.copy()
+                    if noplacement:
+                        base.Placement = FreeCAD.Placement()
+                    return [base]
+            elif obj.Base.isDerivedFrom("Part::Feature"):
                 if obj.Base.Shape:
                     base = obj.Base.Shape.copy()
                     if noplacement:
@@ -466,6 +476,9 @@ class Component:
     def getExtrusionVector(self,obj,noplacement=False):
         "Returns an extrusion vector of this component, if applicable"
         n,l,w,h = self.getDefaultValues(obj)
+        if obj.Base:
+            if obj.Base.isDerivedFrom("Part::Extrusion"):
+                return obj.Base.Dir
         if Draft.getType(obj) == "Structure":
             if l > h:
                 v = n.multiply(l)
@@ -654,6 +667,13 @@ class ViewProviderComponent:
         self.Object = vobj.Object
         
     def updateData(self,obj,prop):
+        if prop == "BaseMaterial":
+            if obj.BaseMaterial:
+                if 'Color' in obj.BaseMaterial.Material:
+                    if "(" in obj.BaseMaterial.Material['Color']:
+                        c = tuple([float(f) for f in obj.BaseMaterial.Material['Color'].strip("()").split(",")])
+                        if obj.ViewObject:
+                            obj.ViewObject.ShapeColor = c
         return
         
     def getIcon(self):

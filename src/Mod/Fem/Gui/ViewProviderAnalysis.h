@@ -63,6 +63,22 @@ public:
     // shows solid in the tree
     virtual bool isShow(void) const{return true;}
 
+    /** @name Drag and drop */
+    //@{
+    /// Returns true if the view provider generally supports dragging objects
+    bool canDragObjects() const;
+    /// Check whether the object can be removed from the view provider by drag and drop
+    bool canDragObject(App::DocumentObject*) const;
+    /// Starts to drag the object
+    void dragObject(App::DocumentObject*);
+    /// Returns true if the view provider generally accepts dropping of objects
+    bool canDropObjects() const;
+    /// Check whether the object can be dropped to the view provider by drag and drop
+    bool canDropObject(App::DocumentObject*) const;
+    /// If the dropped object type is accepted the object will be added as child
+    void dropObject(App::DocumentObject*);
+    //@}
+
 protected:
     virtual bool setEdit(int ModNum);
     virtual void unsetEdit(int ModNum);

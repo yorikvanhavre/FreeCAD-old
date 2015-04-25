@@ -15,7 +15,7 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QComboBox" name="comboBox_MaterialsInDir">
+    <widget class="QComboBox" name="cb_materials">
      <item>
       <property name="text">
        <string>choose...</string>
@@ -61,7 +61,7 @@
         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
        </property>
        <property name="unit" stdset="0">
-        <string>Pa</string>
+        <string notr="true">Pa</string>
        </property>
        <property name="decimals" stdset="0">
         <number>3</number>
@@ -116,6 +116,16 @@
       </widget>
      </item>
     </layout>
+   </item>
+   <item>
+    <widget class="QLabel" name="l_mat_description">
+     <property name="text">
+      <string>Material Description</string>
+     </property>
+     <property name="wordWrap">
+      <bool>true</bool>
+     </property>
+    </widget>
    </item>
   </layout>
  </widget>
