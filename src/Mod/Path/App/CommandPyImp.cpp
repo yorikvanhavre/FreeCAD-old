@@ -189,6 +189,17 @@ void CommandPy::setPlacement(Py::Object arg)
     throw Py::Exception("Argument must be a placement");
 }
 
+PyObject* CommandPy::transform(PyObject *args)
+{
+    PyObject *placement;
+    if ( PyArg_ParseTuple(args, "O!", &(Base::PlacementPy::Type), &placement) ) {
+        Base::PlacementPy *p = static_cast<Base::PlacementPy*>(placement);
+        Path::Command trCmd = getCommandPtr()->transform( *p->getPlacementPtr() );
+        return new CommandPy(new Path::Command(trCmd));
+    } else
+    throw Py::Exception("Argument must be a placement");
+}
+
 // custom attributes get/set
 
 PyObject *CommandPy::getCustomAttributes(const char* attr) const
