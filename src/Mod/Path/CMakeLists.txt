@@ -9,6 +9,7 @@ INSTALL(
     FILES
         Init.py
         InitGui.py
+        Path_rc.py
     DESTINATION
         Mod/Path
 )
