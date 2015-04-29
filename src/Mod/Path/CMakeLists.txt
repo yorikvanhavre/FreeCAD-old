@@ -1,4 +1,4 @@
-
+PYSIDE_WRAP_RC(Path_QRC_SRCS Gui/Resources/Path.qrc)
 add_subdirectory(App)
 
 if(BUILD_GUI)
@@ -48,10 +48,15 @@ SET(PathScripts_SRCS
 )
 
 ADD_CUSTOM_TARGET(PathScripts ALL
-    SOURCES ${PathScripts_SRCS}
+    SOURCES ${PathScripts_SRCS} ${Path_QRC_SRCS}
 )
 
 fc_copy_sources(PathScripts "${CMAKE_BINARY_DIR}/Mod/Path" ${PathScripts_SRCS})
+
+fc_target_copy_resource(Path
+    ${CMAKE_CURRENT_BINARY_DIR}
+    ${CMAKE_BINARY_DIR}/Mod/Path
+    Path_rc.py)
 
 INSTALL(
     FILES
