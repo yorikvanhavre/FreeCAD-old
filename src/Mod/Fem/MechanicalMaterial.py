@@ -158,14 +158,6 @@ class _MechanicalMaterialTaskPanel:
         self.print_mat_data(self.previous_material)
         FreeCADGui.ActiveDocument.resetEdit()
 
-# Function not yet used
-#    def saveMat(self):
-#        self.transferTo()
-#        filename = QtGui.QFileDialog.getSaveFileName(None, 'Save Material file file',self.params.GetString("MaterialDir",'/'),'FreeCAD material file (*.FCMat)')
-#        if(filename):
-#            import Material
-#            Material.exportFCMat(filename,self.obj.Material)
-
     def goMatWeb(self):
         import webbrowser
         webbrowser.open("http://matweb.com")
@@ -194,14 +186,14 @@ class _MechanicalMaterialTaskPanel:
         self.form.cb_materials.setCurrentIndex(index)
         self.set_mat_params_in_combo_box(self.obj.Material)
         gen_mat_desc = ""
-        if 'General_description' in self.obj.Material:
-            gen_mat_desc = self.obj.Material['General_description']
+        if 'Description' in self.obj.Material:
+            gen_mat_desc = self.obj.Material['Description']
         self.form.l_mat_description.setText(gen_mat_desc)
         self.print_mat_data(self.obj.Material)
 
     def get_material_name(self, material):
-        if 'General_name' in self.previous_material:
-            return self.previous_material['General_name']
+        if 'Name' in self.previous_material:
+            return self.previous_material['Name']
         else:
             return 'None'
 
@@ -222,7 +214,10 @@ class _MechanicalMaterialTaskPanel:
 
     def set_mat_params_in_combo_box(self, matmap):
         if 'YoungsModulus' in matmap:
-            self.form.input_fd_young_modulus.setText(matmap['YoungsModulus'])
+            ym_new_unit = "MPa"
+            ym = FreeCAD.Units.Quantity(matmap['YoungsModulus'])
+            ym_with_new_unit = ym.getValueAs(ym_new_unit)
+            self.form.input_fd_young_modulus.setText("{} {}".format(ym_with_new_unit, ym_new_unit))
         if 'PoissonRatio' in matmap:
             self.form.spinBox_poisson_ratio.setValue(float(matmap['PoissonRatio']))
 

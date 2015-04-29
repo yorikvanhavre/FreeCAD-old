@@ -69,8 +69,8 @@ SOURCE_GROUP("Module" FILES ${Mod_SRCS})
 
 SET(FemScripts_SRCS
     convert2TetGen.py
-    FemLib.py
-    CalculixLib.py
+    ccxFrdReader.py
+    ccxInpWriter.py
     MechanicalAnalysis.ui
     MechanicalAnalysis.py
     MechanicalMaterial.ui
@@ -145,9 +145,6 @@ SET(Fem_SRCS
     ${Python_SRCS}
 )
 
-FILE( GLOB Driver_Resources Driver/*.py )
-
-
 add_library(Fem SHARED ${Fem_SRCS})
 target_link_libraries(Fem ${Fem_LIBS})
 
@@ -155,7 +152,6 @@ target_link_libraries(Fem ${Fem_LIBS})
 fc_target_copy_resource(Fem 
     ${CMAKE_SOURCE_DIR}/src/Mod/Fem
     ${CMAKE_BINARY_DIR}/Mod/Fem
-	${Driver_Resources} 
 	Init.py 
     ${FemScripts_SRCS}
     )
