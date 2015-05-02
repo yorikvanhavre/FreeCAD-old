@@ -28,8 +28,8 @@ import Part
 from FreeCAD import Vector
 
 
-def Sort2Edges(edgelist=[]):
-    '''Sort2Edges(edgelist=[]) simple function to reorder the start and end pts of two edges based on their selection order. Returns the list, the start point, and their common point, => edgelist, vertex, vertex'''
+def Sort2Edges(edgelist):
+    '''Sort2Edges(edgelist) simple function to reorder the start and end pts of two edges based on their selection order. Returns the list, the start point, and their common point, => edgelist, vertex, vertex'''
     if len(edgelist)>=2:
         vlist = []
         e0 = edgelist[0]
@@ -141,13 +141,11 @@ def multiSelect():
                 face = True
             if sub.ShapeType =='Edge':
                 edge = sub
+                edgelist.append(edge)
+                edges = True
                 if isinstance(sub.Curve,Part.Circle):
                     circlelist.append(edge)
                     circles = True
-                else:
-                    edgelist.append(edge)
-                    edges = True
-                    
             if sub.ShapeType =='Vertex':
                 ptlist.append(sub)
                 points = True
