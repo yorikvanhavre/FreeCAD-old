@@ -88,11 +88,17 @@ public:
     /// retrieving by region growing
     std::set<long> getSurfaceNodes(long ElemId, short FaceId, float Angle=360)const;
     /// retrieving by face
-    std::set<long> getNodesByFace(const TopoDS_Face &face) const;
+    std::set<int> getNodesByFace(const TopoDS_Face &face) const;
     /// retrieving by edge
-    std::set<long> getNodesByEdge(const TopoDS_Edge &edge) const;
+    std::set<int> getNodesByEdge(const TopoDS_Edge &edge) const;
     /// retrieving by vertex
-    std::set<long> getNodesByVertex(const TopoDS_Vertex &vertex) const;
+    std::set<int> getNodesByVertex(const TopoDS_Vertex &vertex) const;
+    /// retrieving node IDs by element ID
+    std::set<int> getElementNodes(int id) const;
+    /// retrieving volume IDs and face IDs number by face
+    std::list<std::pair<int, int> > getVolumesByFace(const TopoDS_Face &face) const;
+    /// retrieving volume IDs and CalculiX face number by face
+    std::map<int, int> getccxVolumesByFace(const TopoDS_Face &face) const;
     //@}
 
     /** @name Placement control */

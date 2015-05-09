@@ -514,6 +514,72 @@ PyObject* FemMeshPy::setTransform(PyObject *args)
     Py_Return;
 }
 
+PyObject* FemMeshPy::getVolumesByFace(PyObject *args)
+{
+    PyObject *pW;
+    if (!PyArg_ParseTuple(args, "O!", &(Part::TopoShapeFacePy::Type), &pW))
+         return 0;
+
+    try {
+        const TopoDS_Shape& sh = static_cast<Part::TopoShapeFacePy*>(pW)->getTopoShapePtr()->_Shape;
+        if (sh.IsNull()) {
+            PyErr_SetString(Base::BaseExceptionFreeCADError, "Face is empty");
+            return 0;
+        }
+
+        const TopoDS_Face& fc = TopoDS::Face(sh);
+
+        Py::List ret;
+        std::list<std::pair<int, int> > resultSet = getFemMeshPtr()->getVolumesByFace(fc);
+        for (std::list<std::pair<int, int> >::const_iterator it = resultSet.begin();it!=resultSet.end();++it) {
+            Py::Tuple vol_face(2);
+            vol_face.setItem(0, Py::Int(it->first));
+            vol_face.setItem(1, Py::Int(it->second));
+            ret.append(vol_face);
+        }
+
+        return Py::new_reference_to(ret);
+    }
+    catch (Standard_Failure) {
+        Handle_Standard_Failure e = Standard_Failure::Caught();
+        PyErr_SetString(Base::BaseExceptionFreeCADError, e->GetMessageString());
+        return 0;
+    }
+}
+
+PyObject* FemMeshPy::getccxVolumesByFace(PyObject *args)
+{
+    PyObject *pW;
+    if (!PyArg_ParseTuple(args, "O!", &(Part::TopoShapeFacePy::Type), &pW))
+         return 0;
+
+    try {
+        const TopoDS_Shape& sh = static_cast<Part::TopoShapeFacePy*>(pW)->getTopoShapePtr()->_Shape;
+        if (sh.IsNull()) {
+            PyErr_SetString(Base::BaseExceptionFreeCADError, "Face is empty");
+            return 0;
+        }
+
+        const TopoDS_Face& fc = TopoDS::Face(sh);
+
+        Py::List ret;
+        std::map<int, int> resultSet = getFemMeshPtr()->getccxVolumesByFace(fc);
+        for (std::map<int, int>::const_iterator it = resultSet.begin();it!=resultSet.end();++it) {
+            Py::Tuple vol_face(2);
+            vol_face.setItem(0, Py::Int(it->first));
+            vol_face.setItem(1, Py::Int(it->second));
+            ret.append(vol_face);
+        }
+
+        return Py::new_reference_to(ret);
+    }
+    catch (Standard_Failure) {
+        Handle_Standard_Failure e = Standard_Failure::Caught();
+        PyErr_SetString(Base::BaseExceptionFreeCADError, e->GetMessageString());
+        return 0;
+    }
+}
+
 PyObject* FemMeshPy::getNodeById(PyObject *args)
 {
     int id;
@@ -547,8 +613,8 @@ PyObject* FemMeshPy::getNodesByFace(PyObject *args)
             return 0;
         }
         Py::List ret;
-        std::set<long> resultSet = getFemMeshPtr()->getNodesByFace(fc);
-        for (std::set<long>::const_iterator it = resultSet.begin();it!=resultSet.end();++it)
+        std::set<int> resultSet = getFemMeshPtr()->getNodesByFace(fc);
+        for (std::set<int>::const_iterator it = resultSet.begin();it!=resultSet.end();++it)
             ret.append(Py::Int(*it));
 
         return Py::new_reference_to(ret);
@@ -575,8 +641,8 @@ PyObject* FemMeshPy::getNodesByEdge(PyObject *args)
             return 0;
         }
         Py::List ret;
-        std::set<long> resultSet = getFemMeshPtr()->getNodesByEdge(fc);
-        for (std::set<long>::const_iterator it = resultSet.begin();it!=resultSet.end();++it)
+        std::set<int> resultSet = getFemMeshPtr()->getNodesByEdge(fc);
+        for (std::set<int>::const_iterator it = resultSet.begin();it!=resultSet.end();++it)
             ret.append(Py::Int(*it));
 
         return Py::new_reference_to(ret);
@@ -603,12 +669,34 @@ PyObject* FemMeshPy::getNodesByVertex(PyObject *args)
             return 0;
         }
         Py::List ret;
-        std::set<long> resultSet = getFemMeshPtr()->getNodesByVertex(fc);
-        for (std::set<long>::const_iterator it = resultSet.begin();it!=resultSet.end();++it)
+        std::set<int> resultSet = getFemMeshPtr()->getNodesByVertex(fc);
+        for (std::set<int>::const_iterator it = resultSet.begin();it!=resultSet.end();++it)
             ret.append(Py::Int(*it));
 
         return Py::new_reference_to(ret);
 
+    }
+    catch (Standard_Failure) {
+        Handle_Standard_Failure e = Standard_Failure::Caught();
+        PyErr_SetString(Base::BaseExceptionFreeCADError, e->GetMessageString());
+        return 0;
+    }
+}
+
+PyObject* FemMeshPy::getElementNodes(PyObject *args)
+{
+    int id;
+    if (!PyArg_ParseTuple(args, "i", &id))
+         return 0;
+
+    try {
+        std::set<int> resultSet = getFemMeshPtr()->getElementNodes(id);
+        Py::Tuple ret(resultSet.size());
+        int index = 0;
+        for (std::set<int>::const_iterator it = resultSet.begin();it!=resultSet.end();++it)
+            ret.setItem(index++, Py::Int(*it));
+
+        return Py::new_reference_to(ret);
     }
     catch (Standard_Failure) {
         Handle_Standard_Failure e = Standard_Failure::Caught();
@@ -648,12 +736,48 @@ Py::Int FemMeshPy::getNodeCount(void) const
     return Py::Int(getFemMeshPtr()->getSMesh()->NbNodes());
 }
 
+Py::Tuple FemMeshPy::getEdges(void) const
+{
+    std::set<int> ids;
+    SMDS_EdgeIteratorPtr aEdgeIter = getFemMeshPtr()->getSMesh()->GetMeshDS()->edgesIterator();
+    while (aEdgeIter->more()) {
+        const SMDS_MeshEdge* aEdge = aEdgeIter->next();
+        ids.insert(aEdge->GetID());
+    }
+
+    Py::Tuple tuple(ids.size());
+    int index = 0;
+    for (std::set<int>::iterator it = ids.begin(); it != ids.end(); ++it) {
+        tuple.setItem(index++, Py::Int(*it));
+    }
+
+    return tuple;
+}
+
 Py::Int FemMeshPy::getEdgeCount(void) const
 {
     return Py::Int(getFemMeshPtr()->getSMesh()->NbEdges());
 }
 
-Py::Int FemMeshPy::getFacesCount(void) const
+Py::Tuple FemMeshPy::getFaces(void) const
+{
+    std::set<int> ids;
+    SMDS_FaceIteratorPtr aFaceIter = getFemMeshPtr()->getSMesh()->GetMeshDS()->facesIterator();
+    while (aFaceIter->more()) {
+        const SMDS_MeshFace* aFace = aFaceIter->next();
+        ids.insert(aFace->GetID());
+    }
+
+    Py::Tuple tuple(ids.size());
+    int index = 0;
+    for (std::set<int>::iterator it = ids.begin(); it != ids.end(); ++it) {
+        tuple.setItem(index++, Py::Int(*it));
+    }
+
+    return tuple;
+}
+
+Py::Int FemMeshPy::getFaceCount(void) const
 {
     return Py::Int(getFemMeshPtr()->getSMesh()->NbFaces());
 }
@@ -671,6 +795,24 @@ Py::Int FemMeshPy::getQuadrangleCount(void) const
 Py::Int FemMeshPy::getPolygonCount(void) const
 {
     return Py::Int(getFemMeshPtr()->getSMesh()->NbPolygons());
+}
+
+Py::Tuple FemMeshPy::getVolumes(void) const
+{
+    std::set<int> ids;
+    SMDS_VolumeIteratorPtr aVolIter = getFemMeshPtr()->getSMesh()->GetMeshDS()->volumesIterator();
+    while (aVolIter->more()) {
+        const SMDS_MeshVolume* aVol = aVolIter->next();
+        ids.insert(aVol->GetID());
+    }
+
+    Py::Tuple tuple(ids.size());
+    int index = 0;
+    for (std::set<int>::iterator it = ids.begin(); it != ids.end(); ++it) {
+        tuple.setItem(index++, Py::Int(*it));
+    }
+
+    return tuple;
 }
 
 Py::Int FemMeshPy::getVolumeCount(void) const
