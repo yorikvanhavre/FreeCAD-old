@@ -165,7 +165,7 @@ def profile(curve, direction, radius = 1.0, offset_extra = 0.0,rapid_safety_spac
 def makePath(edges, side, radius, offset_extra, rapid_safety_space, clearance, start_depth, step_down, final_depth, use_CRC ,direction):
 
     curve = makeAreaCurve(edges)
-    if direction == 'CCW':
+    if direction == 'CW':
         curve.Reverse()
     path = profile(curve, side, radius, offset_extra, rapid_safety_space, clearance, start_depth, step_down, final_depth, use_CRC)
     del curve

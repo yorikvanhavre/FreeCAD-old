@@ -75,7 +75,7 @@ class PathProfile:
         obj.Side = ['left','right','on'] #side of profile that cutter is on in relation to direction of profile
         obj.addProperty("App::PropertyEnumeration", "Direction", "Profile",translate("Direction", "The direction that the toolpath should go around the part ClockWise CW or CounterClockWise CCW"))
         obj.Direction = ['CW','CCW'] #this is the direction that the profile runs
-        obj.addProperty("App::PropertyBool","UseComp","Use Comp",translate("Use Cutter Comp","make True, if using Cutter Radius Compensation"))
+        obj.addProperty("App::PropertyBool","UseComp","Profile",translate("Use Cutter Comp","make True, if using Cutter Radius Compensation"))
 
 #        obj.addProperty("App::PropertyDistance", "RollRadius", "Profile", translate("Roll Radius","Radius at start and end"))
         obj.addProperty("App::PropertyDistance", "OffsetExtra", "Profile",translate("OffsetExtra","Extra value to stay away from final profile- good for roughing toolpath"))
@@ -150,68 +150,71 @@ class CommandPathKurve:
         FreeCADGui.addModule("PathScripts.PathKurve")
         snippet = '''
 import Path
+
+
+def profileop():
+    selection = PathSelection.multiSelect()
+
+    if not selection:
+        FreeCAD.Console.PrintError('please select some edges\\n')
+
+    prjexists = False
+
+    obj = FreeCAD.ActiveDocument.addObject("Path::FeaturePython","Profile")
+    PathScripts.PathKurve.PathProfile(obj)
+
+    obj.Active = True
+    PathScripts.PathKurve._ViewProviderKurve(obj.ViewObject)
+
+    obj.Base = (FreeCAD.ActiveDocument.getObject(selection['objname']))
+
+    elist = []
+    for e in selection['edgenames']:
+        elist.append(eval(e.lstrip('Edge')))
+
+    obj.Edgelist = elist
+    obj.ClearanceHeight = 5.0
+    obj.StepDown = 1.0
+    obj.StartDepth=0.0
+    obj.FinalDepth=-1.0
+    obj.RetractHeight = 10.0
+    obj.Side = 'left'
+    obj.OffsetExtra = 0.0
+    if selection['clockwise']:
+        obj.Direction = 'CW'
+    else:
+        obj.Direction = 'CCW'
+    obj.UseComp = False
+
+
+    for o in FreeCAD.ActiveDocument.Objects:
+        if "Proxy" in o.PropertiesList:
+            if isinstance(o.Proxy,PathProject.ObjectPathProject):
+                project = o
+                g = o.Group
+                g.append(obj)
+                o.Group = g
+                prjexists = True
+    if prjexists:
+        pass
+    else: #create a new path object
+        project = FreeCAD.ActiveDocument.addObject("Path::FeatureCompoundPython","Project")
+        PathProject.ObjectPathProject(project)
+        PathProject.ViewProviderProject(project.ViewObject)
+        g = project.Group
+        g.append(obj)
+        project.Group = g
+
+    tl = PathUtils.changeTool(obj,project)
+    if tl:
+        obj.ToolNum = tl
+
 from PathScripts import PathProject,PathUtils,PathKurve, PathKurveUtils,PathSelection
 try:
     import area
+    profileop()
 except:
     FreeCAD.Console.PrintError('libarea needs to be installed for this command to work\\n')
-
-selection = PathSelection.multiSelect()
-
-if not selection:
-    FreeCAD.Console.PrintError('please select some edges\\n')
-
-prjexists = False
-
-obj = FreeCAD.ActiveDocument.addObject("Path::FeaturePython","Profile")
-PathScripts.PathKurve.PathProfile(obj)
-
-obj.Active = True
-PathScripts.PathKurve._ViewProviderKurve(obj.ViewObject)
-
-
-
-
-
-obj.Base = (FreeCAD.ActiveDocument.getObject(selection['objname']))
-
-elist = []
-for e in selection['edgenames']:
-    elist.append(eval(e.lstrip('Edge')))
-
-obj.Edgelist = elist
-obj.ClearanceHeight = 5.0
-obj.StepDown = 1.0
-obj.StartDepth=0.0
-obj.FinalDepth=-1.0
-obj.RetractHeight = 10.0
-obj.Side = 'left'
-obj.OffsetExtra = 0.0
-obj.Direction = 'CCW'
-obj.UseComp = False
-
-
-for o in FreeCAD.ActiveDocument.Objects:
-    if "Proxy" in o.PropertiesList:
-        if isinstance(o.Proxy,PathProject.ObjectPathProject):
-            project = o
-            g = o.Group
-            g.append(obj)
-            o.Group = g
-            prjexists = True
-if prjexists:
-    pass
-else: #create a new path object
-    project = FreeCAD.ActiveDocument.addObject("Path::FeatureCompoundPython","Project")
-    PathProject.ObjectPathProject(project)
-    PathProject.ViewProviderProject(project.ViewObject)
-    g = project.Group
-    g.append(obj)
-    project.Group = g
-
-tl = PathUtils.changeTool(obj,project)
-if tl:
-    obj.ToolNum = tl
 
 '''
 
