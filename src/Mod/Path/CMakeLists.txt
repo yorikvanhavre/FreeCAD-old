@@ -21,6 +21,7 @@ SET(PathScripts_SRCS
     PathScripts/opensbp_pre.py
     PathScripts/example_post.py
     PathScripts/linuxcnc_post.py
+    PathScripts/centroid_post.py
     PathScripts/comparams_post.py
     PathScripts/dumper_post.py
     PathScripts/TooltableEditor.py
@@ -46,6 +47,8 @@ SET(PathScripts_SRCS
     PathScripts/PathMachine.py
     PathScripts/PathFromShape.py
     PathScripts/DlgSettingsPath.ui
+    PathScripts/PathKurveUtils.py
+    PathScripts/PathKurve.py
 )
 
 ADD_CUSTOM_TARGET(PathScripts ALL
