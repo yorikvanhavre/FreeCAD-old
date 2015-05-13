@@ -131,10 +131,10 @@ def multiSelect():
                 selItems['objname']   =objname
             if s.Object.Shape.ShapeType == 'Wire':
                 wireobj = True
-            if s.Object.Shape.ShapeType == 'Vertex':
-                #ptlist.append((s.ObjectName,s.Object))
-                ptlist.append(s.Object)
-                points = True
+#            if s.Object.Shape.ShapeType == 'Vertex':
+#                #ptlist.append((s.ObjectName,s.Object))
+#                ptlist.append(s.Object)
+#                points = True
         for sub in s.SubObjects:
             if sub.ShapeType =='Face':
                 facelist.append(sub)
