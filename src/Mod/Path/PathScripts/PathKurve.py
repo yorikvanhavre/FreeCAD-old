@@ -42,6 +42,8 @@ class PathProfile:
     def __init__(self,obj):
         obj.addProperty("App::PropertyLinkSub","Base","Path",translate("Parent Object","The base geometry of this toolpath"))
         obj.addProperty("App::PropertyIntegerList","Edgelist","Path",translate("Edge List", "List of edges selected"))
+        obj.addProperty("App::PropertyLinkSub","StartPoint", "Path", translate("Start Point","Start Point of Profile"))
+        obj.addProperty("App::PropertyLinkSub","EndPoint", "Path", translate("End Point","End Point of Profile"))
         obj.addProperty("App::PropertyBool","Active","Path",translate("Active","Make False, to prevent operation from generating code"))
         obj.addProperty("App::PropertyIntegerConstraint","ToolNum","Tool",translate("PathProfile","The tool number in use"))
         obj.ToolNum = (0,0,1000,1) 
@@ -113,13 +115,29 @@ class PathProfile:
 
 
             edgelist = []
-
+            if obj.StartPoint:
+                self.points =[]
+                self.points.append(obj.StartPoint[0].Shape)
+                if obj.EndPoint:
+                    self.points.append(obj.EndPoint[0].Shape)
             for e in obj.Edgelist:
                 edgelist.append(FreeCAD.ActiveDocument.getObject(obj.Base[0].Name).Shape.Edges[e-1])
 
-            g = PathKurveUtils.makePath(edgelist, self.side, self.radius, self.offset_extra,self.rapid_safety_space, self.clearance, self.start_depth, self.step_down, self.final_depth,self.use_CRC, obj.Direction)
+            if obj.StartPoint:
+                output = PathKurveUtils.makePath(edgelist, self.side, self.radius, self.offset_extra,self.rapid_safety_space, self.clearance, self.start_depth, self.step_down, self.final_depth,self.use_CRC, obj.Direction, self.points)
+            else:
+                output = PathKurveUtils.makePath(edgelist, self.side, self.radius, self.offset_extra,self.rapid_safety_space, self.clearance, self.start_depth, self.step_down, self.final_depth,self.use_CRC, obj.Direction)
 
-            obj.Path = Path.Path(g)
+            if obj.Active:
+                path = Path.Path(output)
+                obj.Path = path
+                obj.ViewObject.Visibility = True
+
+            else:
+                path = Path.Path("(inactive operation)")
+                obj.Path = path
+                obj.ViewObject.Visibility = False
+
 
 class _ViewProviderKurve:
 
@@ -150,7 +168,8 @@ class CommandPathKurve:
         FreeCADGui.addModule("PathScripts.PathKurve")
         snippet = '''
 import Path
-
+from PathScripts import PathSelection,PathProject,PathUtils
+import area
 
 def profileop():
     selection = PathSelection.multiSelect()
@@ -173,11 +192,18 @@ def profileop():
         elist.append(eval(e.lstrip('Edge')))
 
     obj.Edgelist = elist
-    obj.ClearanceHeight = 5.0
+    if selection['pointnames']:
+        FreeCAD.Console.PrintMessage('There are points selected.\\n')
+        if selection['pointnames']>=2:
+            obj.StartPoint= FreeCAD.ActiveDocument.getObject(selection['pointnames'][0])
+            obj.EndPoint=FreeCAD.ActiveDocument.getObject(selection['pointnames'][-1])
+        else:
+            obj.StartPoint= FreeCAD.ActiveDocument.getObject(selection['pointnames'][0])
+    obj.ClearanceHeight = 2.0
     obj.StepDown = 1.0
     obj.StartDepth=0.0
     obj.FinalDepth=-1.0
-    obj.RetractHeight = 10.0
+    obj.RetractHeight = 5.0
     obj.Side = 'left'
     obj.OffsetExtra = 0.0
     if selection['clockwise']:

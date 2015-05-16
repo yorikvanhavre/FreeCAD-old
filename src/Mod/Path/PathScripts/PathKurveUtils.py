@@ -53,7 +53,7 @@ def makeAreaCurve(edges,points=None):
     firstedge = seglist[0]
     if wire.isClosed()==False:
         if points:
-            if len(points)>=1:
+            if len(points)=1:
                 startptX = points[0].X 
                 startptY = points[0].Y
         else:
@@ -162,9 +162,12 @@ def profile(curve, direction, radius = 1.0, offset_extra = 0.0,rapid_safety_spac
 
     return output
 
-def makePath(edges, side, radius, offset_extra, rapid_safety_space, clearance, start_depth, step_down, final_depth, use_CRC ,direction):
+def makePath(edges, side, radius, offset_extra, rapid_safety_space, clearance, start_depth, step_down, final_depth, use_CRC ,direction,points=None):
 
-    curve = makeAreaCurve(edges)
+    if points:
+        curve = makeAreaCurve(edges,points)
+    else:
+        curve = makeAreaCurve(edges)
     if direction == 'CW':
         curve.Reverse()
     path = profile(curve, side, radius, offset_extra, rapid_safety_space, clearance, start_depth, step_down, final_depth, use_CRC)
@@ -173,30 +176,4 @@ def makePath(edges, side, radius, offset_extra, rapid_safety_space, clearance, s
 
 
 
-'''
-side = 'on'
-clearance = float(5)
-rapid_safety_space = float(2)
-start_depth = float(0)
-step_down = float(1)
-final_depth = float(-6)
-tool_diameter = float(3.625)
-radius = tool_diameter/2.0
-roll_radius = float(2)
-offset_extra = 0
-use_CRC='False'
 
-
-sel = PathSelection.multiSelect()
-edges = sel['edgelist']
-
-#if  sel['pointlist']:
-#    PathKurveUtils.makeAreaCurve(c2,edges, sel['pointlist'])
-#else:
-#    PathKurveUtils.makeAreaCurve(c2,edges)
-
-g = PathKurveUtils.makePath(edges, side, radius, offset_extra, rapid_safety_space, clearance, start_depth, step_down, final_depth, use_CRC)
-obj = App.ActiveDocument.addObject("Path::Feature","mypath2")
-obj.Path = Path.Path(g)
-
-'''

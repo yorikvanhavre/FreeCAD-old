@@ -106,6 +106,7 @@ def multiSelect():
     selItems = {}
     selItems['objname']=None #the parent object name - a 3D solid
     selItems['pointlist']=None #start and end points
+    selItems['pointnames']=None #names of points for document object
     selItems['facenames']=None # the selected face name
     selItems['facelist']=None #list of faces selected
     selItems['edgelist']=None #some edges that could be selected along with points and faces
@@ -117,6 +118,7 @@ def multiSelect():
     edgelist =[]
     edgenames=[]
     ptlist=[]
+    ptnames=[]
     circlelist=[]
     face = False
     edges = False
@@ -131,10 +133,10 @@ def multiSelect():
                 selItems['objname']   =objname
             if s.Object.Shape.ShapeType == 'Wire':
                 wireobj = True
-#            if s.Object.Shape.ShapeType == 'Vertex':
-#                #ptlist.append((s.ObjectName,s.Object))
+            if s.Object.Shape.ShapeType == 'Vertex':
+                ptnames.append(s.ObjectName)
 #                ptlist.append(s.Object)
-#                points = True
+                points = True
         for sub in s.SubObjects:
             if sub.ShapeType =='Face':
                 facelist.append(sub)
@@ -199,6 +201,7 @@ def multiSelect():
 
     if points:
         selItems['pointlist']  = ptlist
+        selItems['pointnames'] = ptnames
     if edges:
         selItems['edgenames']=edgenames
     if face:
