@@ -24,31 +24,40 @@
 
 '''
 This is an example preprocessor file for the Path workbench. Its aim is to
-parse the contents of a given GCode file, and transform it to make it
-suitable for use in a Path object. This preprocessor, once placed in the
-appropriate PathScripts folder, can be used directly from inside FreeCAD,
-via the GUI importer or via python scripts with:
+open a gcode file, parse its contents, and create the appropriate objects
+in FreeCAD.
 
-import Path
-Path.read("/path/to/file.ncc","DocumentName","pre_example")
-
-It must contain at least a parse() function, that takes a string as 
-argument, which is the unmodified contents of the input GCode file, and 
-returns another string, that must respect the following 
-rules in order to be used by the Path workbench:
-
-- All lines must begin with a G or M command. Lines that don't respect that 
-  rule will be discarded on import.
-- Only one occurence of another letter can happen after a G  or M command. 
-  For example this is invalid:
-    G1 X1 Y2 
-    X2 Y3
-  You must write it like this: 
-    G1 X1 Y2 
-    G1 X2 Y3
-- Center coordinates (I,J) in G2 and G3 arcs are relative to the last point.
+Read the Path Workbench documentation to know how to create Path objects
+from GCode.
 '''
 
+import os, Path
+import FreeCAD
+
+# to distinguish python built-in open function from the one declared below
+if open.__module__ == '__builtin__':
+    pythonopen = open
+
+
+def open(filename):
+    "called when freecad opens a file."
+    docname = os.path.splitext(os.path.basename(filename))[0]
+    doc = FreeCAD.newDocument(docname)
+    insert(filename,doc.Name)
+
+
+def insert(filename,docname):
+    "called when freecad imports a file"
+    gfile = pythonopen(filename)
+    gcode = gfile.read()
+    gfile.close()
+    gcode = parse(gcode)
+    doc = FreeCAD.getDocument(docname)
+    obj = doc.addObject("Path::Feature","Path")
+    path = Path.Path(gcode)
+    obj.Path = path
+
+            
 def parse(inputstring):
     "parse(inputstring): returns a parsed output string"
     print "preprocessing..."
@@ -86,6 +95,7 @@ def parse(inputstring):
             
     print "done preprocessing."
     return output
+
 
 print __name__ + " gcode preprocessor loaded."
 
