@@ -53,7 +53,7 @@ def makeAreaCurve(edges,points=None):
     firstedge = seglist[0]
     if wire.isClosed()==False:
         if points:
-            if len(points)=1:
+            if len(points)==1:
                 startptX = points[0].X 
                 startptY = points[0].Y
         else:
