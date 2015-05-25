@@ -148,6 +148,7 @@ def explore(filename=None):
     entities += ifc.by_type("IfcPlacement")
     entities += ifc.by_type("IfcProperty")
     entities += ifc.by_type("IfcPhysicalSimpleQuantity")
+    entities += ifc.by_type("IfcMaterial")
     entities = sorted(entities, key=lambda eid: eid.id())
     
     done = []
@@ -183,6 +184,8 @@ def explore(filename=None):
                 item.setIcon(1,QtGui.QIcon(":icons/Draft_Draft.svg"))
             elif entity.is_a() in ["IfcPropertySingleValue","IfcQuantityArea","IfcQuantityVolume"]:
                 item.setIcon(1,QtGui.QIcon(":icons/Tree_Annotation.svg"))
+            elif entity.is_a() in ["IfcMaterial"]:
+                item.setIcon(1,QtGui.QIcon(":icons/Arch_Material.svg"))
             item.setText(2,str(entity.is_a()))
             item.setFont(2,bold);
             
@@ -271,6 +274,7 @@ def insert(filename,docname,skip=[],only=[],root=None):
     SEPARATE_OPENINGS = p.GetBool("ifcSeparateOpenings",False)
     ROOT_ELEMENT = p.GetString("ifcRootElement","IfcProduct")
     GET_EXTRUSIONS = p.GetBool("ifcGetExtrusions",False)
+    MERGE_MATERIALS = p.GetBool("ifcMergeMaterials",False)
     if root:
         ROOT_ELEMENT = root
     MERGE_MODE = p.GetInt("ifcImportMode",0)
@@ -514,7 +518,7 @@ def insert(filename,docname,skip=[],only=[],root=None):
                     obj.IfcAttributes = a
             
             # color
-            if FreeCAD.GuiUp and (pid in colors):
+            if FreeCAD.GuiUp and (pid in colors) and hasattr(obj.ViewObject,"ShapeColor"):
                 if DEBUG: print "    setting color: ",colors[pid]
                 obj.ViewObject.ShapeColor = colors[pid]
         
@@ -615,15 +619,20 @@ def insert(filename,docname,skip=[],only=[],root=None):
     # Materials
     
     if DEBUG and materials: print "Creating materials..."
-    
+        
+    fcmats = {}
     for material in materials:
         name = material.Name or "Material"
-        mat = Arch.makeMaterial(name=name)
-        mdict = {}
-        if material.id() in colors:
-            mdict["Color"] = str(colors[material.id()])
-        if mdict:
-            mat.Material = mdict
+        if MERGE_MATERIALS and (name in fcmats.keys()):
+            mat = fcmats[name]
+        else:
+            mat = Arch.makeMaterial(name=name)
+            mdict = {}
+            if material.id() in colors:
+                mdict["Color"] = str(colors[material.id()])
+            if mdict:
+                mat.Material = mdict
+            fcmats[name] = mat
         for o,m in mattable.items():
             if m == material.id():
                 if o in objects:
