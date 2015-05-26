@@ -26,53 +26,64 @@ import FreeCAD
 import FreeCADGui as Gui
 import Part
 import DraftGeomUtils
+from DraftGeomUtils import geomType
 import math
 import area
 import Path
 from PathScripts import PathUtils
 
+
 def makeAreaVertex(seg):
     if seg.ShapeType =='Edge':
         if isinstance(seg.Curve,Part.Circle):
-            segtype = 1 #0=line,1=ccw arc,-1=cw arc
+            segtype = int(seg.Curve.Axis.z) #1=ccw arc,-1=cw arc
             vertex = area.Vertex(segtype, area.Point(seg.valueAt(seg.LastParameter)[0],seg.valueAt(seg.LastParameter)[1]), area.Point(seg.Curve.Center.x, seg.Curve.Center.y))
         elif isinstance(seg.Curve,Part.Line):
             point1 = seg.valueAt(seg.FirstParameter)[0],seg.valueAt(seg.FirstParameter)[1]
             point2 = seg.valueAt(seg.LastParameter)[0],seg.valueAt(seg.LastParameter)[1]
-            segtype = 0
+            segtype = 0 #0=line
             vertex = area.Point(seg.valueAt(seg.LastParameter)[0],seg.valueAt(seg.LastParameter)[1])
         else:
             pass
     return vertex
 
-def makeAreaCurve(edges,points=None):
+def makeAreaCurve(edges,direction,startpt=None,endpt=None):
     curveobj = area.Curve()
     wire = Part.Wire(edges)
-    seglist = DraftGeomUtils.sortEdges(edges)
-    
-    firstedge = seglist[0]
-    if wire.isClosed()==False:
-        if points:
-            if len(points)==1:
-                startptX = points[0].X 
-                startptY = points[0].Y
-        else:
-            startptX = firstedge.valueAt(firstedge.FirstParameter)[0]
-            startptY = firstedge.valueAt(firstedge.FirstParameter)[1]
-        curveobj.append(area.Point(startptX,startptY))
-
-    if points and (len(points)>1):
-        endptX = points[-1].X
-        endptY = points[-1].Y
-        for s in seglist[:-1]:
-            curveobj.append(makeAreaVertex(s))
-        curveobj.append(area.Point(endptX,endptY))
+    edgelist = DraftGeomUtils.sortEdges(edges) 
+    seglist =[]
+    if direction=='CW':
+        edgelist.reverse()
+        for e in edgelist:
+            seglist.append(PathUtils.reverseEdge(e)) #swap end points on every segment
     else:
-        for s in seglist:
-            curveobj.append(makeAreaVertex(s))
-    wire = Part.Wire(seglist)
-    if wire.isClosed():
-        curveobj.append(area.Point(firstedge.valueAt(firstedge.LastParameter)[0],firstedge.valueAt(firstedge.LastParameter)[1]))
+        for e in edgelist:
+            seglist.append(e) 
+                     
+    firstedge = seglist[0]
+    lastedge = seglist[-1]
+
+    startptX = firstedge.valueAt(firstedge.FirstParameter)[0]
+    startptY = firstedge.valueAt(firstedge.FirstParameter)[1]
+     
+    curveobj.append(area.Point(startptX,startptY))
+        
+    for s in seglist:
+        curveobj.append(makeAreaVertex(s))
+
+    if startpt:
+         startptX = startpt.X 
+         startptY = startpt.Y   
+         curveobj.ChangeStart(area.Point(startptX,startptY))     
+    if endpt:
+         endptX = endpt.X
+         endptY = endpt.Y
+         curveobj.ChangeEnd(area.Point(endpt.X,endpt.Y))
+           
+
+    if direction=='CW':
+        curveobj.Reverse()
+
 
     return curveobj
 
@@ -165,9 +176,17 @@ def profile(curve, direction, radius = 1.0, offset_extra = 0.0,rapid_safety_spac
 def makePath(edges, side, radius, offset_extra, rapid_safety_space, clearance, start_depth, step_down, final_depth, use_CRC ,direction,points=None):
 
     if points:
-        curve = makeAreaCurve(edges,points)
+        if len(points)==1:
+            startpt = points[0]
+            curve = makeAreaCurve(edges,direction,startpt, endpt=None)
+        
+        elif len(points)>1:
+            startpt = points[0]
+            endpt = points[-1]
+            curve = makeAreaCurve(edges,direction, startpt, endpt)
+        
     else:
-        curve = makeAreaCurve(edges)
+        curve = makeAreaCurve(edges,direction,startpt=None, endpt=None)
     if direction == 'CW':
         curve.Reverse()
     path = profile(curve, side, radius, offset_extra, rapid_safety_space, clearance, start_depth, step_down, final_depth, use_CRC)

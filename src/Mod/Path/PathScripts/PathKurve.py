@@ -194,7 +194,7 @@ def profileop():
     obj.Edgelist = elist
     if selection['pointnames']:
         FreeCAD.Console.PrintMessage('There are points selected.\\n')
-        if selection['pointnames']>=2:
+        if len(selection['pointnames'])>1:
             obj.StartPoint= FreeCAD.ActiveDocument.getObject(selection['pointnames'][0])
             obj.EndPoint=FreeCAD.ActiveDocument.getObject(selection['pointnames'][-1])
         else:
