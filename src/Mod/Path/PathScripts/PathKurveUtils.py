@@ -49,7 +49,6 @@ def makeAreaVertex(seg):
 
 def makeAreaCurve(edges,direction,startpt=None,endpt=None):
     curveobj = area.Curve()
-    wire = Part.Wire(edges)
     edgelist = DraftGeomUtils.sortEdges(edges) 
     seglist =[]
     if direction=='CW':
@@ -60,12 +59,9 @@ def makeAreaCurve(edges,direction,startpt=None,endpt=None):
         for e in edgelist:
             seglist.append(e) 
                      
-    firstedge = seglist[0]
-    lastedge = seglist[-1]
-
+    firstedge= seglist[0]
     startptX = firstedge.valueAt(firstedge.FirstParameter)[0]
-    startptY = firstedge.valueAt(firstedge.FirstParameter)[1]
-     
+    startptY = firstedge.valueAt(firstedge.FirstParameter)[1]    
     curveobj.append(area.Point(startptX,startptY))
         
     for s in seglist:
@@ -80,10 +76,8 @@ def makeAreaCurve(edges,direction,startpt=None,endpt=None):
          endptY = endpt.Y
          curveobj.ChangeEnd(area.Point(endpt.X,endpt.Y))
            
-
-    if direction=='CW':
+    if direction == 'CW':
         curveobj.Reverse()
-
 
     return curveobj
 
