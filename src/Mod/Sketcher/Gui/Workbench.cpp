@@ -203,7 +203,9 @@ inline void SketcherAddWorkbenchConstraints<Gui::MenuItem>(Gui::MenuItem& cons){
             << "Sketcher_ConstrainRadius"
             << "Sketcher_ConstrainAngle"
             << "Sketcher_ConstrainSnellsLaw"
-            << "Sketcher_ConstrainInternalAlignment";
+            << "Sketcher_ConstrainInternalAlignment"
+            << "Separator"
+            << "Sketcher_ToggleDrivingConstraint";
 }
 
 template <>
@@ -224,7 +226,9 @@ inline void SketcherAddWorkbenchConstraints<Gui::ToolBarItem>(Gui::ToolBarItem& 
             << "Sketcher_ConstrainDistance"
             << "Sketcher_ConstrainRadius"
             << "Sketcher_ConstrainAngle"
-            << "Sketcher_ConstrainSnellsLaw";
+            << "Sketcher_ConstrainSnellsLaw"
+            << "Separator"
+            << "Sketcher_ToggleDrivingConstraint";            
 }
 
 template <typename T>

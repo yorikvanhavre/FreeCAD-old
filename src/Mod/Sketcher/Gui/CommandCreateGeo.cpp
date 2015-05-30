@@ -53,9 +53,16 @@
 #include <Gui/View3DInventorViewer.h>
 #include <Gui/SoFCUnifiedSelection.h>
 
+#include <Gui/ToolBarManager.h>
+
+#include "GeometryCreationMode.h"
+
 using namespace std;
 using namespace SketcherGui;
 
+namespace SketcherGui {
+GeometryCreationMode geometryCreationMode=Normal;
+}
 
 /* helper functions ======================================================*/
 
@@ -96,9 +103,11 @@ void ActivateHandler(Gui::Document *doc,DrawSketchHandler *handler)
 {
     if (doc) {
         if (doc->getInEdit() && doc->getInEdit()->isDerivedFrom
-            (SketcherGui::ViewProviderSketch::getClassTypeId()))
-            dynamic_cast<SketcherGui::ViewProviderSketch*>
-            (doc->getInEdit())->activateHandler(handler);
+            (SketcherGui::ViewProviderSketch::getClassTypeId())) {
+                SketcherGui::ViewProviderSketch* vp = dynamic_cast<SketcherGui::ViewProviderSketch*> (doc->getInEdit());
+                vp->purgeHandler();
+                vp->activateHandler(handler);
+        }
     }
 }
 
@@ -108,8 +117,8 @@ bool isCreateGeoActive(Gui::Document *doc)
         // checks if a Sketch Viewprovider is in Edit and is in no special mode
         if (doc->getInEdit() && doc->getInEdit()->isDerivedFrom
             (SketcherGui::ViewProviderSketch::getClassTypeId())) {
-            if (dynamic_cast<SketcherGui::ViewProviderSketch*>(doc->getInEdit())->
-                getSketchMode() == ViewProviderSketch::STATUS_NONE)
+            /*if (dynamic_cast<SketcherGui::ViewProviderSketch*>(doc->getInEdit())->
+                getSketchMode() == ViewProviderSketch::STATUS_NONE)*/
                 return true;
         }
     }
@@ -230,11 +239,21 @@ public:
         if (Mode==STATUS_End){
             unsetCursor();
             resetPositionText();
-
+            
+            int currentgeoid= getHighestCurveIndex();
+            
             Gui::Command::openCommand("Add sketch line");
             Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.addGeometry(Part.Line(App.Vector(%f,%f,0),App.Vector(%f,%f,0)))",
                       sketchgui->getObject()->getNameInDocument(),
                       EditCurve[0].fX,EditCurve[0].fY,EditCurve[1].fX,EditCurve[1].fY);
+            
+            if(geometryCreationMode==Construction) {
+                Gui::Command::doCommand(Gui::Command::Doc,
+                    "App.ActiveDocument.%s.toggleConstruction(%d) ",
+                    sketchgui->getObject()->getNameInDocument(),
+                    currentgeoid+1);
+            }
+            
             Gui::Command::commitCommand();
             Gui::Command::updateActive();
 
@@ -252,7 +271,23 @@ public:
 
             EditCurve.clear();
             sketchgui->drawEdit(EditCurve);
-            sketchgui->purgeHandler(); // no code after this line, Handler get deleted in ViewProvider
+            
+            ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+            bool continuousMode = hGrp->GetBool("ContinuousCreationMode",true);
+            
+            if(continuousMode){
+                // This code enables the continuous creation mode.
+                Mode=STATUS_SEEK_First;
+                EditCurve.resize(2);
+                applyCursor();
+                /* It is ok not to call to purgeHandler
+                * in continuous creation mode because the 
+                * handler is destroyed by the quit() method on pressing the
+                * right button of the mouse */                
+            }
+            else{
+                sketchgui->purgeHandler(); // no code after this line, Handler get deleted in ViewProvider    
+            }
         }
         return true;
     }
@@ -440,6 +475,26 @@ public:
             Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('Vertical',%i)) "
                      ,sketchgui->getObject()->getNameInDocument()
                      ,firstCurve+3);
+            
+            if(geometryCreationMode==Construction) {
+                Gui::Command::doCommand(Gui::Command::Doc,
+                    "App.ActiveDocument.%s.toggleConstruction(%d) ",
+                    sketchgui->getObject()->getNameInDocument(),
+                    firstCurve);                
+                Gui::Command::doCommand(Gui::Command::Doc,
+                    "App.ActiveDocument.%s.toggleConstruction(%d) ",
+                    sketchgui->getObject()->getNameInDocument(),
+                    firstCurve+1);
+                Gui::Command::doCommand(Gui::Command::Doc,
+                    "App.ActiveDocument.%s.toggleConstruction(%d) ",
+                    sketchgui->getObject()->getNameInDocument(),
+                    firstCurve+2);
+                Gui::Command::doCommand(Gui::Command::Doc,
+                    "App.ActiveDocument.%s.toggleConstruction(%d) ",
+                    sketchgui->getObject()->getNameInDocument(),
+                    firstCurve+3);                
+            }
+            
 
             Gui::Command::commitCommand();
             Gui::Command::updateActive();
@@ -456,9 +511,26 @@ public:
                 sugConstr2.clear();
             }
 
-            EditCurve.clear();
-            sketchgui->drawEdit(EditCurve);
-            sketchgui->purgeHandler(); // no code after this line, Handler get deleted in ViewProvider
+            ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+            bool continuousMode = hGrp->GetBool("ContinuousCreationMode",true);
+            
+            if(continuousMode){
+            // This code enables the continuous creation mode.
+                Mode=STATUS_SEEK_First;
+                EditCurve.clear();
+                sketchgui->drawEdit(EditCurve);
+                EditCurve.resize(5);
+                applyCursor();
+                /* this is ok not to call to purgeHandler
+                * in continuous creation mode because the 
+                * handler is destroyed by the quit() method on pressing the
+                * right button of the mouse */
+            }
+            else{
+                sketchgui->purgeHandler(); // no code after this line, Handler get deleted in ViewProvider    
+            }
+            
+                
         }
         return true;
     }
@@ -803,11 +875,35 @@ public:
             // exit on clicking exactly at the same position (e.g. double click)
             if (onSketchPos == EditCurve[0]) {
                 unsetCursor();
-                EditCurve.clear();
                 resetPositionText();
+                EditCurve.clear();
                 sketchgui->drawEdit(EditCurve);
-                sketchgui->purgeHandler(); // no code after this line, Handler get deleted in ViewProvider
-                return true; // 'this' instance is destroyed now!
+                
+                ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+                bool continuousMode = hGrp->GetBool("ContinuousCreationMode",true);
+                
+                if(continuousMode){
+                    // This code enables the continuous creation mode.
+                    Mode=STATUS_SEEK_First;
+                    SegmentMode=SEGMENT_MODE_Line;
+                    TransitionMode=TRANSITION_MODE_Free;
+                    suppressTransition=false;
+                    firstCurve=-1;
+                    previousCurve=-1;
+                    firstPosId=Sketcher::none;
+                    previousPosId=Sketcher::none;
+                    EditCurve.resize(2);
+                    applyCursor();                
+                    /* this is ok not to call to purgeHandler
+                    * in continuous creation mode because the 
+                    * handler is destroyed by the quit() method on pressing the
+                    * right button of the mouse */                
+                    return true;
+                }
+                else{
+                    sketchgui->purgeHandler(); // no code after this line, Handler get deleted in ViewProvider
+                    return true;
+                } 
             }
 
             Mode = STATUS_Do;
@@ -830,7 +926,7 @@ public:
     virtual bool releaseButton(Base::Vector2D onSketchPos)
     {
         if (Mode == STATUS_Do || Mode == STATUS_Close) {
-            bool addedGeometry = true;
+            bool addedGeometry = true;            
             if (SegmentMode == SEGMENT_MODE_Line) {
                 // open the transaction
                 Gui::Command::openCommand("Add line to sketch wire");
@@ -840,6 +936,7 @@ public:
                         "App.ActiveDocument.%s.addGeometry(Part.Line(App.Vector(%f,%f,0),App.Vector(%f,%f,0)))",
                         sketchgui->getObject()->getNameInDocument(),
                         EditCurve[0].fX,EditCurve[0].fY,EditCurve[1].fX,EditCurve[1].fY);
+                    
                 }
                 catch (const Base::Exception& e) {
                     addedGeometry = false;
@@ -867,9 +964,9 @@ public:
                     Gui::Command::abortCommand();
                 }
             }
+            int lastCurve = getHighestCurveIndex();
             // issue the constraint
             if (addedGeometry && (previousPosId != Sketcher::none)) {
-                int lastCurve = getHighestCurveIndex();
                 Sketcher::PointPos lastStartPosId = (SegmentMode == SEGMENT_MODE_Arc && startAngle > endAngle) ?
                                                     Sketcher::end : Sketcher::start;
                 Sketcher::PointPos lastEndPosId = (SegmentMode == SEGMENT_MODE_Arc && startAngle > endAngle) ?
@@ -897,6 +994,13 @@ public:
                 Gui::Command::commitCommand();
                 Gui::Command::updateActive();
             }
+            
+            if(addedGeometry && geometryCreationMode==Construction) {
+                Gui::Command::doCommand(Gui::Command::Doc,
+                    "App.ActiveDocument.%s.toggleConstruction(%d) ",
+                    sketchgui->getObject()->getNameInDocument(),
+                    lastCurve);
+            }
 
             if (Mode == STATUS_Close) {
                 if (sugConstr2.size() > 0) {
@@ -911,10 +1015,34 @@ public:
                 }
 
                 unsetCursor();
-                EditCurve.clear();
+                
                 resetPositionText();
-                sketchgui->drawEdit(EditCurve);
-                sketchgui->purgeHandler(); // no code after this line, Handler get deleted in ViewProvider
+                EditCurve.clear();
+                sketchgui->drawEdit(EditCurve);                
+                
+                ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+                bool continuousMode = hGrp->GetBool("ContinuousCreationMode",true);
+                
+                if(continuousMode){
+                    // This code enables the continuous creation mode.
+                    Mode=STATUS_SEEK_First;
+                    SegmentMode=SEGMENT_MODE_Line;
+                    TransitionMode=TRANSITION_MODE_Free;
+                    suppressTransition=false;
+                    firstCurve=-1;
+                    previousCurve=-1;
+                    firstPosId=Sketcher::none;
+                    previousPosId=Sketcher::none;
+                    EditCurve.resize(2);
+                    applyCursor();                
+                    /* this is ok not to call to purgeHandler
+                    * in continuous creation mode because the 
+                    * handler is destroyed by the quit() method on pressing the
+                    * right button of the mouse */                
+                }
+                else{
+                    sketchgui->purgeHandler(); // no code after this line, Handler get deleted in ViewProvider
+                }
             }
             else {
                 Gui::Command::commitCommand();
@@ -1200,6 +1328,8 @@ public:
         if (Mode==STATUS_End) {
             unsetCursor();
             resetPositionText();
+            int currentgeoid= getHighestCurveIndex();
+            
             Gui::Command::openCommand("Add sketch arc");
             Gui::Command::doCommand(Gui::Command::Doc,
                 "App.ActiveDocument.%s.addGeometry(Part.ArcOfCircle"
@@ -1209,6 +1339,13 @@ public:
                       CenterPoint.fX, CenterPoint.fY, sqrt(rx*rx + ry*ry),
                       startAngle, endAngle); //arcAngle > 0 ? 0 : 1);
 
+            if(geometryCreationMode==Construction) {
+                Gui::Command::doCommand(Gui::Command::Doc,
+                    "App.ActiveDocument.%s.toggleConstruction(%d) ",
+                    sketchgui->getObject()->getNameInDocument(),
+                    currentgeoid+1);
+            }                    
+                      
             Gui::Command::commitCommand();
             Gui::Command::updateActive();
 
@@ -1230,9 +1367,24 @@ public:
                 sugConstr3.clear();
             }
 
-            EditCurve.clear();
-            sketchgui->drawEdit(EditCurve);
-            sketchgui->purgeHandler(); // no code after this line, Handler get deleted in ViewProvider
+            ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+            bool continuousMode = hGrp->GetBool("ContinuousCreationMode",true);
+            
+            if(continuousMode){
+                // This code enables the continuous creation mode.
+                Mode=STATUS_SEEK_First;
+                EditCurve.clear();
+                sketchgui->drawEdit(EditCurve);
+                EditCurve.resize(2);
+                applyCursor();
+                /* this is ok not to call to purgeHandler
+                * in continuous creation mode because the 
+                * handler is destroyed by the quit() method on pressing the
+                * right button of the mouse */
+            }
+            else{
+                sketchgui->purgeHandler(); // no code after this line, Handler get deleted in ViewProvider    
+            }                        
         }
         return true;
     }
@@ -1473,6 +1625,8 @@ public:
         if (Mode==STATUS_End) {
             unsetCursor();
             resetPositionText();
+            int currentgeoid= getHighestCurveIndex();
+            
             Gui::Command::openCommand("Add sketch arc");
             Gui::Command::doCommand(Gui::Command::Doc,
                 "App.ActiveDocument.%s.addGeometry(Part.ArcOfCircle"
@@ -1481,6 +1635,13 @@ public:
                       sketchgui->getObject()->getNameInDocument(),
                       CenterPoint.fX, CenterPoint.fY, radius,
                       startAngle, endAngle);
+
+            if(geometryCreationMode==Construction) {
+                Gui::Command::doCommand(Gui::Command::Doc,
+                    "App.ActiveDocument.%s.toggleConstruction(%d) ",
+                    sketchgui->getObject()->getNameInDocument(),
+                    currentgeoid+1);
+            }            
 
             Gui::Command::commitCommand();
             Gui::Command::updateActive();
@@ -1503,9 +1664,24 @@ public:
                 sugConstr3.clear();
             }
 
-            EditCurve.clear();
-            sketchgui->drawEdit(EditCurve);
-            sketchgui->purgeHandler(); // no code after this line, Handler get deleted in ViewProvider
+            ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+            bool continuousMode = hGrp->GetBool("ContinuousCreationMode",true);
+            
+            if(continuousMode){
+                // This code enables the continuous creation mode.
+                Mode=STATUS_SEEK_First;
+                EditCurve.clear();
+                sketchgui->drawEdit(EditCurve);
+                EditCurve.resize(2);
+                applyCursor();
+                /* this is ok not to call to purgeHandler
+                * in continuous creation mode because the 
+                * handler is destroyed by the quit() method on pressing the
+                * right button of the mouse */
+            }
+            else{
+                sketchgui->purgeHandler(); // no code after this line, Handler get deleted in ViewProvider    
+            }            
         }
         return true;
     }
@@ -1737,6 +1913,8 @@ public:
             double ry = EditCurve[1].fY - EditCurve[0].fY;
             unsetCursor();
             resetPositionText();
+            int currentgeoid= getHighestCurveIndex();
+            
             Gui::Command::openCommand("Add sketch circle");
             Gui::Command::doCommand(Gui::Command::Doc,
                 "App.ActiveDocument.%s.addGeometry(Part.Circle"
@@ -1744,6 +1922,13 @@ public:
                       sketchgui->getObject()->getNameInDocument(),
                       EditCurve[0].fX, EditCurve[0].fY,
                       sqrt(rx*rx + ry*ry));
+
+            if(geometryCreationMode==Construction) {
+                Gui::Command::doCommand(Gui::Command::Doc,
+                    "App.ActiveDocument.%s.toggleConstruction(%d) ",
+                    sketchgui->getObject()->getNameInDocument(),
+                    currentgeoid+1);
+            }            
 
             Gui::Command::commitCommand();
             Gui::Command::updateActive();
@@ -1760,9 +1945,24 @@ public:
                 sugConstr2.clear();
             }
 
-            EditCurve.clear();
-            sketchgui->drawEdit(EditCurve);
-            sketchgui->purgeHandler(); // no code after this line, Handler get deleted in ViewProvider
+            ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+            bool continuousMode = hGrp->GetBool("ContinuousCreationMode",true);
+            
+            if(continuousMode){
+                // This code enables the continuous creation mode.
+                Mode=STATUS_SEEK_First;
+                EditCurve.clear();
+                sketchgui->drawEdit(EditCurve);
+                EditCurve.resize(34);
+                applyCursor();
+                /* this is ok not to call to purgeHandler
+                * in continuous creation mode because the 
+                * handler is destroyed by the quit() method on pressing the
+                * right button of the mouse */
+            }
+            else{
+                sketchgui->purgeHandler(); // no code after this line, Handler get deleted in ViewProvider    
+            }            
         }
         return true;
     }
@@ -2054,6 +2254,18 @@ public:
     {
         if (mode == STATUS_Close) {
             saveEllipse();
+            ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+            bool continuousMode = hGrp->GetBool("ContinuousCreationMode",true);
+            
+            if(continuousMode){
+                if (constrMethod == 0) {
+                    method = CENTER_PERIAPSIS_B;
+                    mode = STATUS_SEEK_CENTROID;
+                } else {
+                    method = PERIAPSIS_APOAPSIS_B;
+                    mode = STATUS_SEEK_PERIAPSIS;
+                }
+            }
         }
         return true;
     }
@@ -2506,9 +2718,16 @@ private:
                                 periapsis.fX, periapsis.fY,
                                 positiveB.fX, positiveB.fY,
                                 centroid.fX, centroid.fY);
-
+        
         currentgeoid++;
-
+        
+        if(geometryCreationMode==Construction) {
+            Gui::Command::doCommand(Gui::Command::Doc,
+                "App.ActiveDocument.%s.toggleConstruction(%d) ",
+                sketchgui->getObject()->getNameInDocument(),
+                currentgeoid);
+        }
+        
         try {
             Gui::Command::doCommand(Gui::Command::Doc,
                                 "App.ActiveDocument.%s.ExposeInternalGeometry(%d)",
@@ -2556,10 +2775,34 @@ private:
             }
         }
 
-        // delete the temp construction curve from the sketch
-        editCurve.clear();
-        sketchgui->drawEdit(editCurve);
-        sketchgui->purgeHandler(); // no code after this line, Handler gets deleted in ViewProvider
+            // This code enables the continuous creation mode.
+            if (constrMethod == 0) {
+                method = CENTER_PERIAPSIS_B;
+                mode = STATUS_SEEK_CENTROID;
+            } else {
+                method = PERIAPSIS_APOAPSIS_B;
+                mode = STATUS_SEEK_PERIAPSIS;
+            }
+            editCurve.clear();
+            sketchgui->drawEdit(editCurve);
+            
+            ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+            bool continuousMode = hGrp->GetBool("ContinuousCreationMode",true);
+
+            
+            if(continuousMode){
+                // This code enables the continuous creation mode.
+                editCurve.resize(33);
+                applyCursor();
+                /* It is ok not to call to purgeHandler
+                * in continuous creation mode because the 
+                * handler is destroyed by the quit() method on pressing the
+                * right button of the mouse */                
+            }
+            else{
+                sketchgui->purgeHandler(); // no code after this line, Handler get deleted in ViewProvider    
+            }
+            
     }
 };
 
@@ -2889,6 +3132,14 @@ public:
             
             currentgeoid++;
             
+            if(geometryCreationMode==Construction) {
+                Gui::Command::doCommand(Gui::Command::Doc,
+                    "App.ActiveDocument.%s.toggleConstruction(%d) ",
+                    sketchgui->getObject()->getNameInDocument(),
+                    currentgeoid);
+            }
+            
+            
             try {                 
                 Gui::Command::doCommand(Gui::Command::Doc,
                                         "App.ActiveDocument.%s.ExposeInternalGeometry(%d)",
@@ -2929,9 +3180,24 @@ public:
                 sugConstr4.clear();
             }
 
-            EditCurve.clear();
-            sketchgui->drawEdit(EditCurve);
-            sketchgui->purgeHandler(); // no code after this line, Handler get deleted in ViewProvider
+            ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+            bool continuousMode = hGrp->GetBool("ContinuousCreationMode",true);
+            
+            if(continuousMode){
+                // This code enables the continuous creation mode.
+                Mode=STATUS_SEEK_First;
+                EditCurve.clear();
+                sketchgui->drawEdit(EditCurve);
+                EditCurve.resize(34);
+                applyCursor();
+                /* this is ok not to call to purgeHandler
+                * in continuous creation mode because the 
+                * handler is destroyed by the quit() method on pressing the
+                * right button of the mouse */
+            }
+            else{
+                sketchgui->purgeHandler(); // no code after this line, Handler get deleted in ViewProvider    
+            }            
         }
         return true;
     }
@@ -3218,6 +3484,7 @@ public:
         if (Mode==STATUS_End) {
             unsetCursor();
             resetPositionText();
+            int currentgeoid= getHighestCurveIndex();
             Gui::Command::openCommand("Add sketch circle");
             Gui::Command::doCommand(Gui::Command::Doc,
                 "App.ActiveDocument.%s.addGeometry(Part.Circle"
@@ -3225,6 +3492,13 @@ public:
                       sketchgui->getObject()->getNameInDocument(),
                       CenterPoint.fX, CenterPoint.fY,
                       radius);
+            
+            if(geometryCreationMode==Construction) {
+                Gui::Command::doCommand(Gui::Command::Doc,
+                    "App.ActiveDocument.%s.toggleConstruction(%d) ",
+                    sketchgui->getObject()->getNameInDocument(),
+                    currentgeoid+1);
+            }
 
             Gui::Command::commitCommand();
             Gui::Command::updateActive();
@@ -3246,10 +3520,25 @@ public:
                 createAutoConstraints(sugConstr3, getHighestCurveIndex(), Sketcher::none);
                 sugConstr3.clear();
             }
-
-            EditCurve.clear();
-            sketchgui->drawEdit(EditCurve);
-            sketchgui->purgeHandler(); // no code after this line, Handler get deleted in ViewProvider
+            
+            ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+            bool continuousMode = hGrp->GetBool("ContinuousCreationMode",true);
+            
+            if(continuousMode){
+                // This code enables the continuous creation mode.
+                Mode=STATUS_SEEK_First;
+                EditCurve.clear();
+                sketchgui->drawEdit(EditCurve);
+                EditCurve.resize(2);
+                applyCursor();
+                /* this is ok not to call to purgeHandler
+                * in continuous creation mode because the 
+                * handler is destroyed by the quit() method on pressing the
+                * right button of the mouse */
+            }
+            else{
+                sketchgui->purgeHandler(); // no code after this line, Handler get deleted in ViewProvider    
+            }
         }
         return true;
     }
@@ -3439,11 +3728,14 @@ public:
         if (selectionDone){
             unsetCursor();
             resetPositionText();
+            
+            int currentgeoid= getHighestCurveIndex();
 
             Gui::Command::openCommand("Add sketch point");
             Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.addGeometry(Part.Point(App.Vector(%f,%f,0)))",
                       sketchgui->getObject()->getNameInDocument(),
-                      EditPoint.fX,EditPoint.fY);
+                      EditPoint.fX,EditPoint.fY);                       
+            
             Gui::Command::commitCommand();
             Gui::Command::updateActive();
 
@@ -3453,7 +3745,20 @@ public:
                 sugConstr.clear();
             }
 
-            sketchgui->purgeHandler(); // no code after this line, Handler get deleted in ViewProvider
+                        ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+            bool continuousMode = hGrp->GetBool("ContinuousCreationMode",true);
+            
+            if(continuousMode){
+                // This code enables the continuous creation mode.
+                applyCursor();
+                /* It is ok not to call to purgeHandler
+                * in continuous creation mode because the 
+                * handler is destroyed by the quit() method on pressing the
+                * right button of the mouse */                
+            }
+            else{
+                sketchgui->purgeHandler(); // no code after this line, Handler get deleted in ViewProvider    
+            }               
         }
         return true;
     }
@@ -3661,6 +3966,7 @@ public:
         int VtId = sketchgui->getPreselectPoint();
         if (Mode == STATUS_SEEK_First && VtId != -1) {
             int GeoId;
+            bool construction=false;
             Sketcher::PointPos PosId=Sketcher::none;
             sketchgui->getSketchObject()->getGeoVertexIndex(VtId,GeoId,PosId);
             const Part::Geometry *geom = sketchgui->getSketchObject()->getGeometry(GeoId);
@@ -3675,6 +3981,7 @@ public:
                 if (GeoIdList.size() == 2 && GeoIdList[0] >= 0  && GeoIdList[1] >= 0) {
                     const Part::Geometry *geom1 = sketchgui->getSketchObject()->getGeometry(GeoIdList[0]);
                     const Part::Geometry *geom2 = sketchgui->getSketchObject()->getGeometry(GeoIdList[1]);
+                    construction=geom1->Construction && geom2->Construction;
                     if (geom1->getTypeId() == Part::GeomLineSegment::getClassTypeId() &&
                         geom2->getTypeId() == Part::GeomLineSegment::getClassTypeId()) {
                         const Part::GeomLineSegment *lineSeg1 = dynamic_cast<const Part::GeomLineSegment *>(geom1);
@@ -3694,11 +4001,20 @@ public:
                 if (radius < 0)
                     return false;
 
+                int currentgeoid= getHighestCurveIndex();
                 // create fillet at point
                 Gui::Command::openCommand("Create fillet");
                 Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.fillet(%d,%d,%f)",
                           sketchgui->getObject()->getNameInDocument(),
                           GeoId, PosId, radius);
+
+                if(construction) {
+                    Gui::Command::doCommand(Gui::Command::Doc,
+                        "App.ActiveDocument.%s.toggleConstruction(%d) ",
+                        sketchgui->getObject()->getNameInDocument(),
+                        currentgeoid+1);                        
+                }
+                    
                 Gui::Command::commitCommand();
                 Gui::Command::updateActive();
             }
@@ -3740,6 +4056,7 @@ public:
 
                     // create fillet between lines
                     Gui::Command::openCommand("Create fillet");
+                    int currentgeoid= getHighestCurveIndex();
                     Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.fillet(%d,%d,App.Vector(%f,%f,0),App.Vector(%f,%f,0),%f)",
                               sketchgui->getObject()->getNameInDocument(),
                               firstCurve, secondCurve,
@@ -3747,6 +4064,14 @@ public:
                               secondPos.fX, secondPos.fY, radius);
                     Gui::Command::commitCommand();
                     Gui::Command::updateActive();
+                    
+                    if(lineSeg1->Construction && lineSeg2->Construction) {
+                        Gui::Command::doCommand(Gui::Command::Doc,
+                            "App.ActiveDocument.%s.toggleConstruction(%d) ",
+                            sketchgui->getObject()->getNameInDocument(),
+                            currentgeoid+1);                        
+                    }
+                    
 
                     Gui::Selection().clearSelection();
                     Mode = STATUS_SEEK_First;
@@ -4065,7 +4390,10 @@ public:
 
     virtual bool releaseButton(Base::Vector2D onSketchPos)
     {
-        sketchgui->purgeHandler(); // no code after this line, Handler get deleted in ViewProvider
+        /* this is ok not to call to purgeHandler
+        * in continuous creation mode because the 
+        * handler is destroyed by the quit() method on pressing the
+        * right button of the mouse */
         return true;
     }
 
@@ -4083,7 +4411,10 @@ public:
                     Gui::Command::commitCommand();
                     Gui::Command::updateActive();
                     Gui::Selection().clearSelection();
-                    sketchgui->purgeHandler(); // no code after this line, Handler get deleted in ViewProvider
+                /* this is ok not to call to purgeHandler
+                * in continuous creation mode because the 
+                * handler is destroyed by the quit() method on pressing the
+                * right button of the mouse */
                 }
                 catch (const Base::Exception& e) {
                     Base::Console().Error("%s\n", e.what());
@@ -4311,6 +4642,25 @@ public:
                 Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('Equal',%i,%i)) "
                          ,sketchgui->getObject()->getNameInDocument()
                          ,firstCurve,firstCurve+1);
+                
+                if(geometryCreationMode==Construction) {
+                    Gui::Command::doCommand(Gui::Command::Doc,
+                        "App.ActiveDocument.%s.toggleConstruction(%d) ",
+                        sketchgui->getObject()->getNameInDocument(),
+                        firstCurve);
+                    Gui::Command::doCommand(Gui::Command::Doc,
+                        "App.ActiveDocument.%s.toggleConstruction(%d) ",
+                        sketchgui->getObject()->getNameInDocument(),
+                        firstCurve+1);
+                    Gui::Command::doCommand(Gui::Command::Doc,
+                        "App.ActiveDocument.%s.toggleConstruction(%d) ",
+                        sketchgui->getObject()->getNameInDocument(),
+                        firstCurve+2);
+                    Gui::Command::doCommand(Gui::Command::Doc,
+                        "App.ActiveDocument.%s.toggleConstruction(%d) ",
+                        sketchgui->getObject()->getNameInDocument(),
+                        firstCurve+3);                    
+                }
 
                 Gui::Command::commitCommand();
                 Gui::Command::updateActive();
@@ -4332,10 +4682,24 @@ public:
                 Gui::Command::abortCommand();
                 Gui::Command::updateActive();
             }
-
-            EditCurve.clear();
-            sketchgui->drawEdit(EditCurve);
-            sketchgui->purgeHandler(); // no code after this line, Handler get deleted in ViewProvider
+            ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+            bool continuousMode = hGrp->GetBool("ContinuousCreationMode",true);
+            
+            if(continuousMode){
+                // This code enables the continuous creation mode.
+                Mode=STATUS_SEEK_First;
+                EditCurve.clear();
+                sketchgui->drawEdit(EditCurve);
+                EditCurve.resize(36);
+                applyCursor();
+                /* this is ok not to call to purgeHandler
+                * in continuous creation mode because the 
+                * handler is destroyed by the quit() method on pressing the
+                * right button of the mouse */
+            }
+            else{
+                sketchgui->purgeHandler(); // no code after this line, Handler get deleted in ViewProvider    
+            }
         }
         return true;
     }
@@ -4458,7 +4822,7 @@ public:
             double rx = dV.fX;
             double ry = dV.fY;
             for (int i=1; i < static_cast<int>(Corners); i++) {
-            	const double old_rx = rx;
+                const double old_rx = rx;
                 rx = cos_v * rx - sin_v * ry;
                 ry = cos_v * ry + sin_v * old_rx;
                 EditCurve[i] = Base::Vector2D(StartPos.fX + rx, StartPos.fY + ry);
@@ -4501,26 +4865,38 @@ public:
             resetPositionText();
             Gui::Command::openCommand("Add hexagon");
 
+            int currentgeoid= getHighestCurveIndex();
+            
             try {
-            	Gui::Command::doCommand(Gui::Command::Doc,
-            			"import ProfileLib.RegularPolygon\n"
-            			"ProfileLib.RegularPolygon.makeRegularPolygon('%s',%i,App.Vector(%f,%f,0),App.Vector(%f,%f,0))",
-            	                            sketchgui->getObject()->getNameInDocument(),
-            	                            Corners,
-            	                            StartPos.fX,StartPos.fY,EditCurve[0].fX,EditCurve[0].fY);
+                Gui::Command::doCommand(Gui::Command::Doc,
+                        "import ProfileLib.RegularPolygon\n"
+                        "ProfileLib.RegularPolygon.makeRegularPolygon('%s',%i,App.Vector(%f,%f,0),App.Vector(%f,%f,0))",
+                                            sketchgui->getObject()->getNameInDocument(),
+                                            Corners,
+                                            StartPos.fX,StartPos.fY,EditCurve[0].fX,EditCurve[0].fY);
 
+                if(geometryCreationMode==Construction) {
+                    int i;
+                    for(i=0;i<Corners;i++) {
+                        Gui::Command::doCommand(Gui::Command::Doc,
+                            "App.ActiveDocument.%s.toggleConstruction(%d) ",
+                            sketchgui->getObject()->getNameInDocument(),
+                            currentgeoid+1+i);                    
+                    }
+                }
+                
                 Gui::Command::commitCommand();
                 Gui::Command::updateActive();
 
-                // add auto constraints at the start of the first side
+                // add auto constraints at the center of the polygon
                 if (sugConstr1.size() > 0) {
-                    createAutoConstraints(sugConstr1, getHighestCurveIndex() - 3 , Sketcher::mid);
+                    createAutoConstraints(sugConstr1, getHighestCurveIndex(), Sketcher::mid);
                     sugConstr1.clear();
                 }
 
-                // add auto constraints at the end of the second side
+                // add auto constraints to the last side of the polygon
                 if (sugConstr2.size() > 0) {
-                    createAutoConstraints(sugConstr2, getHighestCurveIndex() - 2, Sketcher::end);
+                    createAutoConstraints(sugConstr2, getHighestCurveIndex() - 1, Sketcher::end);
                     sugConstr2.clear();
                 }
             }
@@ -4529,10 +4905,24 @@ public:
                 Gui::Command::abortCommand();
                 Gui::Command::updateActive();
             }
-
-            EditCurve.clear();
-            sketchgui->drawEdit(EditCurve);
-            sketchgui->purgeHandler(); // no code after this line, Handler get deleted in ViewProvider
+            ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+            bool continuousMode = hGrp->GetBool("ContinuousCreationMode",true);
+            
+            if(continuousMode){
+                // This code enables the continuous creation mode.
+                Mode=STATUS_SEEK_First;
+                EditCurve.clear();
+                sketchgui->drawEdit(EditCurve);
+                EditCurve.resize(Corners+1);
+                applyCursor();
+                /* this is ok not to call to purgeHandler
+                * in continuous creation mode because the 
+                * handler is destroyed by the quit() method on pressing the
+                * right button of the mouse */
+            }
+            else{
+                sketchgui->purgeHandler(); // no code after this line, Handler get deleted in ViewProvider    
+            } 
         }
         return true;
     }
@@ -4809,8 +5199,6 @@ bool CmdSketcherCompCreateRegularPolygon::isActive(void)
 {
     return isCreateGeoActive(getActiveGuiDocument());
 }
-
-
 
 void CreateSketcherCommandsCreateGeo(void)
 {

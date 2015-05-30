@@ -53,7 +53,8 @@ Constraint::Constraint()
   Third(GeoUndef),
   ThirdPos(none),
   LabelDistance(10.f),
-  LabelPosition(0.f)
+  LabelPosition(0.f),
+  isDriving(true)
 {
 }
 
@@ -69,7 +70,8 @@ Constraint::Constraint(const Constraint& from)
   Third(from.Third),
   ThirdPos(from.ThirdPos),
   LabelDistance(from.LabelDistance),
-  LabelPosition(from.LabelPosition)
+  LabelPosition(from.LabelPosition),
+  isDriving(from.isDriving)
 {
 }
 
@@ -109,7 +111,8 @@ void Constraint::Save (Writer &writer) const
     << "Third=\""                       <<  Third               << "\" "
     << "ThirdPos=\""                    <<  (int) ThirdPos      << "\" "
     << "LabelDistance=\""               <<  LabelDistance       << "\" "
-    << "LabelPosition=\""               <<  LabelPosition       << "\" />"
+    << "LabelPosition=\""               <<  LabelPosition       << "\" "
+    << "IsDriving=\""                   <<  (int)isDriving      << "\" />"
     << std::endl;
 }
 
@@ -128,16 +131,20 @@ void Constraint::Restore(XMLReader &reader)
         AlignmentType = (InternalAlignmentType) reader.getAttributeAsInteger("InternalAlignmentType");
     else
         AlignmentType = Undef;
-    
+
     // read the third geo group if present
     if (reader.hasAttribute("Third")) {
         Third    = reader.getAttributeAsInteger("Third");
         ThirdPos = (PointPos)  reader.getAttributeAsInteger("ThirdPos");
     }
+
     // Read the distance a constraint label has been moved
     if (reader.hasAttribute("LabelDistance"))
         LabelDistance = (float)reader.getAttributeAsFloat("LabelDistance");
 
     if (reader.hasAttribute("LabelPosition"))
         LabelPosition = (float)reader.getAttributeAsFloat("LabelPosition");
+
+    if (reader.hasAttribute("IsDriving"))
+        isDriving = reader.getAttributeAsInteger("IsDriving") ? true : false;
 }

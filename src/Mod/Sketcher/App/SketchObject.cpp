@@ -219,6 +219,91 @@ int SketchObject::setDatum(int ConstrId, double Datum)
     return err;
 }
 
+int SketchObject::setDriving(int ConstrId, bool isdriving)
+{
+    const std::vector<Constraint *> &vals = this->Constraints.getValues();
+    
+    if (ConstrId < 0 || ConstrId >= int(vals.size()))
+        return -1;
+    
+    ConstraintType type = vals[ConstrId]->Type;
+    
+    if (type != Distance &&
+        type != DistanceX &&
+        type != DistanceY &&
+        type != Radius &&
+        type != Angle &&
+        type != SnellsLaw)
+        return -2;
+    
+    if (!(vals[ConstrId]->First>=0 || vals[ConstrId]->Second>=0 || vals[ConstrId]->Third>=0) && isdriving==true)
+        return -3; // a constraint that does not have at least one element as not-external-geometry can never be driving.
+
+    // copy the list
+    std::vector<Constraint *> newVals(vals);
+    // clone the changed Constraint
+    Constraint *constNew = vals[ConstrId]->clone();
+    constNew->isDriving = isdriving;
+    newVals[ConstrId] = constNew;
+    this->Constraints.setValues(newVals);
+    delete constNew;
+
+    return 0;
+}
+
+int SketchObject::getDriving(int ConstrId, bool &isdriving)
+{
+    const std::vector<Constraint *> &vals = this->Constraints.getValues();
+    
+    if (ConstrId < 0 || ConstrId >= int(vals.size()))
+        return -1;
+    
+    ConstraintType type = vals[ConstrId]->Type;
+    
+    if (type != Distance &&
+        type != DistanceX &&
+        type != DistanceY &&
+        type != Radius &&
+        type != Angle &&
+        type != SnellsLaw)
+        return -1;
+
+    isdriving=vals[ConstrId]->isDriving;
+    return 0;
+}
+
+int SketchObject::toggleDriving(int ConstrId)
+{
+    const std::vector<Constraint *> &vals = this->Constraints.getValues();
+    
+    if (ConstrId < 0 || ConstrId >= int(vals.size()))
+        return -1;
+    
+    ConstraintType type = vals[ConstrId]->Type;
+    
+    if (type != Distance &&
+        type != DistanceX &&
+        type != DistanceY &&
+        type != Radius &&
+        type != Angle &&
+        type != SnellsLaw)
+        return -2;
+    
+    if (!(vals[ConstrId]->First>=0 || vals[ConstrId]->Second>=0 || vals[ConstrId]->Third>=0) && vals[ConstrId]->isDriving==false)
+        return -3; // a constraint that does not have at least one element as not-external-geometry can never be driving.
+        
+    // copy the list
+    std::vector<Constraint *> newVals(vals);
+    // clone the changed Constraint
+    Constraint *constNew = vals[ConstrId]->clone();
+    constNew->isDriving = !constNew->isDriving;
+    newVals[ConstrId] = constNew;
+    this->Constraints.setValues(newVals);
+    delete constNew;
+
+    return 0;
+}
+
 int SketchObject::movePoint(int GeoId, PointPos PosId, const Base::Vector3d& toPoint, bool relative)
 {
     Sketch sketch;
@@ -418,7 +503,7 @@ int SketchObject::toggleConstruction(int GeoId)
     newVals[GeoId]=geoNew;
 
     this->Geometry.setValues(newVals);
-    this->Constraints.acceptGeometry(getCompleteGeometry());
+    //this->Constraints.acceptGeometry(getCompleteGeometry()); <= This is not necessary for a toggle. Reducing redundant solving. Abdullah
     return 0;
 }
 
@@ -435,7 +520,7 @@ int SketchObject::setConstruction(int GeoId, bool on)
     newVals[GeoId]=geoNew;
 
     this->Geometry.setValues(newVals);
-    this->Constraints.acceptGeometry(getCompleteGeometry());
+    //this->Constraints.acceptGeometry(getCompleteGeometry()); <= This is not necessary for a toggle. Reducing redundant solving. Abdullah
     return 0;
 }
 

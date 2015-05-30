@@ -9,13 +9,16 @@
         <file>icons/Constraint_ExternalAngle.svg</file>
         <file>icons/Constraint_Horizontal.svg</file>
         <file>icons/Constraint_HorizontalDistance.svg</file>
+        <file>icons/Constraint_HorizontalDistance_Driven.svg</file>
         <file>icons/Constraint_InternalAlignment.svg</file>
         <file>icons/Constraint_InternalAlignment_Ellipse_Focus1.svg</file>
         <file>icons/Constraint_InternalAlignment_Ellipse_Focus2.svg</file>
         <file>icons/Constraint_InternalAlignment_Ellipse_MajorAxis.svg</file>
         <file>icons/Constraint_InternalAlignment_Ellipse_MinorAxis.svg</file>
         <file>icons/Constraint_InternalAngle.svg</file>
+        <file>icons/Constraint_InternalAngle_Driven.svg</file>
         <file>icons/Constraint_Length.svg</file>
+        <file>icons/Constraint_Length_Driven.svg</file>
         <file>icons/Constraint_Parallel.svg</file>
         <file>icons/Constraint_Perpendicular.svg</file>
         <file>icons/Constraint_PointOnEnd.svg</file>
@@ -25,17 +28,21 @@
         <file>icons/Constraint_PointOnStart.svg</file>
         <file>icons/Constraint_PointToObject.svg</file>
         <file>icons/Constraint_Radius.svg</file>
+        <file>icons/Constraint_Radius_Driven.svg</file>
         <file>icons/Constraint_SnellsLaw.svg</file>
+        <file>icons/Constraint_SnellsLaw_Driven.svg</file>
         <file>icons/Constraint_Symmetric.svg</file>
         <file>icons/Constraint_Tangent.svg</file>
         <file>icons/Constraint_TangentToEnd.svg</file>
         <file>icons/Constraint_TangentToStart.svg</file>
         <file>icons/Constraint_Vertical.svg</file>
         <file>icons/Constraint_VerticalDistance.svg</file>
+        <file>icons/Constraint_VerticalDistance_Driven.svg</file>
         <file>icons/Sketcher_AlterConstruction.svg</file>
         <file>icons/Sketcher_AlterFillet.svg</file>
         <file>icons/Sketcher_CloseShape.svg</file>
         <file>icons/Sketcher_Conics.svg</file>
+        <file>icons/Sketcher_Conics_Constr.svg</file>
         <file>icons/Sketcher_Conics_Ellipse_3points.svg</file>
         <file>icons/Sketcher_Conics_Ellipse_Center.svg</file>
         <file>icons/Sketcher_ConnectLines.svg</file>
@@ -43,27 +50,44 @@
         <file>icons/Sketcher_ConstrainDistance.svg</file>
         <file>icons/Sketcher_ConstrainHorizontal.svg</file>
         <file>icons/Sketcher_ConstrainLock.svg</file>
+        <file>icons/Sketcher_ConstrainLock_Driven.svg</file>
         <file>icons/Sketcher_ConstrainParallel.svg</file>
         <file>icons/Sketcher_ConstrainVertical.svg</file>
         <file>icons/Sketcher_Create3PointArc.svg</file>
+        <file>icons/Sketcher_Create3PointArc_Constr.svg</file>
         <file>icons/Sketcher_Create3PointCircle.svg</file>
+        <file>icons/Sketcher_Create3PointCircle_Constr.svg</file>
         <file>icons/Sketcher_CreateArc.svg</file>
+        <file>icons/Sketcher_CreateArc_Constr.svg</file>
         <file>icons/Sketcher_CreateCircle.svg</file>
+        <file>icons/Sketcher_CreateCircle_Constr.svg</file>
         <file>icons/Sketcher_CreateEllipse.svg</file>
         <file>icons/Sketcher_CreateEllipse_3points.svg</file>
+        <file>icons/Sketcher_CreateEllipse_3points_Constr.svg</file>
+        <file>icons/Sketcher_CreateEllipse_Constr.svg</file>
         <file>icons/Sketcher_CreateFillet.svg</file>
         <file>icons/Sketcher_CreateHeptagon.svg</file>
+        <file>icons/Sketcher_CreateHeptagon_Constr.svg</file>
         <file>icons/Sketcher_CreateHexagon.svg</file>
+        <file>icons/Sketcher_CreateHexagon_Constr.svg</file>
         <file>icons/Sketcher_CreateLine.svg</file>
+        <file>icons/Sketcher_CreateLine_Constr.svg</file>
         <file>icons/Sketcher_CreateOctagon.svg</file>
+        <file>icons/Sketcher_CreateOctagon_Constr.svg</file>
         <file>icons/Sketcher_CreatePentagon.svg</file>
+        <file>icons/Sketcher_CreatePentagon_Constr.svg</file>
         <file>icons/Sketcher_CreatePoint.svg</file>
         <file>icons/Sketcher_CreatePolyline.svg</file>
+        <file>icons/Sketcher_CreatePolyline_Constr.svg</file>
         <file>icons/Sketcher_CreateRectangle.svg</file>
+        <file>icons/Sketcher_CreateRectangle_Constr.svg</file>
         <file>icons/Sketcher_CreateSlot.svg</file>
+        <file>icons/Sketcher_CreateSlot_Constr.svg</file>
         <file>icons/Sketcher_CreateSquare.svg</file>
+        <file>icons/Sketcher_CreateSquare_Constr.svg</file>
         <file>icons/Sketcher_CreateText.svg</file>
         <file>icons/Sketcher_CreateTriangle.svg</file>
+        <file>icons/Sketcher_CreateTriangle_Constr.svg</file>
         <file>icons/Sketcher_DraftLine.svg</file>
         <file>icons/Sketcher_EditSketch.svg</file>
         <file>icons/Sketcher_Element_Arc_Edge.svg</file>
@@ -90,6 +114,7 @@
         <file>icons/Sketcher_Element_Point_StartingPoint.svg</file>
         <file>icons/Sketcher_Element_SelectionTypeInvalid.svg</file>
         <file>icons/Sketcher_Elliptical_Arc.svg</file>
+        <file>icons/Sketcher_Elliptical_Arc_Constr.svg</file>
         <file>icons/Sketcher_External.svg</file>
         <file>icons/Sketcher_LeaveSketch.svg</file>
         <file>icons/Sketcher_MapSketch.svg</file>
@@ -104,6 +129,11 @@
         <file>icons/Sketcher_SelectRedundantConstraints.svg</file>
         <file>icons/Sketcher_SelectVerticalAxis.svg</file>
         <file>icons/Sketcher_Sketch.svg</file>
+        <file>icons/Sketcher_ToggleConstraint.svg</file>
+        <file>icons/Sketcher_ToggleConstruction.svg</file>
+        <file>icons/Sketcher_ToggleNormal.svg</file>
+        <file>icons/Sketcher_Toggle_Constraint_Driven.svg</file>
+        <file>icons/Sketcher_Toggle_Constraint_Driving.svg</file>
         <file>icons/Sketcher_Trimming.svg</file>
         <file>icons/Sketcher_ViewSketch.svg</file>
         <file>icons/small/Constraint_Concentric_sm.xpm</file>
@@ -148,11 +178,11 @@
         <file>translations/Sketcher_ro.qm</file>
         <file>translations/Sketcher_ru.qm</file>
         <file>translations/Sketcher_sk.qm</file>
+        <file>translations/Sketcher_sr.qm</file>
         <file>translations/Sketcher_sv-SE.qm</file>
         <file>translations/Sketcher_tr.qm</file>
         <file>translations/Sketcher_uk.qm</file>
         <file>translations/Sketcher_zh-CN.qm</file>
         <file>translations/Sketcher_zh-TW.qm</file>
-        <file>translations/Sketcher_sr.qm</file>
     </qresource>
 </RCC> 
