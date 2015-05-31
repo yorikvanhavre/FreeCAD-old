@@ -41,10 +41,11 @@ except AttributeError:
 class PathProfile:
     def __init__(self,obj):
         obj.addProperty("App::PropertyLinkSub","Base","Path",translate("Parent Object","The base geometry of this toolpath"))
-        obj.addProperty("App::PropertyIntegerList","Edgelist","Path",translate("Edge List", "List of edges selected"))
-        obj.addProperty("App::PropertyLinkSub","StartPoint", "Path", translate("Start Point","Start Point of Profile"))
-        obj.addProperty("App::PropertyLinkSub","EndPoint", "Path", translate("End Point","End Point of Profile"))
+        obj.addProperty("App::PropertyLinkSub","StartPoint", "Path", translate("Start Point","Linked Start Point of Profile"))
+        obj.addProperty("App::PropertyLinkSub","EndPoint", "Path", translate("End Point","Linked End Point of Profile"))
         obj.addProperty("App::PropertyBool","Active","Path",translate("Active","Make False, to prevent operation from generating code"))
+        obj.addProperty("App::PropertyString","Comment","Path",translate("Comment","An optional comment for this profile"))
+
         obj.addProperty("App::PropertyIntegerConstraint","ToolNum","Tool",translate("PathProfile","The tool number in use"))
         obj.ToolNum = (0,0,1000,1) 
         #Depth Properties
@@ -54,34 +55,35 @@ class PathProfile:
         obj.addProperty("App::PropertyDistance", "StartDepth", "Depth", translate("Start Depth","Starting Depth of Tool- first cut depth in Z"))
         obj.addProperty("App::PropertyDistance", "FinalDepth", "Depth", translate("Final Depth","Final Depth of Tool- lowest value in Z"))
         obj.addProperty("App::PropertyDistance", "RetractHeight", "Depth", translate("Retract Height","The height desired to retract tool when path is finished"))
-        obj.addProperty("App::PropertyString","Comment","Path",translate("Comment","An optional comment for this profile"))
 
         #Feed Properties
-#        obj.addProperty("App::PropertySpeed", "VertFeed", "Feed",translate("Vert Feed","Feed rate for vertical moves in Z"))
-#        obj.addProperty("App::PropertySpeed", "HorizFeed", "Feed",translate("Horiz Feed","Feed rate for horizontal moves"))
-#       
-#        #Start Point Properties
-#        obj.addProperty("App::PropertyVector","StartPoint","Start Point",translate("Start Point","The start point of this path"))
-#        obj.addProperty("App::PropertyBool","UseStartPoint","Start Point",translate("Use Start Point","make True, if specifying a Start Point"))
-#        obj.addProperty("App::PropertyLength", "ExtendAtStart", "Start Point", translate("extend at start", "extra length of tool path before start of part edge"))
-#        obj.addProperty("App::PropertyLength", "LeadInLineLen", "Lead In Length", translate("lead in length","length of straight segment of toolpath that comes in at angle to first part edge"))
-
-#        #End Point Properties
-#        obj.addProperty("App::PropertyBool","UseEndPoint","End Point",translate("Use End Point","make True, if specifying an End Point"))
-#        obj.addProperty("App::PropertyLength", "ExtendAtEnd", "End Point", translate("extend at end","extra length of tool path after end of part edge"))
-#        obj.addProperty("App::PropertyLength", "LeadOutLineLen", "Lead Out Length", translate("lead_out_line_len","length of straight segment of toolpath that comes in at angle to last edge selected"))
-#        obj.addProperty("App::PropertyVector","EndPoint","End Point",translate("End Point","The end point of this path"))
-
+        obj.addProperty("App::PropertyLength", "VertFeed", "Feed",translate("Vert Feed","Feed  rate (in units per minute) for vertical moves in Z"))
+        obj.addProperty("App::PropertyLength", "HorizFeed", "Feed",translate("Horiz Feed","Feed rate (in units per minute) for horizontal moves"))
+       
         #Profile Properties
         obj.addProperty("App::PropertyEnumeration", "Side", "Profile", translate("Side","Side of edge that tool should cut"))
         obj.Side = ['left','right','on'] #side of profile that cutter is on in relation to direction of profile
         obj.addProperty("App::PropertyEnumeration", "Direction", "Profile",translate("Direction", "The direction that the toolpath should go around the part ClockWise CW or CounterClockWise CCW"))
         obj.Direction = ['CW','CCW'] #this is the direction that the profile runs
         obj.addProperty("App::PropertyBool","UseComp","Profile",translate("Use Cutter Comp","make True, if using Cutter Radius Compensation"))
-
-#        obj.addProperty("App::PropertyDistance", "RollRadius", "Profile", translate("Roll Radius","Radius at start and end"))
+        obj.addProperty("App::PropertyIntegerList","Edgelist","Profile",translate("Edge List", "List of edges selected"))
         obj.addProperty("App::PropertyDistance", "OffsetExtra", "Profile",translate("OffsetExtra","Extra value to stay away from final profile- good for roughing toolpath"))
 #        obj.addProperty("App::PropertyLength", "SegLen", "Profile",translate("Seg Len","Tesselation  value for tool paths made from beziers, bsplines, and ellipses"))
+
+#        #Start Point Properties
+        obj.addProperty("App::PropertyString","StartPtName","Profile",translate("Start Point","The name of the start point of this path"))
+        obj.addProperty("App::PropertyBool","UseStartPt","Profile",translate("Use Start Point","Make True, if specifying a Start Point"))
+#        obj.addProperty("App::PropertyLength", "ExtendAtStart", "Profile", translate("extend at start", "extra length of tool path before start of part edge"))
+#        obj.addProperty("App::PropertyLength", "LeadInLineLen", "Profile", translate("lead in length","length of straight segment of toolpath that comes in at angle to first part edge"))
+
+#        #End Point Properties
+        obj.addProperty("App::PropertyString","EndPtName","Profile",translate("End Point","The name of the end point of this path"))
+        obj.addProperty("App::PropertyBool","UseEndPt","Profile",translate("Use End Point","Make True, if specifying an End Point"))
+#        obj.addProperty("App::PropertyLength", "ExtendAtEnd", "Profile", translate("extend at end","extra length of tool path after end of part edge"))
+#        obj.addProperty("App::PropertyLength", "LeadOutLineLen", "Profile", translate("lead_out_line_len","length of straight segment of toolpath that comes in at angle to last edge selected"))
+
+#        obj.addProperty("App::PropertyDistance", "RollRadius", "Profile", translate("Roll Radius","Radius at start and end"))
+
         obj.Proxy = self
 
 
@@ -115,18 +117,23 @@ class PathProfile:
 
 
             edgelist = []
-            if obj.StartPoint:
-                self.points =[]
-                self.points.append(obj.StartPoint[0].Shape)
-                if obj.EndPoint:
-                    self.points.append(obj.EndPoint[0].Shape)
+
+            if obj.StartPtName and obj.UseStartPt:
+                self.startpt = FreeCAD.ActiveDocument.getObject(obj.StartPtName).Shape
+            else:
+                self.startpt = None
+
+            if obj.EndPtName and obj.UseEndPt:
+                self.endpt = FreeCAD.ActiveDocument.getObject(obj.EndPtName).Shape
+            else:
+                self.endpt = None
+                
             for e in obj.Edgelist:
                 edgelist.append(FreeCAD.ActiveDocument.getObject(obj.Base[0].Name).Shape.Edges[e-1])
 
-            if obj.StartPoint:
-                output = PathKurveUtils.makePath(edgelist, self.side, self.radius, self.offset_extra,self.rapid_safety_space, self.clearance, self.start_depth, self.step_down, self.final_depth,self.use_CRC, obj.Direction, self.points)
-            else:
-                output = PathKurveUtils.makePath(edgelist, self.side, self.radius, self.offset_extra,self.rapid_safety_space, self.clearance, self.start_depth, self.step_down, self.final_depth,self.use_CRC, obj.Direction)
+            output=PathKurveUtils.makePath(edgelist,self.side,self.radius,self.offset_extra, \
+                   self.rapid_safety_space,self.clearance,self.start_depth,self.step_down, \
+                   self.final_depth,self.use_CRC,obj.Direction,self.startpt,self.endpt )
 
             if obj.Active:
                 path = Path.Path(output)
@@ -137,7 +144,6 @@ class PathProfile:
                 path = Path.Path("(inactive operation)")
                 obj.Path = path
                 obj.ViewObject.Visibility = False
-
 
 class _ViewProviderKurve:
 
@@ -195,10 +201,16 @@ def profileop():
     if selection['pointnames']:
         FreeCAD.Console.PrintMessage('There are points selected.\\n')
         if len(selection['pointnames'])>1:
-            obj.StartPoint= FreeCAD.ActiveDocument.getObject(selection['pointnames'][0])
-            obj.EndPoint=FreeCAD.ActiveDocument.getObject(selection['pointnames'][-1])
-        else:
-            obj.StartPoint= FreeCAD.ActiveDocument.getObject(selection['pointnames'][0])
+            obj.StartPtName = selection['pointnames'][0]
+            obj.StartPoint= FreeCAD.ActiveDocument.getObject(obj.StartPtName)
+            
+            obj.EndPtName = selection['pointnames'][-1]
+            obj.EndPoint=FreeCAD.ActiveDocument.getObject(obj.EndPtName)
+            
+        else:            
+            obj.StartPtName = selection['pointnames'][0]
+            obj.StartPoint= FreeCAD.ActiveDocument.getObject(obj.StartPtName)
+            
     obj.ClearanceHeight = 2.0
     obj.StepDown = 1.0
     obj.StartDepth=0.0
