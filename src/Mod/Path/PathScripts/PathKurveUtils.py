@@ -23,6 +23,7 @@
 #***************************************************************************
 '''PathKurveUtils - functions needed for using libarea (created by Dan Heeks) for making simple CNC profile paths '''
 import FreeCAD
+from FreeCAD import Vector
 import FreeCADGui as Gui
 import Part
 import DraftGeomUtils
@@ -60,6 +61,7 @@ def makeAreaCurve(edges,direction,startpt=None,endpt=None):
             seglist.append(e) 
                      
     firstedge= seglist[0]
+    lastedge = seglist[-1]
     startptX = firstedge.valueAt(firstedge.FirstParameter)[0]
     startptY = firstedge.valueAt(firstedge.FirstParameter)[1]    
     curveobj.append(area.Point(startptX,startptY))
@@ -68,13 +70,24 @@ def makeAreaCurve(edges,direction,startpt=None,endpt=None):
         curveobj.append(makeAreaVertex(s))
 
     if startpt:
-         startptX = startpt.X 
-         startptY = startpt.Y   
-         curveobj.ChangeStart(area.Point(startptX,startptY))     
+        # future nearest point code yet to be worked out -fixme
+#         v1 = Vector(startpt.X,startpt.Y,startpt.Z)
+#         perppoint1 = DraftGeomUtils.findPerpendicular(v1,firstedge)
+#         perppoint1 = DraftGeomUtils.findDistance(v1,firstedge)
+#         if  perppoint1:
+#             curveobj.ChangeStart(area.Point(perppoint1[0].x,perppoint1[0].y))
+#         else:
+#             curveobj.ChangeStart(area.Point(startpt.X,startpt.Y))
+        curveobj.ChangeStart(area.Point(startpt.X,startpt.Y))         
     if endpt:
-         endptX = endpt.X
-         endptY = endpt.Y
-         curveobj.ChangeEnd(area.Point(endpt.X,endpt.Y))
+        # future nearest point code yet to be worked out -fixme
+#         v2 = Vector(endpt.X,endpt.Y,endpt.Z)
+#         perppoint2 = DraftGeomUtils.findPerpendicular(v2,lastedge)
+#         if perppoint2:
+#             curveobj.ChangeEnd(area.Point(perppoint2[0].x,perppoint2[0].y))
+#         else:
+#             curveobj.ChangeEnd(area.Point(endpt.X,endpt.Y))
+        curveobj.ChangeEnd(area.Point(endpt.X,endpt.Y))
            
     if direction == 'CW':
         curveobj.Reverse()

@@ -118,7 +118,7 @@ class PathProfile:
 
             edgelist = []
 
-            if obj.StartPtName and obj.UseStartPt:
+            if obj.StartPtName and obj.UseStartPt:             
                 self.startpt = FreeCAD.ActiveDocument.getObject(obj.StartPtName).Shape
             else:
                 self.startpt = None
