@@ -47,10 +47,22 @@ def cleanedges(splines,precision):
                 edges.append(Part.Edge(i))
         elif geomType(spline)=="Ellipse":
             edges = curvetowire(spline, 1.0) #fixme hardcoded value
+                        
+        elif geomType(spline)=="Circle":
+            if spline.LastParameter > 6.283185: #check for full circle
+                a1 =spline.FirstParameter
+                a3 =spline.LastParameter
+                a2 =(a3-a1)/2.0
+                arc1 = Part.ArcOfCircle(spline.Curve,a1,a2 )
+                edges.append(arc1.toShape())
+                arc2 = Part.ArcOfCircle(spline.Curve,a2,a3 )
+                edges.append(arc2.toShape())
+            else:
+                edges.append(spline)
+                
+                
             
-            
-            
-        elif geomType(spline) in ["Circle","Line"]:
+        elif geomType(spline)=="Line":
             edges.append(spline)
         else:
             pass
