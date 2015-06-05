@@ -50,7 +50,8 @@ def makeAreaVertex(seg):
 
 def makeAreaCurve(edges,direction,startpt=None,endpt=None):
     curveobj = area.Curve()
-    edgelist = DraftGeomUtils.sortEdges(edges) 
+    cleanededges = PathUtils.cleanedges(edges, 0.01)
+    edgelist = DraftGeomUtils.sortEdges(cleanededges) 
     seglist =[]
     if direction=='CW':
         edgelist.reverse()

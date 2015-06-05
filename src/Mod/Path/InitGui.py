@@ -60,7 +60,6 @@ class PathWorkbench ( Workbench ):
     def Initialize(self):
         # load the builtin modules
         import Path
-        import Path_rc
         import PathGui
         # load python modules
         from PathScripts import PathProfile

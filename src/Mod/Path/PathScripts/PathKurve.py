@@ -250,10 +250,10 @@ def profileop():
 from PathScripts import PathProject,PathUtils,PathKurve, PathKurveUtils,PathSelection
 try:
     import area
-    profileop()
+    
 except:
     FreeCAD.Console.PrintError('libarea needs to be installed for this command to work\\n')
-
+profileop()
 '''
 
         FreeCADGui.doCommand(snippet)

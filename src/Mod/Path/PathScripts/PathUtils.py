@@ -31,6 +31,30 @@ import DraftGeomUtils
 from DraftGeomUtils import geomType
 import DraftVecUtils
 
+def cleanedges(splines,precision):
+    '''cleanedges([splines],precision). Convert BSpline curves, Beziers, or Ellipses to edges that can be used for cnc paths.
+    Returns Circle, Arcs, Lines as is. Ignores other geometry. '''
+    edges = []
+    for spline in splines:
+        if geomType(spline)=="BSplineCurve":
+            arcs = spline.Curve.toBiArcs(precision)
+            for i in arcs:
+                edges.append(Part.Edge(i))
+        elif geomType(spline)=="BezierCurve":
+            newspline=spline.Curve.toBSpline()
+            arcs = newspline.toBiArcs(precision)
+            for i in arcs:
+                edges.append(Part.Edge(i))
+        elif geomType(spline)=="Ellipse":
+            FreeCAD.Console.PrintError('ellipses not working yet\n')
+            
+        elif geomType(spline) in ["Circle","Line"]:
+            edges.append(spline)
+        else:
+            pass
+               
+    return edges
+
 def curvetowire(obj,steps):
     '''adapted from DraftGeomUtils, because the discretize function changed a bit '''
     points = obj.copy().discretize(Distance = eval('steps'))
