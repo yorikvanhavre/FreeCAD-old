@@ -98,7 +98,7 @@ def makeAreaCurve(edges,direction,startpt=None,endpt=None):
 
 # profile command,
 # direction should be 'left' or 'right' or 'on'
-def profile(curve, direction, radius = 1.0, offset_extra = 0.0,rapid_safety_space = None, clearance = None, start_depth = None, stepdown = None, final_depth = None,use_CRC=False):
+def profile(curve,direction,radius=1.0,vertfeed=0.0,horizfeed=0.0,offset_extra=0.0,rapid_safety_space=None,clearance=None,start_depth=None,stepdown=None,final_depth=None,use_CRC=False):
 
     output = ""
     offset_curve = area.Curve(curve)
@@ -135,13 +135,17 @@ def profile(curve, direction, radius = 1.0, offset_extra = 0.0,rapid_safety_spac
         mat_depth = prev_depth
         start_z = mat_depth
         #first move
-        output += "G0 X"+str(PathUtils.fmt(offset_curve.GetFirstSpan().p.x))+" Y"+str(PathUtils.fmt(offset_curve.GetFirstSpan().p.y))+" Z"+str(PathUtils.fmt(mat_depth + rapid_safety_space))+"\n"
+        output += "G0 X"+str(PathUtils.fmt(offset_curve.GetFirstSpan().p.x))+\
+        " Y"+str(PathUtils.fmt(offset_curve.GetFirstSpan().p.y))+\
+        " Z"+str(PathUtils.fmt(mat_depth + rapid_safety_space))+"\n"
         # feed down to depth
         mat_depth = depth
         if start_z > mat_depth: 
             mat_depth = start_z
         # feed down in Z
-        output += "G1 X"+str(PathUtils.fmt(offset_curve.GetFirstSpan().p.x))+" Y"+str(PathUtils.fmt(offset_curve.GetFirstSpan().p.y))+" Z"+str(PathUtils.fmt(depth))+"\n"
+        output += "G1 X"+str(PathUtils.fmt(offset_curve.GetFirstSpan().p.x))+\
+        " Y"+str(PathUtils.fmt(offset_curve.GetFirstSpan().p.y))+" Z"+str(PathUtils.fmt(depth))+\
+        " F"+str(PathUtils.fmt(vertfeed))+"\n"
         if use_CRC:
             if direction == 'left':
                 output +="G41"+"\n"
@@ -155,7 +159,8 @@ def profile(curve, direction, radius = 1.0, offset_extra = 0.0,rapid_safety_spac
             current_perim += span.Length()
             if span.v.type == 0:#line
                 #feed(span.v.p.x, span.v.p.y, ez)
-                output +="G1 X"+ str(PathUtils.fmt(span.v.p.x)) +" Y"+ str(PathUtils.fmt(span.v.p.y))+" Z"+ str(PathUtils.fmt(depth))+"\n"
+                output +="G1 X"+str(PathUtils.fmt(span.v.p.x))+" Y"+str(PathUtils.fmt(span.v.p.y))+\
+                " Z"+str(PathUtils.fmt(depth))+" F"+str(PathUtils.fmt(horizfeed))+"\n"
                 lastx = span.v.p.x
                 lasty = span.v.p.y
             elif (span.v.type == 1) or (span.v.type == -1):
@@ -166,7 +171,7 @@ def profile(curve, direction, radius = 1.0, offset_extra = 0.0,rapid_safety_spac
                 arc_I= span.v.c.x-lastx
                 arc_J= span.v.c.y-lasty
                 output +=command +"X"+str(PathUtils.fmt(span.v.p.x))+" Y"+ str(PathUtils.fmt(span.v.p.y))#+" Z"+ str(PathUtils.fmt(depth))
-                output +=" I"+str(PathUtils.fmt(arc_I))+ " J"+str(PathUtils.fmt(arc_J))+'\n'#" K"+str(PathUtils.fmt(depth)) +"\n"
+                output +=" I"+str(PathUtils.fmt(arc_I))+ " J"+str(PathUtils.fmt(arc_J))+" F"+str(PathUtils.fmt(horizfeed))+'\n'#" K"+str(PathUtils.fmt(depth)) +"\n"
                 lastx = span.v.p.x
                 lasty = span.v.p.y
             else:
@@ -181,12 +186,12 @@ def profile(curve, direction, radius = 1.0, offset_extra = 0.0,rapid_safety_spac
 
     return output
 
-def makePath(edges, side, radius, offset_extra, rapid_safety_space, clearance, start_depth, step_down, final_depth, use_CRC ,direction,startpt=None,endpt=None):
+def makePath(edges,side,radius,vertfeed,horizfeed,offset_extra,rapid_safety_space,clearance,start_depth,step_down,final_depth,use_CRC,direction,startpt=None,endpt=None):
 
     curve = makeAreaCurve(edges,direction,startpt, endpt)
     if direction == 'CW':
         curve.Reverse()
-    path = profile(curve, side, radius, offset_extra, rapid_safety_space, clearance, start_depth, step_down, final_depth, use_CRC)
+    path = profile(curve,side,radius,vertfeed,horizfeed,offset_extra,rapid_safety_space,clearance,start_depth,step_down,final_depth,use_CRC)
     del curve
     return path
 

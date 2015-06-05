@@ -46,7 +46,9 @@ def cleanedges(splines,precision):
             for i in arcs:
                 edges.append(Part.Edge(i))
         elif geomType(spline)=="Ellipse":
-            FreeCAD.Console.PrintError('ellipses not working yet\n')
+            edges = curvetowire(spline, 1.0) #fixme hardcoded value
+            
+            
             
         elif geomType(spline) in ["Circle","Line"]:
             edges.append(spline)
@@ -66,7 +68,7 @@ def curvetowire(obj,steps):
         p0 = p
     return edgelist
 
-def fmt(val): return format(val, '.4f') #set at 4 decimal places for testing
+def fmt(val): return format(val, '.4f') #fixme set at 4 decimal places for testing
 
 def isSameEdge(e1,e2):
     """isSameEdge(e1,e2): return True if the 2 edges are both lines or arcs/circles and have the same

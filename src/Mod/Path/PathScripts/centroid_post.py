@@ -118,7 +118,7 @@ def export(selection,filename):
                 for param in params:
                     if param in c.Parameters:
                         if param == 'F': 
-                            outstring.append(param + PostUtils.fmt(c.Parameters['F'], FEED_DECIMALS,'G21'))
+                            outstring.append(param + PostUtils.fmt(c.Parameters['F'], FEED_DECIMALS,UNITS))
                         elif param == 'H':
                             outstring.append(param + str(int(c.Parameters['H'])))
                         elif param == 'S':

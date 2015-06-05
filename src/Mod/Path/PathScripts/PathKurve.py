@@ -112,8 +112,9 @@ class PathProfile:
             self.rapid_safety_space=obj.RetractHeight.Value
             self.side=obj.Side
             self.offset_extra=obj.OffsetExtra.Value
-
             self.use_CRC=obj.UseComp
+            self.vf=obj.VertFeed.Value
+            self.hf=obj.HorizFeed.Value
 
 
             edgelist = []
@@ -131,9 +132,9 @@ class PathProfile:
             for e in obj.Edgelist:
                 edgelist.append(FreeCAD.ActiveDocument.getObject(obj.Base[0].Name).Shape.Edges[e-1])
 
-            output=PathKurveUtils.makePath(edgelist,self.side,self.radius,self.offset_extra, \
+            output=PathKurveUtils.makePath(edgelist,self.side,self.radius,self.vf,self.hf,self.offset_extra, \
                    self.rapid_safety_space,self.clearance,self.start_depth,self.step_down, \
-                   self.final_depth,self.use_CRC,obj.Direction,self.startpt,self.endpt )
+                   self.final_depth,self.use_CRC,obj.Direction,self.startpt,self.endpt)
 
             if obj.Active:
                 path = Path.Path(output)
