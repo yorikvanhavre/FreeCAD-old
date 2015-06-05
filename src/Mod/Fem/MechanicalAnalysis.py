@@ -131,6 +131,20 @@ class _CommandMechanicalJobControl:
         return FreeCADGui.ActiveDocument is not None and FemGui.getActiveAnalysis() is not None
 
 
+class _CommandPurgeFemResults:
+    def GetResources(self):
+        return {'Pixmap': 'Fem_Purge_Results',
+                'MenuText': QtCore.QT_TRANSLATE_NOOP("Fem_PurgeResults", "Purge results"),
+                'Accel': "S, S",
+                'ToolTip': QtCore.QT_TRANSLATE_NOOP("Fem_PurgeResults", "Purge results from an analysis")}
+
+    def Activated(self):
+        purge_fem_results()
+
+    def IsActive(self):
+        return FreeCADGui.ActiveDocument is not None and results_present()
+
+
 class _CommandMechanicalShowResult:
     "the Fem JobControl command definition"
     def GetResources(self):
@@ -160,8 +174,7 @@ class _CommandMechanicalShowResult:
         FreeCADGui.Control.showDialog(taskd)
 
     def IsActive(self):
-        import FemGui
-        return FreeCADGui.ActiveDocument is not None and FemGui.getActiveAnalysis() is not None
+        return FreeCADGui.ActiveDocument is not None and results_present()
 
 
 class _FemAnalysis:
@@ -512,29 +525,38 @@ class _ResultControlTaskPanel:
     def getStandardButtons(self):
         return int(QtGui.QDialogButtonBox.Close)
 
+    def get_stats(self, type_name):
+        for i in FemGui.getActiveAnalysis().Member:
+            if i.isDerivedFrom("Fem::FemResultValue"):
+                if i.DataType == 'AnalysisStats':
+                    match_table = {"U1": (i.Values[0], i.Values[1], i.Values[2]),
+                                   "U2": (i.Values[3], i.Values[4], i.Values[5]),
+                                   "U3": (i.Values[6], i.Values[7], i.Values[8]),
+                                   "Uabs": (i.Values[9], i.Values[10], i.Values[11]),
+                                   "Sabs": (i.Values[12], i.Values[13], i.Values[14]),
+                                   "None": (0.0, 0.0, 0.0)}
+                    return match_table[type_name]
+        return (0.0, 0.0, 0.0)
+
     def typeChanged(self, index):
         selected = self.form.comboBox_Type.itemData(index)
         if selected[0] == "None":
             self.MeshObject.ViewObject.NodeColor = {}
             self.MeshObject.ViewObject.ElementColor = {}
-            self.form.lineEdit_Max.setProperty("unit", "mm")
-            self.form.lineEdit_Max.setText(" 0 mm")
-            self.form.lineEdit_Min.setProperty("unit", "mm")
-            self.form.lineEdit_Min.setText(" 0 mm")
-            self.form.lineEdit_Avg.setProperty("unit", "mm")
-            self.form.lineEdit_Avg.setText(" 0 mm")
-            return
+            self.MeshObject.ViewObject.setNodeColorByResult()
+            unit = "mm"
 
         QApplication.setOverrideCursor(Qt.WaitCursor)
         if self.DisplacementObject:
             if selected[0] in ("U1", "U2", "U3", "Uabs"):
-                (minm, maxm, avg) = self.MeshObject.ViewObject.setNodeColorByResult(self.DisplacementObject, selected[1])
+                self.MeshObject.ViewObject.setNodeColorByResult(self.DisplacementObject, selected[1])
                 unit = "mm"
         if self.StressObject:
             if selected[0] in ("Sabs"):
-                (minm, maxm, avg) = self.MeshObject.ViewObject.setNodeColorByResult(self.StressObject)
+                self.MeshObject.ViewObject.setNodeColorByResult(self.StressObject)
                 unit = "MPa"
 
+        (minm, avg, maxm) = self.get_stats(selected[0])
         self.form.lineEdit_Max.setProperty("unit", unit)
         self.form.lineEdit_Max.setText("{:.6} {}".format(maxm, unit))
         self.form.lineEdit_Min.setProperty("unit", unit)
@@ -544,15 +566,17 @@ class _ResultControlTaskPanel:
 
         QtGui.qApp.restoreOverrideCursor()
 
-    def showDisplacementClicked(self, bool):
+    def showDisplacementClicked(self, checked):
         QApplication.setOverrideCursor(Qt.WaitCursor)
+        factor = 0.0
+        if checked:
+            factor = self.form.horizontalScrollBar_Factor.value()
         self.setDisplacement()
+        self.MeshObject.ViewObject.applyDisplacement(factor)
         QtGui.qApp.restoreOverrideCursor()
 
     def sliderValue(self, value):
-        if(self.form.checkBox_ShowDisplacement.isChecked()):
-            self.MeshObject.ViewObject.animate(value)
-
+        self.MeshObject.ViewObject.applyDisplacement(value)
         self.form.spinBox_DisplacementFactor.setValue(value)
 
     def sliderMaxValue(self, value):
@@ -566,14 +590,6 @@ class _ResultControlTaskPanel:
     def setDisplacement(self):
         if self.DisplacementObject:
             self.MeshObject.ViewObject.setNodeDisplacementByResult(self.DisplacementObject)
-
-    def setColorStress(self):
-        if self.StressObject:
-            values = self.StressObject.Values
-            maxVal = max(values)
-            self.form.doubleSpinBox_MinValueColor.setValue(maxVal)
-
-            self.MeshObject.ViewObject.setNodeColorByResult(self.StressObject)
 
     def update(self):
         'fills the widgets'
@@ -606,7 +622,36 @@ class _ResultControlTaskPanel:
     def reject(self):
         FreeCADGui.Control.closeDialog()
 
+# Helpers
+
+
+def results_present():
+    import FemGui
+    results = False
+    analysis_members = FemGui.getActiveAnalysis().Member
+    for o in analysis_members:
+        if o.isDerivedFrom('Fem::FemResultVector'):
+            results = True
+        elif o.isDerivedFrom("Fem::FemResultValue") and o.DataType == 'VonMisesStress':
+            results = True
+    return results
+
+
+def purge_fem_results(Analysis=None):
+    import FemGui
+    if Analysis is None:
+        analysis_members = FemGui.getActiveAnalysis().Member
+    else:
+        analysis_members = FemGui.Analysis().Member
+    for o in analysis_members:
+        if (o.isDerivedFrom('Fem::FemResultVector') or
+           (o.isDerivedFrom("Fem::FemResultValue") and o.DataType == 'VonMisesStress') or
+           (o.isDerivedFrom("Fem::FemResultValue") and o.DataType == 'AnalysisStats')):
+            FreeCAD.ActiveDocument.removeObject(o.Name)
+
+
 FreeCADGui.addCommand('Fem_NewMechanicalAnalysis', _CommandNewMechanicalAnalysis())
 FreeCADGui.addCommand('Fem_CreateFromShape', _CommandFemFromShape())
 FreeCADGui.addCommand('Fem_MechanicalJobControl', _CommandMechanicalJobControl())
+FreeCADGui.addCommand('Fem_PurgeResults', _CommandPurgeFemResults())
 FreeCADGui.addCommand('Fem_ShowResult', _CommandMechanicalShowResult())
