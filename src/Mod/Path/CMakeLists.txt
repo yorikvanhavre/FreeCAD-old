@@ -1,4 +1,3 @@
-PYSIDE_WRAP_RC(Path_QRC_SRCS Gui/Resources/Path.qrc)
 add_subdirectory(App)
 
 if(BUILD_GUI)
@@ -9,7 +8,6 @@ INSTALL(
     FILES
         Init.py
         InitGui.py
-        Path_rc.py
     DESTINATION
         Mod/Path
 )
@@ -52,28 +50,14 @@ SET(PathScripts_SRCS
 )
 
 ADD_CUSTOM_TARGET(PathScripts ALL
-    SOURCES ${PathScripts_SRCS} ${Path_QRC_SRCS}
+    SOURCES ${PathScripts_SRCS}
 )
 
 fc_copy_sources(PathScripts "${CMAKE_BINARY_DIR}/Mod/Path" ${PathScripts_SRCS})
-
-fc_target_copy_resource(Path
-    ${CMAKE_CURRENT_BINARY_DIR}
-    ${CMAKE_BINARY_DIR}/Mod/Path
-    Path_rc.py)
 
 INSTALL(
     FILES
         ${PathScripts_SRCS}
     DESTINATION
         Mod/Path/PathScripts
-       )
-
-INSTALL(
-    FILES
-        DemoParts/hole_puzzle.fcstd
-        DemoParts/motor_mount_inch.fcstd
-        DemoParts/strange_part_with_holes.fcstd
-    DESTINATION
-        ${CMAKE_INSTALL_DATADIR}/Mod/Path/DemoParts
        )
