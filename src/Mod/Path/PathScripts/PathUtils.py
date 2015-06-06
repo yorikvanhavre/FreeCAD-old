@@ -60,7 +60,7 @@ def cleanedges(splines,precision):
             else:
                 edges.append(spline)
                 
-                
+             
             
         elif geomType(spline)=="Line":
             edges.append(spline)

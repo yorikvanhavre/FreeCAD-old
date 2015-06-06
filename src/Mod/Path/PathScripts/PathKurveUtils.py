@@ -98,7 +98,10 @@ def makeAreaCurve(edges,direction,startpt=None,endpt=None):
 
 # profile command,
 # direction should be 'left' or 'right' or 'on'
-def profile(curve,direction,radius=1.0,vertfeed=0.0,horizfeed=0.0,offset_extra=0.0,rapid_safety_space=None,clearance=None,start_depth=None,stepdown=None,final_depth=None,use_CRC=False):
+def profile(curve,direction,radius=1.0,vertfeed=0.0,horizfeed=0.0,offset_extra=0.0, \
+            rapid_safety_space=None,clearance=None,start_depth=None,stepdown=None, \
+            final_depth=None,use_CRC=False,roll_start=False,roll_end=True,roll_radius=None, \
+            roll_start_pt=None,roll_end_pt=None):
 
     output = ""
     offset_curve = area.Curve(curve)
