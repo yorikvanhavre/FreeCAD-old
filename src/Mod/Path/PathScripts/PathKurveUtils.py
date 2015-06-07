@@ -26,13 +26,13 @@ import FreeCAD
 from FreeCAD import Vector
 import FreeCADGui as Gui
 import Part
-import DraftGeomUtils
+import DraftGeomUtils,DraftVecUtils
 from DraftGeomUtils import geomType
 import math
 import area
 import Path
 from PathScripts import PathUtils
-
+import PathSelection
 
 def makeAreaVertex(seg):
     if seg.ShapeType =='Edge':
@@ -50,24 +50,43 @@ def makeAreaVertex(seg):
 
 def makeAreaCurve(edges,direction,startpt=None,endpt=None):
     curveobj = area.Curve()
+
     cleanededges = PathUtils.cleanedges(edges, 0.01)
-    edgelist = DraftGeomUtils.sortEdges(cleanededges) 
-    seglist =[]
-    if direction=='CW':
-        edgelist.reverse()
-        for e in edgelist:
-            seglist.append(PathUtils.reverseEdge(e)) #swap end points on every segment
+
+    #sort the edges
+    vlist,edgestart,common = PathSelection.Sort2Edges([cleanededges[0],cleanededges[1]])
+   
+    if cleanededges[0].valueAt(cleanededges[0].FirstParameter)<>edgestart:
+        firstedge=PathUtils.reverseEdge(cleanededges[0])
     else:
-        for e in edgelist:
-            seglist.append(e) 
-                     
-    firstedge= seglist[0]
-    lastedge = seglist[-1]
-    startptX = firstedge.valueAt(firstedge.FirstParameter)[0]
-    startptY = firstedge.valueAt(firstedge.FirstParameter)[1]    
-    curveobj.append(area.Point(startptX,startptY))
-        
-    for s in seglist:
+        firstedge=cleanededges[0]
+    
+    edgelist=[]
+    edgelist.append(firstedge)
+
+    #get start and end points of each edge aligned
+    for e in cleanededges[1:]:
+        if DraftVecUtils.equals(common,e.valueAt(e.FirstParameter)):
+            edgelist.append(e)
+            common= e.valueAt(e.LastParameter)
+        else:
+            newedge = PathUtils.reverseEdge(e)
+            common= newedge.valueAt(newedge.LastParameter)
+            edgelist.append(newedge)
+  
+    curveobj.append(area.Point(edgestart.x,edgestart.y))
+
+
+#     seglist =[]
+#     if direction=='CW':
+#         edgelist.reverse()
+#         for e in edgelist:
+#             seglist.append(PathUtils.reverseEdge(e)) #swap end points on every segment
+#     else:
+#         for e in edgelist:
+#             seglist.append(e) 
+                            
+    for s in edgelist:
         curveobj.append(makeAreaVertex(s))
 
     if startpt:
@@ -97,23 +116,24 @@ def makeAreaCurve(edges,direction,startpt=None,endpt=None):
 
 
 # profile command,
-# direction should be 'left' or 'right' or 'on'
-def profile(curve,direction,radius=1.0,vertfeed=0.0,horizfeed=0.0,offset_extra=0.0, \
+# side_of_line should be 'left' or 'right' or 'on'
+def profile(curve,side_of_line,radius=1.0,vertfeed=0.0,horizfeed=0.0,offset_extra=0.0, \
             rapid_safety_space=None,clearance=None,start_depth=None,stepdown=None, \
-            final_depth=None,use_CRC=False,roll_start=False,roll_end=True,roll_radius=None, \
+            final_depth=None,use_CRC=False, \
+            roll_on=None,roll_off=None,roll_start=False,roll_end=True,roll_radius=None, \
             roll_start_pt=None,roll_end_pt=None):
 
     output = ""
     offset_curve = area.Curve(curve)
     if offset_curve.getNumVertices() <= 1:
         raise Exception,"Sketch has no elements!"
-    if direction == "on":
+    if side_of_line == "on":
         use_CRC =False 
 
-    elif (direction == "left") or (direction == "right"):
+    elif (side_of_line == "left") or (side_of_line == "right"):
         # get tool radius plus little bit of extra offset, if needed to clean up profile a little more
         offset = radius + offset_extra
-        if direction == 'left':
+        if side_of_line == 'left':
             offset_curve.Offset(offset)
 
         else:
@@ -122,7 +142,42 @@ def profile(curve,direction,radius=1.0,vertfeed=0.0,horizfeed=0.0,offset_extra=0
         if offset_curve == False:
             raise Exception, "couldn't offset kurve " + str(offset_curve)
     else:
-        raise Exception,"direction must be 'on', 'left', or 'right'"
+        raise Exception,"Side must be 'left','right', or 'on'"
+
+#===============================================================================
+#     #roll_on roll_off section
+#     roll_on_curve = area.Curve()
+#     if offset_curve.getNumVertices() <= 1: return
+#     first_span = offset_curve.GetFirstSpan()
+#     if roll_on == None:
+#         rollstart = first_span.p
+#     elif roll_on == 'auto':
+#         if roll_radius < 0.0000000001:
+#             rollstart = first_span.p
+#         v = first_span.GetVector(0.0)
+#         if direction == 'right':
+#             off_v = area.Point(v.y, -v.x)
+#         else:
+#             off_v = area.Point(-v.y, v.x)
+#         rollstart = first_span.p + off_v * roll_radius
+#     else:
+#         rollstart = roll_on       
+# 
+#     rvertex = area.Vertex(first_span.p)
+#     
+#     if first_span.p == rollstart:
+#         rvertex.type = 0    
+#     else:
+#         v = first_span.GetVector(0.0) # get start direction
+#         rvertex.c, rvertex.type = area.TangentialArc(first_span.p, rollstart, -v)
+#         rvertex.type = -rvertex.type # because TangentialArc was used in reverse
+#     # add a start roll on point
+#     roll_on_curve.append(rollstart)
+# 
+#     # add the roll on arc
+#     roll_on_curve.append(rvertex)    
+#     #end of roll_on roll_off section
+#===============================================================================
 
     # do multiple depths
     layer_count = int((start_depth - final_depth) / stepdown)
@@ -150,7 +205,7 @@ def profile(curve,direction,radius=1.0,vertfeed=0.0,horizfeed=0.0,offset_extra=0
         " Y"+str(PathUtils.fmt(offset_curve.GetFirstSpan().p.y))+" Z"+str(PathUtils.fmt(depth))+\
         " F"+str(PathUtils.fmt(vertfeed))+"\n"
         if use_CRC:
-            if direction == 'left':
+            if side_of_line == 'left':
                 output +="G41"+"\n"
             else:
                 output +="G42"+"\n"

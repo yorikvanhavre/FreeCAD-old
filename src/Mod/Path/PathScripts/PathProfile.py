@@ -23,6 +23,7 @@
 #***************************************************************************
 
 import FreeCAD,FreeCADGui,Path,PathGui
+from FreeCAD import Vector
 from PySide import QtCore,QtGui
 from PathScripts import PathUtils,PathSelection,PathProject
 

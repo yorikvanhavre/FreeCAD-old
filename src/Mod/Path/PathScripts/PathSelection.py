@@ -37,7 +37,7 @@ def Sort2Edges(edgelist):
         a0 = e0.Vertexes[0]
         a1 = e0.Vertexes[1]
         b0 = e1.Vertexes[0]
-        b1 = e1.Vertexes[1]
+        b1 = e1.Vertexes[1]      
         # comparison routine to order two edges:
         if a1.isSame(b0):
             vlist.append((a0.Point.x,a0.Point.y))

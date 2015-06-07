@@ -32,38 +32,31 @@ from DraftGeomUtils import geomType
 import DraftVecUtils
 
 def cleanedges(splines,precision):
-    '''cleanedges([splines],precision). Convert BSpline curves, Beziers, or Ellipses to edges that can be used for cnc paths.
-    Returns Circle, Arcs, Lines as is. Ignores other geometry. '''
+    '''cleanedges([splines],precision). Convert BSpline curves, Beziers, to arcs that can be used for cnc paths.
+    Returns Lines as is. Filters Circle and Arcs for over 180 degrees. Discretizes Ellipses. Ignores other geometry. '''
     edges = []
     for spline in splines:
         if geomType(spline)=="BSplineCurve":
             arcs = spline.Curve.toBiArcs(precision)
             for i in arcs:
                 edges.append(Part.Edge(i))
+
         elif geomType(spline)=="BezierCurve":
             newspline=spline.Curve.toBSpline()
             arcs = newspline.toBiArcs(precision)
             for i in arcs:
                 edges.append(Part.Edge(i))
+
         elif geomType(spline)=="Ellipse":
             edges = curvetowire(spline, 1.0) #fixme hardcoded value
                         
         elif geomType(spline)=="Circle":
-            if spline.LastParameter > 6.283185: #check for full circle
-                a1 =spline.FirstParameter
-                a3 =spline.LastParameter
-                a2 =(a3-a1)/2.0
-                arc1 = Part.ArcOfCircle(spline.Curve,a1,a2 )
-                edges.append(arc1.toShape())
-                arc2 = Part.ArcOfCircle(spline.Curve,a2,a3 )
-                edges.append(arc2.toShape())
-            else:
-                edges.append(spline)
-                
-             
-            
+            #arcs=filterArcs(spline)
+            edges.append(spline)
+                                     
         elif geomType(spline)=="Line":
             edges.append(spline)
+ 
         else:
             pass
                
