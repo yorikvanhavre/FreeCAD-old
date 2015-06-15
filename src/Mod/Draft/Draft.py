@@ -4369,7 +4369,8 @@ class _DrawingView(_DraftObject):
                     svg = ""
                     shapes = []
                     others = []
-                    for o in obj.Source.Group:
+                    objs = getGroupContents([obj.Source])
+                    for o in objs:
                         if o.ViewObject.isVisible():
                             svg += getSVG(o,obj.Scale,obj.LineWidth,obj.FontSize.Value,obj.FillStyle,obj.Direction,ls,lc)
                 else:
@@ -5250,11 +5251,14 @@ class _Facebinder(_DraftObject):
         if not faces:
             return
         import Part
-        sh = faces.pop()
         try:
-            for f in faces:
-                sh = sh.fuse(f)
-            sh = sh.removeSplitter()
+            if len(faces) > 1:
+                sh = faces.pop()
+                sh = sh.multiFuse(faces)
+                sh = sh.removeSplitter()
+            else:
+                sh = faces[0]
+                sh.transformShape(sh.Matrix, True)
         except Part.OCCError:
             print("Draft: error building facebinder")
             return

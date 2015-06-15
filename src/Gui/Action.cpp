@@ -516,40 +516,51 @@ void WorkbenchGroup::addTo(QWidget *w)
     }
 }
 
+void WorkbenchGroup::setWorkbenchData(int i, const QString& wb)
+{
+    QList<QAction*> workbenches = _group->actions();
+    QString name = Application::Instance->workbenchMenuText(wb);
+    QPixmap px = Application::Instance->workbenchIcon(wb);
+    QString tip = Application::Instance->workbenchToolTip(wb);
+
+    workbenches[i]->setObjectName(wb);
+    workbenches[i]->setIcon(px);
+    workbenches[i]->setText(name);
+    workbenches[i]->setToolTip(tip);
+    workbenches[i]->setStatusTip(tr("Select the '%1' workbench").arg(name));
+    workbenches[i]->setVisible(true);
+}
+
 void WorkbenchGroup::refreshWorkbenchList()
 {
-    QString active = QString::fromAscii(WorkbenchManager::instance()->active()->name().c_str());
     QStringList items = Application::Instance->workbenches();
     QStringList enabled_wbs_list = DlgWorkbenchesImp::load_enabled_workbenches();
-    QList<QAction*> workbenches = _group->actions();
-    int numWorkbenches = std::min<int>(workbenches.count(), items.count());
+    QStringList disabled_wbs_list = DlgWorkbenchesImp::load_disabled_workbenches();
     int i=0;
 
-    for (QStringList::Iterator it = enabled_wbs_list.begin(); it != enabled_wbs_list.end(); ++it, i++) {
-        QString s = *it;
-        QString name = Application::Instance->workbenchMenuText(*it);
-        QPixmap px = Application::Instance->workbenchIcon(*it);
-        QString tip = Application::Instance->workbenchToolTip(*it);
-        workbenches[i]->setObjectName(*it);
-        workbenches[i]->setIcon(px);
-        workbenches[i]->setText(name);
-        workbenches[i]->setToolTip(tip);
-        workbenches[i]->setStatusTip(tr("Select the '%1' workbench").arg(name));
-        workbenches[i]->setVisible(false);
-        workbenches[i]->setVisible(true);
-        // Note: See remark at WorkbenchComboBox::onWorkbenchActivated
-        // Calling setChecked() here causes to uncheck the current item
-        // item in comboboxes these action were added to.
-        //if (items[i] == active)
-        //workbenches[i]->setChecked(true);
+    // Go through the list of enabled workbenches and verify that they really exist because
+    // it might be possible that a workbench has been removed after setting up the list of
+    // enabled workbenches.
+    for (QStringList::Iterator it = enabled_wbs_list.begin(); it != enabled_wbs_list.end(); ++it) {
+        int index = items.indexOf(*it);
+        if (index >= 0) {
+            setWorkbenchData(i++, *it);
+            items.removeAt(index);
+        }
     }
 
-    // if less workbenches than actions
-    for (int index = numWorkbenches; index < workbenches.count(); index++) {
-        workbenches[index]->setObjectName(QString());
-        workbenches[index]->setIcon(QIcon());
-        workbenches[index]->setText(QString());
-        workbenches[index]->setVisible(false);
+    // Filter out the actively disabled workbenches
+    for (QStringList::Iterator it = disabled_wbs_list.begin(); it != disabled_wbs_list.end(); ++it) {
+        int index = items.indexOf(*it);
+        if (index >= 0) {
+            items.removeAt(index);
+        }
+    }
+
+    // Now add the remaining workbenches of 'items'. They have been added to the application
+    // after setting up the list of enabled workbenches.
+    for (QStringList::Iterator it = items.begin(); it != items.end(); ++it) {
+        setWorkbenchData(i++, *it);
     }
 }
 

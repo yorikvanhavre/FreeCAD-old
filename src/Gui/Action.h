@@ -170,6 +170,9 @@ public:
 
 protected:
     void customEvent(QEvent* e);
+
+private:
+    void setWorkbenchData(int i, const QString& wb);
 };
 
 // --------------------------------------------------------------------
