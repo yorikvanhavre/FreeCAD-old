@@ -155,11 +155,24 @@ void openEditDatumDialog(Sketcher::SketchObject* sketch, int ConstrNbr)
                                 sketch->getNameInDocument(),
                                 ConstrNbr, newDatum, (const char*)newQuant.getUnit().getString().toUtf8());
                     Gui::Command::commitCommand();
-                    Gui::Command::updateActive();
+
+                    ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+                    bool autoRecompute = hGrp->GetBool("AutoRecompute",false);
+                
+                    if(autoRecompute)
+                        Gui::Command::updateActive();
                 }
                 catch (const Base::Exception& e) {
                     QMessageBox::critical(qApp->activeWindow(), QObject::tr("Dimensional constraint"), QString::fromUtf8(e.what()));
                     Gui::Command::abortCommand();
+                    
+                    ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+                    bool autoRecompute = hGrp->GetBool("AutoRecompute",false);
+                    
+                    if(autoRecompute) // toggling does not modify the DoF of the solver, however it may affect features depending on the sketch
+                        Gui::Command::updateActive();
+                    else
+                        sketch->solve(); // we have to update the solver after this aborted addition.
                 }
             }
         }
@@ -200,7 +213,12 @@ void finishDistanceConstraint(Gui::Command* cmd, Sketcher::SketchObject* sketch,
         cmd->commitCommand();
     }
 
-    //updateActive();
+    //ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+    bool autoRecompute = hGrp->GetBool("AutoRecompute",false);
+
+    if(autoRecompute)
+        Gui::Command::updateActive();
+    
     cmd->getSelection().clearSelection();
 }
 
@@ -338,12 +356,23 @@ void SketcherGui::makeTangentToEllipseviaNewPoint(const Sketcher::SketchObject* 
     catch (const Base::Exception& e) {
         Base::Console().Error("%s\n", e.what());
         Gui::Command::abortCommand();
-        Gui::Command::updateActive();
+        
+        ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+        bool autoRecompute = hGrp->GetBool("AutoRecompute",false);
+        
+        if(autoRecompute) // toggling does not modify the DoF of the solver, however it may affect features depending on the sketch
+            Gui::Command::updateActive();
+        
         return;
     }
 
     Gui::Command::commitCommand();
-    Gui::Command::updateActive();
+
+    ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+    bool autoRecompute = hGrp->GetBool("AutoRecompute",false);
+
+    if(autoRecompute)
+        Gui::Command::updateActive();
 }
 /// Makes a simple tangency constraint using extra point + tangent via point
 /// geom1 => an arc of ellipse
@@ -400,12 +429,23 @@ void SketcherGui::makeTangentToArcOfEllipseviaNewPoint(const Sketcher::SketchObj
     catch (const Base::Exception& e) {
         Base::Console().Error("%s\n", e.what());
         Gui::Command::abortCommand();
-        Gui::Command::updateActive();
+        
+        ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+        bool autoRecompute = hGrp->GetBool("AutoRecompute",false);
+        
+        if(autoRecompute) // toggling does not modify the DoF of the solver, however it may affect features depending on the sketch
+            Gui::Command::updateActive();
+        
         return;
     }
 
     Gui::Command::commitCommand();
-    Gui::Command::updateActive();  
+    
+    ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+    bool autoRecompute = hGrp->GetBool("AutoRecompute",false);
+
+    if(autoRecompute)
+        Gui::Command::updateActive();
 }
 
 namespace SketcherGui {
@@ -580,7 +620,12 @@ void CmdSketcherConstrainHorizontal::activated(int iMsg)
     }
     // finish the transaction and update
     commitCommand();
-    updateActive();
+    
+    ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+    bool autoRecompute = hGrp->GetBool("AutoRecompute",false);
+
+    if(autoRecompute)
+        Gui::Command::updateActive();
 
     // clear the selection (convenience)
     getSelection().clearSelection();
@@ -672,7 +717,12 @@ void CmdSketcherConstrainVertical::activated(int iMsg)
     }
     // finish the transaction and update
     commitCommand();
-    updateActive();
+    
+    ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+    bool autoRecompute = hGrp->GetBool("AutoRecompute",false);
+
+    if(autoRecompute)
+        Gui::Command::updateActive();
 
     // clear the selection (convenience)
     getSelection().clearSelection();
@@ -754,7 +804,12 @@ void CmdSketcherConstrainLock::activated(int iMsg)
     
     // finish the transaction and update
     commitCommand();
-    updateActive();
+    
+    ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+    bool autoRecompute = hGrp->GetBool("AutoRecompute",false);
+
+    if(autoRecompute)
+        Gui::Command::updateActive();
 
     // clear the selection (convenience)
     getSelection().clearSelection();
@@ -866,7 +921,11 @@ void CmdSketcherConstrainCoincident::activated(int iMsg)
     else
         abortCommand();
 
-    updateActive();
+    ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+    bool autoRecompute = hGrp->GetBool("AutoRecompute",false);
+
+    if(autoRecompute)
+        Gui::Command::updateActive();
 
     // clear the selection (convenience)
     getSelection().clearSelection();
@@ -1552,7 +1611,13 @@ void CmdSketcherConstrainParallel::activated(int iMsg)
     }
     // finish the transaction and update
     commitCommand();
-    updateActive();
+    
+    ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+    bool autoRecompute = hGrp->GetBool("AutoRecompute",false);
+
+    if(autoRecompute)
+        Gui::Command::updateActive();
+
 
     // clear the selection (convenience)
     getSelection().clearSelection();
@@ -1668,12 +1733,24 @@ void CmdSketcherConstrainPerpendicular::activated(int iMsg)
                                      QObject::tr("Error"),
                                      QString::fromLatin1(e.what()));
                 Gui::Command::abortCommand();
-                Gui::Command::updateActive();
+                
+                ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+                bool autoRecompute = hGrp->GetBool("AutoRecompute",false);
+                
+                if(autoRecompute) // toggling does not modify the DoF of the solver, however it may affect features depending on the sketch
+                    Gui::Command::updateActive();
+                
                 return;
             }
 
             commitCommand();
-            updateActive();
+            
+            ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+            bool autoRecompute = hGrp->GetBool("AutoRecompute",false);
+        
+            if(autoRecompute)
+                Gui::Command::updateActive();
+
             getSelection().clearSelection();
 
             return;
@@ -1697,7 +1774,13 @@ void CmdSketcherConstrainPerpendicular::activated(int iMsg)
                 Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('Perpendicular',%d,%d,%d,%d)) ",
                 selection[0].getFeatName(),GeoId1,PosId1,GeoId2,PosId2);
             commitCommand();
-            updateActive();
+            
+            ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+            bool autoRecompute = hGrp->GetBool("AutoRecompute",false);
+        
+            if(autoRecompute)
+                Gui::Command::updateActive();
+
             getSelection().clearSelection();
             return;
         }
@@ -1719,7 +1802,13 @@ void CmdSketcherConstrainPerpendicular::activated(int iMsg)
                 Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('Perpendicular',%d,%d,%d)) ",
                 selection[0].getFeatName(),GeoId1,PosId1,GeoId2);
             commitCommand();
-            updateActive();
+            
+            ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+            bool autoRecompute = hGrp->GetBool("AutoRecompute",false);
+        
+            if(autoRecompute)
+                Gui::Command::updateActive();
+            
             getSelection().clearSelection();
             return;
         }
@@ -1801,12 +1890,24 @@ void CmdSketcherConstrainPerpendicular::activated(int iMsg)
                 catch (const Base::Exception& e) {
                     Base::Console().Error("%s\n", e.what());
                     Gui::Command::abortCommand();
-                    Gui::Command::updateActive();
+                    
+                    ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+                    bool autoRecompute = hGrp->GetBool("AutoRecompute",false);
+                    
+                    if(autoRecompute) // toggling does not modify the DoF of the solver, however it may affect features depending on the sketch
+                        Gui::Command::updateActive();
+                    
                     return;
                 }
 
                 commitCommand();
-                updateActive();
+                
+                ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+                bool autoRecompute = hGrp->GetBool("AutoRecompute",false);
+            
+                if(autoRecompute)
+                    Gui::Command::updateActive();
+                
                 getSelection().clearSelection();
                 return;
 
@@ -1817,7 +1918,13 @@ void CmdSketcherConstrainPerpendicular::activated(int iMsg)
                 Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('Perpendicular',%d,%d)) ",
                 selection[0].getFeatName(),GeoId1,GeoId2);
             commitCommand();
-            updateActive();
+            
+            ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+            bool autoRecompute = hGrp->GetBool("AutoRecompute",false);
+        
+            if(autoRecompute)
+                Gui::Command::updateActive();
+            
             getSelection().clearSelection();
             return;
         }
@@ -1940,12 +2047,23 @@ void CmdSketcherConstrainTangent::activated(int iMsg)
                                      QObject::tr("Error"),
                                      QString::fromLatin1(e.what()));
                 Gui::Command::abortCommand();
-                Gui::Command::updateActive();
-                return;
+                
+                ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+                bool autoRecompute = hGrp->GetBool("AutoRecompute",false);
+                
+                if(autoRecompute) // toggling does not modify the DoF of the solver, however it may affect features depending on the sketch
+                    Gui::Command::updateActive();
+                        return;
             }
 
             commitCommand();
-            updateActive();
+            
+            ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+            bool autoRecompute = hGrp->GetBool("AutoRecompute",false);
+        
+            if(autoRecompute)
+                Gui::Command::updateActive();
+            
             getSelection().clearSelection();
 
             return;
@@ -1969,7 +2087,13 @@ void CmdSketcherConstrainTangent::activated(int iMsg)
                 Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('Tangent',%d,%d,%d,%d)) ",
                 selection[0].getFeatName(),GeoId1,PosId1,GeoId2,PosId2);
             commitCommand();
-            updateActive();
+            
+            ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+            bool autoRecompute = hGrp->GetBool("AutoRecompute",false);
+        
+            if(autoRecompute)
+                Gui::Command::updateActive();
+            
             getSelection().clearSelection();
             return;
         }
@@ -1991,7 +2115,13 @@ void CmdSketcherConstrainTangent::activated(int iMsg)
                 Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('Tangent',%d,%d,%d)) ",
                 selection[0].getFeatName(),GeoId1,PosId1,GeoId2);
             commitCommand();
-            updateActive();
+            
+            ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+            bool autoRecompute = hGrp->GetBool("AutoRecompute",false);
+        
+            if(autoRecompute)
+                Gui::Command::updateActive();
+            
             getSelection().clearSelection();
             return;
         }
@@ -2051,7 +2181,13 @@ void CmdSketcherConstrainTangent::activated(int iMsg)
                 Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('Tangent',%d,%d)) ",
                 selection[0].getFeatName(),GeoId1,GeoId2);
             commitCommand();
-            updateActive();
+            
+            ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+            bool autoRecompute = hGrp->GetBool("AutoRecompute",false);
+        
+            if(autoRecompute)
+                Gui::Command::updateActive();
+
             getSelection().clearSelection();
             return;
         }
@@ -2301,13 +2437,27 @@ void CmdSketcherConstrainRadius::activated(int iMsg)
                         }
                     }
                     commitCommand();
-                    updateActive();
+                    
+                    ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+                    bool autoRecompute = hGrp->GetBool("AutoRecompute",false);
+                
+                    if(autoRecompute)
+                        Gui::Command::updateActive();
+                    
                     commitNeeded=false;
                     updateNeeded=false;
                 }
                 catch (const Base::Exception& e) {
                     QMessageBox::critical(qApp->activeWindow(), QObject::tr("Dimensional constraint"), QString::fromUtf8(e.what()));
                     abortCommand();
+                    
+                    ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+                    bool autoRecompute = hGrp->GetBool("AutoRecompute",false);
+                    
+                    if(autoRecompute) // toggling does not modify the DoF of the solver, however it may affect features depending on the sketch
+                        Gui::Command::updateActive();
+                    else
+                        Obj->solve(); // we have to update the solver after this aborted addition.
                 }
             }
             else {
@@ -2327,8 +2477,14 @@ void CmdSketcherConstrainRadius::activated(int iMsg)
     if(commitNeeded)
         commitCommand();
     
-    if(updateNeeded)
-        updateActive();
+    if(updateNeeded) {
+        ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+        bool autoRecompute = hGrp->GetBool("AutoRecompute",false);
+    
+        if(autoRecompute)
+            Gui::Command::updateActive();
+    }
+
 }
 
 void CmdSketcherConstrainRadius::updateAction(int mode)
@@ -2715,7 +2871,12 @@ void CmdSketcherConstrainEqual::activated(int iMsg)
     }
     // finish the transaction and update
     commitCommand();
-    updateActive();
+    
+    ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+    bool autoRecompute = hGrp->GetBool("AutoRecompute",false);
+
+    if(autoRecompute)
+        Gui::Command::updateActive();
 
     // clear the selection (convenience)
     getSelection().clearSelection();
@@ -2795,7 +2956,13 @@ void CmdSketcherConstrainSymmetric::activated(int iMsg)
 
                 // finish the transaction and update
                 commitCommand();
-                updateActive();
+                
+                ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+                bool autoRecompute = hGrp->GetBool("AutoRecompute",false);
+            
+                if(autoRecompute)
+                    Gui::Command::updateActive();
+
 
                 // clear the selection (convenience)
                 getSelection().clearSelection();
@@ -2846,7 +3013,13 @@ void CmdSketcherConstrainSymmetric::activated(int iMsg)
 
                 // finish the transaction and update
                 commitCommand();
-                updateActive();
+                
+                ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+                bool autoRecompute = hGrp->GetBool("AutoRecompute",false);
+            
+                if(autoRecompute)
+                    Gui::Command::updateActive();
+
 
                 // clear the selection (convenience)
                 getSelection().clearSelection();
@@ -2862,7 +3035,13 @@ void CmdSketcherConstrainSymmetric::activated(int iMsg)
 
             // finish the transaction and update
             commitCommand();
-            updateActive();
+            
+            ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+            bool autoRecompute = hGrp->GetBool("AutoRecompute",false);
+        
+            if(autoRecompute)
+                Gui::Command::updateActive();
+
 
             // clear the selection (convenience)
             getSelection().clearSelection();
@@ -3003,7 +3182,13 @@ void CmdSketcherConstrainSnellsLaw::activated(int iMsg)
         }*/            
         
         commitCommand();
-        updateActive();
+        
+        ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+        bool autoRecompute = hGrp->GetBool("AutoRecompute",false);
+    
+        if(autoRecompute)
+            Gui::Command::updateActive();
+
 
         // clear the selection (convenience)
         getSelection().clearSelection();
@@ -3245,7 +3430,13 @@ void CmdSketcherConstrainInternalAlignment::activated(int iMsg)
 
             // finish the transaction and update
             commitCommand();
-            updateActive();
+            
+            ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+            bool autoRecompute = hGrp->GetBool("AutoRecompute",false);
+        
+            if(autoRecompute)
+                Gui::Command::updateActive();
+
             
             if(extra_elements){
                 QMessageBox::warning(Gui::getMainWindow(), QObject::tr("Extra elements"),
@@ -3401,7 +3592,12 @@ void CmdSketcherConstrainInternalAlignment::activated(int iMsg)
 
             // finish the transaction and update
             commitCommand();
-            updateActive();
+            ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+            bool autoRecompute = hGrp->GetBool("AutoRecompute",false);
+        
+            if(autoRecompute)
+                Gui::Command::updateActive();
+
             
             if(extra_elements){
                 QMessageBox::warning(Gui::getMainWindow(), QObject::tr("Extra elements"),
@@ -3540,7 +3736,11 @@ void CmdSketcherToggleDrivingConstraint::activated(int iMsg)
         else
             abortCommand();
 
-        updateActive();
+        ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+        bool autoRecompute = hGrp->GetBool("AutoRecompute",false);
+    
+        if(autoRecompute)
+            Gui::Command::updateActive();
 
         // clear the selection (convenience)
         getSelection().clearSelection();

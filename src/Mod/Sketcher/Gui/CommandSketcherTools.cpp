@@ -157,7 +157,11 @@ void CmdSketcherCloseShape::activated(int iMsg)
     // finish the transaction and update
     commitCommand();
 
-    updateActive();
+    ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+    bool autoRecompute = hGrp->GetBool("AutoRecompute",false);
+    
+    if(autoRecompute)
+        Gui::Command::updateActive();
 
     // clear the selection (convenience)
     getSelection().clearSelection();
@@ -239,7 +243,12 @@ void CmdSketcherConnect::activated(int iMsg)
 
     // finish the transaction and update
     commitCommand();
-    updateActive();
+    
+    ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+    bool autoRecompute = hGrp->GetBool("AutoRecompute",false);
+    
+    if(autoRecompute)
+        Gui::Command::updateActive();
 
     // clear the selection (convenience)
     getSelection().clearSelection();
@@ -477,7 +486,7 @@ void CmdSketcherSelectRedundantConstraints::activated(int iMsg)
     std::stringstream ss;
     
     // get the needed lists and objects
-    const std::vector< int > &solverredundant = dynamic_cast<SketcherGui::ViewProviderSketch*>(doc->getInEdit())->getRedundant();
+    const std::vector< int > &solverredundant = dynamic_cast<SketcherGui::ViewProviderSketch*>(doc->getInEdit())->getSketchObject()->getLastRedundant();
     const std::vector< Sketcher::Constraint * > &vals = Obj->Constraints.getValues();
        
     getSelection().clearSelection();
@@ -532,7 +541,7 @@ void CmdSketcherSelectConflictingConstraints::activated(int iMsg)
     std::stringstream ss;
     
     // get the needed lists and objects
-    const std::vector< int > &solverconflicting = dynamic_cast<SketcherGui::ViewProviderSketch*>(doc->getInEdit())->getConflicting();
+    const std::vector< int > &solverconflicting = dynamic_cast<SketcherGui::ViewProviderSketch*>(doc->getInEdit())->getSketchObject()->getLastConflicting();
     const std::vector< Sketcher::Constraint * > &vals = Obj->Constraints.getValues();
     
     getSelection().clearSelection();
@@ -887,7 +896,7 @@ void CmdSketcherRestoreInternalAlignmentGeometry::activated(int iMsg)
                 try{
                     if(!major)
                     {
-                        Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.addGeometry(Part.Line(App.Vector(%f,%f,0),App.Vector(%f,%f,0)))",
+                        Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.addGeometry(Part.Line(App.Vector(%f,%f,0),App.Vector(%f,%f,0)),True)",
                         Obj->getNameInDocument(),
                         majorpositiveend.x,majorpositiveend.y,majornegativeend.x,majornegativeend.y); // create line for major axis
                         
@@ -898,7 +907,7 @@ void CmdSketcherRestoreInternalAlignmentGeometry::activated(int iMsg)
                     }
                     if(!minor)
                     {                       
-                        Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.addGeometry(Part.Line(App.Vector(%f,%f,0),App.Vector(%f,%f,0)))",
+                        Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.addGeometry(Part.Line(App.Vector(%f,%f,0),App.Vector(%f,%f,0)),True)",
                         Obj->getNameInDocument(),
                         minorpositiveend.x,minorpositiveend.y,minornegativeend.x,minornegativeend.y); // create line for minor axis
                         
@@ -927,23 +936,24 @@ void CmdSketcherRestoreInternalAlignmentGeometry::activated(int iMsg)
                         Obj->getNameInDocument(),currentgeoid+incrgeo+1,Sketcher::start,GeoId); // constrain major axis     
                     }
                     
-                    // Make lines construction lines
-                    if(majorindex!=-1){
-                        doCommand(Doc,"App.ActiveDocument.%s.toggleConstruction(%d) ",Obj->getNameInDocument(),majorindex);
-                    }
-                    
-                    if(minorindex!=-1){
-                        doCommand(Doc,"App.ActiveDocument.%s.toggleConstruction(%d) ",Obj->getNameInDocument(),minorindex);
-                    }
-                    
                     Gui::Command::commitCommand();
-                    Gui::Command::updateActive();
+                    
+                    ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+                    bool autoRecompute = hGrp->GetBool("AutoRecompute",false);
+                    
+                    if(autoRecompute)
+                        Gui::Command::updateActive();
                 
                 }
                 catch (const Base::Exception& e) {
                     Base::Console().Error("%s\n", e.what());
                     Gui::Command::abortCommand();
-                    Gui::Command::updateActive();
+                    
+                    ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+                    bool autoRecompute = hGrp->GetBool("AutoRecompute",false);
+                    
+                    if(autoRecompute)
+                        Gui::Command::updateActive();
                 }
     
             } // if(geo->getTypeId() == Part::GeomEllipse::getClassTypeId()) 

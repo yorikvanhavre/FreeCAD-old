@@ -243,19 +243,12 @@ public:
             int currentgeoid= getHighestCurveIndex();
             
             Gui::Command::openCommand("Add sketch line");
-            Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.addGeometry(Part.Line(App.Vector(%f,%f,0),App.Vector(%f,%f,0)))",
+            Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.addGeometry(Part.Line(App.Vector(%f,%f,0),App.Vector(%f,%f,0)),%s)",
                       sketchgui->getObject()->getNameInDocument(),
-                      EditCurve[0].fX,EditCurve[0].fY,EditCurve[1].fX,EditCurve[1].fY);
-            
-            if(geometryCreationMode==Construction) {
-                Gui::Command::doCommand(Gui::Command::Doc,
-                    "App.ActiveDocument.%s.toggleConstruction(%d) ",
-                    sketchgui->getObject()->getNameInDocument(),
-                    currentgeoid+1);
-            }
-            
+                      EditCurve[0].fX,EditCurve[0].fY,EditCurve[1].fX,EditCurve[1].fY,
+                      geometryCreationMode==Construction?"True":"False");
+                        
             Gui::Command::commitCommand();
-            Gui::Command::updateActive();
 
             // add auto constraints for the line segment start
             if (sugConstr1.size() > 0) {
@@ -268,11 +261,19 @@ public:
                 createAutoConstraints(sugConstr2, getHighestCurveIndex(), Sketcher::end);
                 sugConstr2.clear();
             }
+            
+            ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+            bool autoRecompute = hGrp->GetBool("AutoRecompute",false);
+            
+            if(autoRecompute)
+                Gui::Command::updateActive();
+            else
+                static_cast<Sketcher::SketchObject *>(sketchgui->getObject())->solve();
 
             EditCurve.clear();
             sketchgui->drawEdit(EditCurve);
             
-            ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+            //ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
             bool continuousMode = hGrp->GetBool("ContinuousCreationMode",true);
             
             if(continuousMode){
@@ -447,70 +448,41 @@ public:
             resetPositionText();
             Gui::Command::openCommand("Add sketch box");
             int firstCurve = getHighestCurveIndex() + 1;
-            // add the four line geos
-            Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.addGeometry(Part.Line(App.Vector(%f,%f,0),App.Vector(%f,%f,0)))",
-                      sketchgui->getObject()->getNameInDocument(),
-                      EditCurve[0].fX,EditCurve[0].fY,EditCurve[1].fX,EditCurve[1].fY);
-            Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.addGeometry(Part.Line(App.Vector(%f,%f,0),App.Vector(%f,%f,0)))",
-                      sketchgui->getObject()->getNameInDocument(),
-                      EditCurve[1].fX,EditCurve[1].fY,EditCurve[2].fX,EditCurve[2].fY);
-            Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.addGeometry(Part.Line(App.Vector(%f,%f,0),App.Vector(%f,%f,0)))",
-                      sketchgui->getObject()->getNameInDocument(),
-                      EditCurve[2].fX,EditCurve[2].fY,EditCurve[3].fX,EditCurve[3].fY);
-            Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.addGeometry(Part.Line(App.Vector(%f,%f,0),App.Vector(%f,%f,0)))",
-                      sketchgui->getObject()->getNameInDocument(),
-                      EditCurve[3].fX,EditCurve[3].fY,EditCurve[0].fX,EditCurve[0].fY);
-            // add the four coincidents to ty them together
-            Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('Coincident',%i,2,%i,1)) "
-                     ,sketchgui->getObject()->getNameInDocument()
-                     ,firstCurve,firstCurve+1);
-            Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('Coincident',%i,2,%i,1)) "
-                     ,sketchgui->getObject()->getNameInDocument()
-                     ,firstCurve+1,firstCurve+2);
-            Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('Coincident',%i,2,%i,1)) "
-                     ,sketchgui->getObject()->getNameInDocument()
-                     ,firstCurve+2,firstCurve+3);
-            Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('Coincident',%i,2,%i,1)) "
-                     ,sketchgui->getObject()->getNameInDocument()
-                     ,firstCurve+3,firstCurve);
-            // add the horizontal constraints
-            Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('Horizontal',%i)) "
-                     ,sketchgui->getObject()->getNameInDocument()
-                     ,firstCurve);
-            Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('Horizontal',%i)) "
-                     ,sketchgui->getObject()->getNameInDocument()
-                     ,firstCurve+2);
-            // add the vertical constraints
-            Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('Vertical',%i)) "
-                     ,sketchgui->getObject()->getNameInDocument()
-                     ,firstCurve+1);
-            Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('Vertical',%i)) "
-                     ,sketchgui->getObject()->getNameInDocument()
-                     ,firstCurve+3);
+            Gui::Command::doCommand(Gui::Command::Doc,
+                "geoList = []\n"
+                "geoList.append(Part.Line(App.Vector(%f,%f,0),App.Vector(%f,%f,0)))\n"
+                "geoList.append(Part.Line(App.Vector(%f,%f,0),App.Vector(%f,%f,0)))\n"
+                "geoList.append(Part.Line(App.Vector(%f,%f,0),App.Vector(%f,%f,0)))\n"
+                "geoList.append(Part.Line(App.Vector(%f,%f,0),App.Vector(%f,%f,0)))\n"
+                "App.ActiveDocument.%s.addGeometry(geoList,%s)\n"
+                "conList = []\n"
+                "conList.append(Sketcher.Constraint('Coincident',%i,2,%i,1))\n"
+                "conList.append(Sketcher.Constraint('Coincident',%i,2,%i,1))\n"
+                "conList.append(Sketcher.Constraint('Coincident',%i,2,%i,1))\n"
+                "conList.append(Sketcher.Constraint('Coincident',%i,2,%i,1))\n"
+                "conList.append(Sketcher.Constraint('Horizontal',%i))\n"
+                "conList.append(Sketcher.Constraint('Horizontal',%i))\n"
+                "conList.append(Sketcher.Constraint('Vertical',%i))\n"
+                "conList.append(Sketcher.Constraint('Vertical',%i))\n"
+                "App.ActiveDocument.%s.addConstraint(conList)\n",
+                EditCurve[0].fX,EditCurve[0].fY,EditCurve[1].fX,EditCurve[1].fY, // line 1
+                EditCurve[1].fX,EditCurve[1].fY,EditCurve[2].fX,EditCurve[2].fY, // line 2
+                EditCurve[2].fX,EditCurve[2].fY,EditCurve[3].fX,EditCurve[3].fY, // line 3
+                EditCurve[3].fX,EditCurve[3].fY,EditCurve[0].fX,EditCurve[0].fY, // line 4
+                sketchgui->getObject()->getNameInDocument(), // the sketch
+                geometryCreationMode==Construction?"True":"False", // geometry as construction or not                                        
+                firstCurve,firstCurve+1, // coincident1
+                firstCurve+1,firstCurve+2, // coincident2
+                firstCurve+2,firstCurve+3, // coincident3
+                firstCurve+3,firstCurve, // coincident4
+                firstCurve, // horizontal1
+                firstCurve+2, // horizontal2
+                firstCurve+1, // vertical1
+                firstCurve+3, // vertical2
+                sketchgui->getObject()->getNameInDocument()); // the sketch
             
-            if(geometryCreationMode==Construction) {
-                Gui::Command::doCommand(Gui::Command::Doc,
-                    "App.ActiveDocument.%s.toggleConstruction(%d) ",
-                    sketchgui->getObject()->getNameInDocument(),
-                    firstCurve);                
-                Gui::Command::doCommand(Gui::Command::Doc,
-                    "App.ActiveDocument.%s.toggleConstruction(%d) ",
-                    sketchgui->getObject()->getNameInDocument(),
-                    firstCurve+1);
-                Gui::Command::doCommand(Gui::Command::Doc,
-                    "App.ActiveDocument.%s.toggleConstruction(%d) ",
-                    sketchgui->getObject()->getNameInDocument(),
-                    firstCurve+2);
-                Gui::Command::doCommand(Gui::Command::Doc,
-                    "App.ActiveDocument.%s.toggleConstruction(%d) ",
-                    sketchgui->getObject()->getNameInDocument(),
-                    firstCurve+3);                
-            }
-            
-
             Gui::Command::commitCommand();
-            Gui::Command::updateActive();
-
+            
             // add auto constraints at the start of the first side
             if (sugConstr1.size() > 0) {
                 createAutoConstraints(sugConstr1, getHighestCurveIndex() - 3 , Sketcher::start);
@@ -522,8 +494,16 @@ public:
                 createAutoConstraints(sugConstr2, getHighestCurveIndex() - 2, Sketcher::end);
                 sugConstr2.clear();
             }
-
+            
             ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+            bool autoRecompute = hGrp->GetBool("AutoRecompute",false);
+            
+            if(autoRecompute)
+                Gui::Command::updateActive();
+            else
+                static_cast<Sketcher::SketchObject *>(sketchgui->getObject())->solve();            
+
+            //ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
             bool continuousMode = hGrp->GetBool("ContinuousCreationMode",true);
             
             if(continuousMode){
@@ -957,10 +937,10 @@ public:
                 // issue the geometry
                 try {
                     Gui::Command::doCommand(Gui::Command::Doc,
-                        "App.ActiveDocument.%s.addGeometry(Part.Line(App.Vector(%f,%f,0),App.Vector(%f,%f,0)))",
+                        "App.ActiveDocument.%s.addGeometry(Part.Line(App.Vector(%f,%f,0),App.Vector(%f,%f,0)),%s)",
                         sketchgui->getObject()->getNameInDocument(),
-                        EditCurve[0].fX,EditCurve[0].fY,EditCurve[1].fX,EditCurve[1].fY);
-                    
+                        EditCurve[0].fX,EditCurve[0].fY,EditCurve[1].fX,EditCurve[1].fY,
+                        geometryCreationMode==Construction?"True":"False");
                 }
                 catch (const Base::Exception& e) {
                     addedGeometry = false;
@@ -977,10 +957,11 @@ public:
                 try {
                     Gui::Command::doCommand(Gui::Command::Doc,
                         "App.ActiveDocument.%s.addGeometry(Part.ArcOfCircle"
-                        "(Part.Circle(App.Vector(%f,%f,0),App.Vector(0,0,1),%f),%f,%f))",
+                        "(Part.Circle(App.Vector(%f,%f,0),App.Vector(0,0,1),%f),%f,%f),%s)",
                         sketchgui->getObject()->getNameInDocument(),
                         CenterPoint.fX, CenterPoint.fY, std::abs(arcRadius),
-                        std::min(startAngle,endAngle), std::max(startAngle,endAngle));
+                        std::min(startAngle,endAngle), std::max(startAngle,endAngle),
+                        geometryCreationMode==Construction?"True":"False");
                 }
                 catch (const Base::Exception& e) {
                     addedGeometry = false;
@@ -1016,14 +997,14 @@ public:
                         lastCurve,lastEndPosId,firstCurve,firstPosId);
                 }
                 Gui::Command::commitCommand();
-                Gui::Command::updateActive();
-            }
+                
+                ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+                bool autoRecompute = hGrp->GetBool("AutoRecompute",false);
             
-            if(addedGeometry && geometryCreationMode==Construction) {
-                Gui::Command::doCommand(Gui::Command::Doc,
-                    "App.ActiveDocument.%s.toggleConstruction(%d) ",
-                    sketchgui->getObject()->getNameInDocument(),
-                    lastCurve);
+                if(autoRecompute)
+                    Gui::Command::updateActive();
+                else
+                    static_cast<Sketcher::SketchObject *>(sketchgui->getObject())->solve();                
             }
 
             if (Mode == STATUS_Close) {
@@ -1070,8 +1051,7 @@ public:
             }
             else {
                 Gui::Command::commitCommand();
-                Gui::Command::updateActive();
-
+                            
                 // Add auto constraints
                 if (sugConstr1.size() > 0) { // this is relevant only to the very first point
                     createAutoConstraints(sugConstr1, getHighestCurveIndex(), Sketcher::start);
@@ -1082,6 +1062,14 @@ public:
                     createAutoConstraints(sugConstr2, getHighestCurveIndex(), Sketcher::end);
                     sugConstr2.clear();
                 }
+
+                ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+                bool autoRecompute = hGrp->GetBool("AutoRecompute",false);
+                
+                if(autoRecompute)
+                    Gui::Command::updateActive();
+                else
+                    static_cast<Sketcher::SketchObject *>(sketchgui->getObject())->solve();                
 
                 // remember the vertex for the next rounds constraint..
                 previousCurve = getHighestCurveIndex();
@@ -1370,21 +1358,14 @@ public:
             Gui::Command::doCommand(Gui::Command::Doc,
                 "App.ActiveDocument.%s.addGeometry(Part.ArcOfCircle"
                 "(Part.Circle(App.Vector(%f,%f,0),App.Vector(0,0,1),%f),"
-                "%f,%f))",
+                "%f,%f),%s)",
                       sketchgui->getObject()->getNameInDocument(),
                       CenterPoint.fX, CenterPoint.fY, sqrt(rx*rx + ry*ry),
-                      startAngle, endAngle); //arcAngle > 0 ? 0 : 1);
-
-            if(geometryCreationMode==Construction) {
-                Gui::Command::doCommand(Gui::Command::Doc,
-                    "App.ActiveDocument.%s.toggleConstruction(%d) ",
-                    sketchgui->getObject()->getNameInDocument(),
-                    currentgeoid+1);
-            }                    
+                      startAngle, endAngle,
+                      geometryCreationMode==Construction?"True":"False"); //arcAngle > 0 ? 0 : 1);                   
                       
             Gui::Command::commitCommand();
-            Gui::Command::updateActive();
-
+            
             // Auto Constraint center point
             if (sugConstr1.size() > 0) {
                 createAutoConstraints(sugConstr1, getHighestCurveIndex(), Sketcher::mid);
@@ -1404,6 +1385,14 @@ public:
             }
 
             ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+            bool autoRecompute = hGrp->GetBool("AutoRecompute",false);
+        
+            if(autoRecompute)
+                Gui::Command::updateActive();
+            else
+                static_cast<Sketcher::SketchObject *>(sketchgui->getObject())->solve();            
+
+            //ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
             bool continuousMode = hGrp->GetBool("ContinuousCreationMode",true);
             
             if(continuousMode){
@@ -1667,21 +1656,14 @@ public:
             Gui::Command::doCommand(Gui::Command::Doc,
                 "App.ActiveDocument.%s.addGeometry(Part.ArcOfCircle"
                 "(Part.Circle(App.Vector(%f,%f,0),App.Vector(0,0,1),%f),"
-                "%f,%f))",
+                "%f,%f),%s)",
                       sketchgui->getObject()->getNameInDocument(),
                       CenterPoint.fX, CenterPoint.fY, radius,
-                      startAngle, endAngle);
-
-            if(geometryCreationMode==Construction) {
-                Gui::Command::doCommand(Gui::Command::Doc,
-                    "App.ActiveDocument.%s.toggleConstruction(%d) ",
-                    sketchgui->getObject()->getNameInDocument(),
-                    currentgeoid+1);
-            }            
+                      startAngle, endAngle,
+                      geometryCreationMode==Construction?"True":"False");           
 
             Gui::Command::commitCommand();
-            Gui::Command::updateActive();
-
+            
             // Auto Constraint first picked point
             if (sugConstr1.size() > 0) {
                 createAutoConstraints(sugConstr1, getHighestCurveIndex(), arcPos1);
@@ -1699,8 +1681,16 @@ public:
                 createAutoConstraints(sugConstr3, getHighestCurveIndex(), Sketcher::none);
                 sugConstr3.clear();
             }
-
+            
             ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+            bool autoRecompute = hGrp->GetBool("AutoRecompute",false);
+        
+            if(autoRecompute)
+                Gui::Command::updateActive();
+            else
+                static_cast<Sketcher::SketchObject *>(sketchgui->getObject())->solve();            
+
+            //ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
             bool continuousMode = hGrp->GetBool("ContinuousCreationMode",true);
             
             if(continuousMode){
@@ -1973,20 +1963,13 @@ public:
             Gui::Command::openCommand("Add sketch circle");
             Gui::Command::doCommand(Gui::Command::Doc,
                 "App.ActiveDocument.%s.addGeometry(Part.Circle"
-                "(App.Vector(%f,%f,0),App.Vector(0,0,1),%f))",
+                "(App.Vector(%f,%f,0),App.Vector(0,0,1),%f),%s)",
                       sketchgui->getObject()->getNameInDocument(),
                       EditCurve[0].fX, EditCurve[0].fY,
-                      sqrt(rx*rx + ry*ry));
-
-            if(geometryCreationMode==Construction) {
-                Gui::Command::doCommand(Gui::Command::Doc,
-                    "App.ActiveDocument.%s.toggleConstruction(%d) ",
-                    sketchgui->getObject()->getNameInDocument(),
-                    currentgeoid+1);
-            }            
+                      sqrt(rx*rx + ry*ry),
+                      geometryCreationMode==Construction?"True":"False");            
 
             Gui::Command::commitCommand();
-            Gui::Command::updateActive();
 
             // add auto constraints for the center point
             if (sugConstr1.size() > 0) {
@@ -1999,8 +1982,16 @@ public:
                 createAutoConstraints(sugConstr2, getHighestCurveIndex(), Sketcher::none);
                 sugConstr2.clear();
             }
-
+            
             ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+            bool autoRecompute = hGrp->GetBool("AutoRecompute",false);
+        
+            if(autoRecompute)
+                Gui::Command::updateActive();
+            else
+                static_cast<Sketcher::SketchObject *>(sketchgui->getObject())->solve();            
+
+            //ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
             bool continuousMode = hGrp->GetBool("ContinuousCreationMode",true);
             
             if(continuousMode){
@@ -2768,20 +2759,14 @@ private:
         Gui::Command::openCommand("Add sketch ellipse");
         Gui::Command::doCommand(Gui::Command::Doc,
                                 "App.ActiveDocument.%s.addGeometry(Part.Ellipse"
-                                "(App.Vector(%f,%f,0),App.Vector(%f,%f,0),App.Vector(%f,%f,0)))",
+                                "(App.Vector(%f,%f,0),App.Vector(%f,%f,0),App.Vector(%f,%f,0)),%s)",
                                 sketchgui->getObject()->getNameInDocument(),
                                 periapsis.fX, periapsis.fY,
                                 positiveB.fX, positiveB.fY,
-                                centroid.fX, centroid.fY);
+                                centroid.fX, centroid.fY,
+                                geometryCreationMode==Construction?"True":"False");
         
         currentgeoid++;
-        
-        if(geometryCreationMode==Construction) {
-            Gui::Command::doCommand(Gui::Command::Doc,
-                "App.ActiveDocument.%s.toggleConstruction(%d) ",
-                sketchgui->getObject()->getNameInDocument(),
-                currentgeoid);
-        }
         
         try {
             Gui::Command::doCommand(Gui::Command::Doc,
@@ -2792,12 +2777,19 @@ private:
         catch (const Base::Exception& e) {
             Base::Console().Error("%s\n", e.what());
             Gui::Command::abortCommand();
-            Gui::Command::updateActive();
+            
+            ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+            bool autoRecompute = hGrp->GetBool("AutoRecompute",false);
+            
+            if(autoRecompute) 
+                Gui::Command::updateActive();
+            else
+                static_cast<Sketcher::SketchObject *>(sketchgui->getObject())->solve();            
+            
             return;
         }
         
         Gui::Command::commitCommand();
-        Gui::Command::updateActive();
 
         if (method == CENTER_PERIAPSIS_B) {
             // add auto constraints for the center point
@@ -2829,34 +2821,42 @@ private:
                 sugConstr3.clear();
             }
         }
+        
+        ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+        bool autoRecompute = hGrp->GetBool("AutoRecompute",false);
+    
+        if(autoRecompute)
+            Gui::Command::updateActive();
+        else
+            static_cast<Sketcher::SketchObject *>(sketchgui->getObject())->solve();        
 
+        // This code enables the continuous creation mode.
+        if (constrMethod == 0) {
+            method = CENTER_PERIAPSIS_B;
+            mode = STATUS_SEEK_CENTROID;
+        } else {
+            method = PERIAPSIS_APOAPSIS_B;
+            mode = STATUS_SEEK_PERIAPSIS;
+        }
+        editCurve.clear();
+        sketchgui->drawEdit(editCurve);
+        
+        //ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+        bool continuousMode = hGrp->GetBool("ContinuousCreationMode",true);
+
+        
+        if(continuousMode){
             // This code enables the continuous creation mode.
-            if (constrMethod == 0) {
-                method = CENTER_PERIAPSIS_B;
-                mode = STATUS_SEEK_CENTROID;
-            } else {
-                method = PERIAPSIS_APOAPSIS_B;
-                mode = STATUS_SEEK_PERIAPSIS;
-            }
-            editCurve.clear();
-            sketchgui->drawEdit(editCurve);
-            
-            ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
-            bool continuousMode = hGrp->GetBool("ContinuousCreationMode",true);
-
-            
-            if(continuousMode){
-                // This code enables the continuous creation mode.
-                editCurve.resize(33);
-                applyCursor();
-                /* It is ok not to call to purgeHandler
-                * in continuous creation mode because the 
-                * handler is destroyed by the quit() method on pressing the
-                * right button of the mouse */                
-            }
-            else{
-                sketchgui->purgeHandler(); // no code after this line, Handler get deleted in ViewProvider    
-            }
+            editCurve.resize(33);
+            applyCursor();
+            /* It is ok not to call to purgeHandler
+            * in continuous creation mode because the 
+            * handler is destroyed by the quit() method on pressing the
+            * right button of the mouse */                
+        }
+        else{
+            sketchgui->purgeHandler(); // no code after this line, Handler get deleted in ViewProvider    
+        }
             
     }
 };
@@ -3178,23 +3178,16 @@ public:
             Gui::Command::doCommand(Gui::Command::Doc,
                 "App.ActiveDocument.%s.addGeometry(Part.ArcOfEllipse"
                 "(Part.Ellipse(App.Vector(%f,%f,0),App.Vector(%f,%f,0),App.Vector(%f,%f,0)),"
-                "%f,%f))",
+                "%f,%f),%s)",
                     sketchgui->getObject()->getNameInDocument(),
                     majAxisPoint.fX, majAxisPoint.fY,                                    
                     minAxisPoint.fX, minAxisPoint.fY,
                     centerPoint.fX, centerPoint.fY,
-                    startAngle, endAngle);
+                    startAngle, endAngle,
+                    geometryCreationMode==Construction?"True":"False");
             
             currentgeoid++;
-            
-            if(geometryCreationMode==Construction) {
-                Gui::Command::doCommand(Gui::Command::Doc,
-                    "App.ActiveDocument.%s.toggleConstruction(%d) ",
-                    sketchgui->getObject()->getNameInDocument(),
-                    currentgeoid);
-            }
-            
-            
+
             try {                 
                 Gui::Command::doCommand(Gui::Command::Doc,
                                         "App.ActiveDocument.%s.ExposeInternalGeometry(%d)",
@@ -3204,12 +3197,19 @@ public:
             catch (const Base::Exception& e) {
                 Base::Console().Error("%s\n", e.what());
                 Gui::Command::abortCommand();
-                Gui::Command::updateActive();
+                
+                ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+                bool autoRecompute = hGrp->GetBool("AutoRecompute",false);
+                
+                if(autoRecompute) 
+                    Gui::Command::updateActive();
+                else
+                    static_cast<Sketcher::SketchObject *>(sketchgui->getObject())->solve();                
+                
                 return false;
             }
 
             Gui::Command::commitCommand();
-            Gui::Command::updateActive();
             
             // add auto constraints for the center point
             if (sugConstr1.size() > 0) {
@@ -3234,8 +3234,16 @@ public:
                 createAutoConstraints(sugConstr4, currentgeoid, isOriginalArcCCW?Sketcher::end:Sketcher::start);
                 sugConstr4.clear();
             }
-
+            
             ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+            bool autoRecompute = hGrp->GetBool("AutoRecompute",false);
+        
+            if(autoRecompute)
+                Gui::Command::updateActive();
+            else
+                static_cast<Sketcher::SketchObject *>(sketchgui->getObject())->solve();            
+
+            //ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
             bool continuousMode = hGrp->GetBool("ContinuousCreationMode",true);
             
             if(continuousMode){
@@ -3564,20 +3572,13 @@ public:
             Gui::Command::openCommand("Add sketch circle");
             Gui::Command::doCommand(Gui::Command::Doc,
                 "App.ActiveDocument.%s.addGeometry(Part.Circle"
-                "(App.Vector(%f,%f,0),App.Vector(0,0,1),%f))",
+                "(App.Vector(%f,%f,0),App.Vector(0,0,1),%f),%s)",
                       sketchgui->getObject()->getNameInDocument(),
                       CenterPoint.fX, CenterPoint.fY,
-                      radius);
+                      radius,
+                      geometryCreationMode==Construction?"True":"False");
             
-            if(geometryCreationMode==Construction) {
-                Gui::Command::doCommand(Gui::Command::Doc,
-                    "App.ActiveDocument.%s.toggleConstruction(%d) ",
-                    sketchgui->getObject()->getNameInDocument(),
-                    currentgeoid+1);
-            }
-
             Gui::Command::commitCommand();
-            Gui::Command::updateActive();
 
             // Auto Constraint first picked point
             if (sugConstr1.size() > 0) {
@@ -3598,6 +3599,14 @@ public:
             }
             
             ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+            bool autoRecompute = hGrp->GetBool("AutoRecompute",false);
+        
+            if(autoRecompute)
+                Gui::Command::updateActive();
+            else
+                static_cast<Sketcher::SketchObject *>(sketchgui->getObject())->solve();            
+            
+            //ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
             bool continuousMode = hGrp->GetBool("ContinuousCreationMode",true);
             
             if(continuousMode){
@@ -3832,15 +3841,22 @@ public:
                       EditPoint.fX,EditPoint.fY);                       
             
             Gui::Command::commitCommand();
-            Gui::Command::updateActive();
 
             // add auto constraints for the line segment start
             if (sugConstr.size() > 0) {
                 createAutoConstraints(sugConstr, getHighestCurveIndex(), Sketcher::start);
                 sugConstr.clear();
             }
+            
+            ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+            bool autoRecompute = hGrp->GetBool("AutoRecompute",false);
+        
+            if(autoRecompute)
+                Gui::Command::updateActive();
+            else
+                static_cast<Sketcher::SketchObject *>(sketchgui->getObject())->solve();            
 
-                        ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+            //ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
             bool continuousMode = hGrp->GetBool("ContinuousCreationMode",true);
             
             if(continuousMode){
@@ -4058,10 +4074,10 @@ public:
 
     virtual bool releaseButton(Base::Vector2D onSketchPos)
     {
+        bool construction=false;
         int VtId = sketchgui->getPreselectPoint();
         if (Mode == STATUS_SEEK_First && VtId != -1) {
             int GeoId;
-            bool construction=false;
             Sketcher::PointPos PosId=Sketcher::none;
             sketchgui->getSketchObject()->getGeoVertexIndex(VtId,GeoId,PosId);
             const Part::Geometry *geom = sketchgui->getSketchObject()->getGeometry(GeoId);
@@ -4111,7 +4127,14 @@ public:
                 }
                     
                 Gui::Command::commitCommand();
-                Gui::Command::updateActive();
+                
+                ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+                bool autoRecompute = hGrp->GetBool("AutoRecompute",false);
+            
+                if(autoRecompute)
+                    Gui::Command::updateActive();
+                else
+                    static_cast<Sketcher::SketchObject *>(sketchgui->getObject())->solve();                
             }
             return true;
         }
@@ -4148,6 +4171,8 @@ public:
                     double radius = Part::suggestFilletRadius(lineSeg1, lineSeg2, refPnt1, refPnt2);
                     if (radius < 0)
                         return false;
+                    
+                    construction=lineSeg1->Construction && lineSeg2->Construction;
 
                     // create fillet between lines
                     Gui::Command::openCommand("Create fillet");
@@ -4158,9 +4183,14 @@ public:
                               firstPos.fX, firstPos.fY,
                               secondPos.fX, secondPos.fY, radius);
                     Gui::Command::commitCommand();
-                    Gui::Command::updateActive();
                     
-                    if(lineSeg1->Construction && lineSeg2->Construction) {
+                    ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+                    bool autoRecompute = hGrp->GetBool("AutoRecompute",false);
+                
+                    if(autoRecompute)
+                        Gui::Command::updateActive();                    
+                    
+                    if(construction) {
                         Gui::Command::doCommand(Gui::Command::Doc,
                             "App.ActiveDocument.%s.toggleConstruction(%d) ",
                             sketchgui->getObject()->getNameInDocument(),
@@ -4330,7 +4360,12 @@ public:
                               sketchgui->getObject()->getNameInDocument(),
                               GeoId, onSketchPos.fX, onSketchPos.fY);
                     Gui::Command::commitCommand();
-                    Gui::Command::updateActive();
+                    
+                    ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+                    bool autoRecompute = hGrp->GetBool("AutoRecompute",false);
+        
+                    if(autoRecompute)
+                        Gui::Command::updateActive();                    
                 }
                 catch (const Base::Exception& e) {
                     Base::Console().Error("%s\n", e.what());
@@ -4504,7 +4539,21 @@ public:
                               sketchgui->getObject()->getNameInDocument(),
                               msg.pObjectName, msg.pSubName);
                     Gui::Command::commitCommand();
-                    Gui::Command::updateActive();
+                    
+                    ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+                    bool autoRecompute = hGrp->GetBool("AutoRecompute",false);
+                
+                    if(autoRecompute)
+                        Gui::Command::updateActive();
+                    else {
+                        // adding external geometry does not require a solve() per se (the DoF is the same), 
+                        // however a solve is required to update the amount of solver geometry, because we only
+                        // redraw a changed Sketch if the solver geometry amount is the same as the SkethObject
+                        // geometry amount (as this avoids other issues).
+                        // This solver is a very low cost one anyway (there is actually nothing to solve).
+                        static_cast<Sketcher::SketchObject *>(sketchgui->getObject())->solve();
+                    }
+                    
                     Gui::Selection().clearSelection();
                 /* this is ok not to call to purgeHandler
                 * in continuous creation mode because the 
@@ -4691,74 +4740,40 @@ public:
             }
 
             try {
-                Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.addGeometry(Part.ArcOfCircle(Part.Circle(App.Vector(%f,%f,0),App.Vector(0,0,1),%f),%f,%f))",
-                          sketchgui->getObject()->getNameInDocument(),
-                          StartPos.fX,StartPos.fY,  // center of the  arc
-                          fabs(r),                  // radius
-                          start,end                 // start and end angle
-                          );
-                Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.addGeometry(Part.ArcOfCircle(Part.Circle(App.Vector(%f,%f,0),App.Vector(0,0,1),%f),%f,%f))",
-                          sketchgui->getObject()->getNameInDocument(),
-                          StartPos.fX+lx,StartPos.fY+ly,    // center of the  arc
-                          fabs(r),                          // radius
-                          end,start                         // start and end angle
-                          );
-
-                Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.addGeometry(Part.Line(App.Vector(%f,%f,0),App.Vector(%f,%f,0)))",
-                          sketchgui->getObject()->getNameInDocument(),
-                          EditCurve[16].fX,EditCurve[16].fY,EditCurve[17].fX,EditCurve[17].fY);
-                Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.addGeometry(Part.Line(App.Vector(%f,%f,0),App.Vector(%f,%f,0)))",
-                          sketchgui->getObject()->getNameInDocument(),
-                          EditCurve[0].fX,EditCurve[0].fY,EditCurve[34].fX,EditCurve[34].fY);
-
-                Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('Tangent',%i,1,%i,1)) "
-                         ,sketchgui->getObject()->getNameInDocument()
-                         ,firstCurve,firstCurve+3);
-                Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('Tangent',%i,2,%i,1)) "
-                         ,sketchgui->getObject()->getNameInDocument()
-                         ,firstCurve,firstCurve+2);
-                Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('Tangent',%i,2,%i,1)) "
-                         ,sketchgui->getObject()->getNameInDocument()
-                         ,firstCurve+2,firstCurve+1);
-                Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('Tangent',%i,2,%i,2)) "
-                         ,sketchgui->getObject()->getNameInDocument()
-                         ,firstCurve+3,firstCurve+1);
-
-                //// add the either horizontal or vertical constraints
-                if(fabs(lx)>fabs(ly))
-                    Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('Horizontal',%i)) "
-                             ,sketchgui->getObject()->getNameInDocument()
-                             ,firstCurve+2);
-                else
-                    Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('Vertical',%i)) "
-                             ,sketchgui->getObject()->getNameInDocument()
-                             ,firstCurve+2);
-                // make the two arcs equal
-                Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('Equal',%i,%i)) "
-                         ,sketchgui->getObject()->getNameInDocument()
-                         ,firstCurve,firstCurve+1);
+                Gui::Command::doCommand(Gui::Command::Doc,
+                    "geoList = []\n"
+                    "geoList.append(Part.ArcOfCircle(Part.Circle(App.Vector(%f,%f,0),App.Vector(0,0,1),%f),%f,%f))\n"
+                    "geoList.append(Part.ArcOfCircle(Part.Circle(App.Vector(%f,%f,0),App.Vector(0,0,1),%f),%f,%f))\n"
+                    "geoList.append(Part.Line(App.Vector(%f,%f,0),App.Vector(%f,%f,0)))\n"
+                    "geoList.append(Part.Line(App.Vector(%f,%f,0),App.Vector(%f,%f,0)))\n"
+                    "App.ActiveDocument.%s.addGeometry(geoList,%s)\n"
+                    "conList = []\n"
+                    "conList.append(Sketcher.Constraint('Tangent',%i,1,%i,1))\n"
+                    "conList.append(Sketcher.Constraint('Tangent',%i,2,%i,1))\n"
+                    "conList.append(Sketcher.Constraint('Tangent',%i,2,%i,1))\n"
+                    "conList.append(Sketcher.Constraint('Tangent',%i,2,%i,2))\n"
+                    "conList.append(Sketcher.Constraint('%s',%i))\n"
+                    "conList.append(Sketcher.Constraint('Equal',%i,%i))\n"
+                    "App.ActiveDocument.%s.addConstraint(conList)\n",
+                    StartPos.fX,StartPos.fY,  // center of the  arc1
+                    fabs(r),                  // radius arc1
+                    start,end,                 // start and end angle of arc1
+                    StartPos.fX+lx,StartPos.fY+ly,    // center of the  arc2
+                    fabs(r),                          // radius arc2
+                    end,start,                         // start and end angle of arc2
+                    EditCurve[16].fX,EditCurve[16].fY,EditCurve[17].fX,EditCurve[17].fY, // line1
+                    EditCurve[0].fX,EditCurve[0].fY,EditCurve[34].fX,EditCurve[34].fY, // line2
+                    sketchgui->getObject()->getNameInDocument(), // the sketch
+                    geometryCreationMode==Construction?"True":"False", // geometry as construction or not                                        
+                    firstCurve,firstCurve+3, // tangent1
+                    firstCurve,firstCurve+2, // tangent2
+                    firstCurve+2,firstCurve+1, // tangent3
+                    firstCurve+3,firstCurve+1, // tangent4
+                    (fabs(lx)>fabs(ly))?"Horizontal":"Vertical", firstCurve+2, // vertical or horizontal constraint
+                    firstCurve,firstCurve+1, // equal constraint
+                    sketchgui->getObject()->getNameInDocument()); // the sketch                
                 
-                if(geometryCreationMode==Construction) {
-                    Gui::Command::doCommand(Gui::Command::Doc,
-                        "App.ActiveDocument.%s.toggleConstruction(%d) ",
-                        sketchgui->getObject()->getNameInDocument(),
-                        firstCurve);
-                    Gui::Command::doCommand(Gui::Command::Doc,
-                        "App.ActiveDocument.%s.toggleConstruction(%d) ",
-                        sketchgui->getObject()->getNameInDocument(),
-                        firstCurve+1);
-                    Gui::Command::doCommand(Gui::Command::Doc,
-                        "App.ActiveDocument.%s.toggleConstruction(%d) ",
-                        sketchgui->getObject()->getNameInDocument(),
-                        firstCurve+2);
-                    Gui::Command::doCommand(Gui::Command::Doc,
-                        "App.ActiveDocument.%s.toggleConstruction(%d) ",
-                        sketchgui->getObject()->getNameInDocument(),
-                        firstCurve+3);                    
-                }
-
                 Gui::Command::commitCommand();
-                Gui::Command::updateActive();
 
                 // add auto constraints at the start of the first side
                 if (sugConstr1.size() > 0) {
@@ -4771,11 +4786,23 @@ public:
                     createAutoConstraints(sugConstr2, getHighestCurveIndex() - 2, Sketcher::end);
                     sugConstr2.clear();
                 }
+
+                ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+                bool autoRecompute = hGrp->GetBool("AutoRecompute",false);
+        
+                if(autoRecompute)
+                    Gui::Command::updateActive();
+                else
+                    static_cast<Sketcher::SketchObject *>(sketchgui->getObject())->solve();
             }
             catch (const Base::Exception& e) {
                 Base::Console().Error("%s\n", e.what());
                 Gui::Command::abortCommand();
-                Gui::Command::updateActive();
+                ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+                bool autoRecompute = hGrp->GetBool("AutoRecompute",false);
+                
+                if(autoRecompute)
+                    Gui::Command::updateActive();                
             }
             ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
             bool continuousMode = hGrp->GetBool("ContinuousCreationMode",true);
@@ -4977,24 +5004,17 @@ public:
             try {
                 Gui::Command::doCommand(Gui::Command::Doc,
                         "import ProfileLib.RegularPolygon\n"
-                        "ProfileLib.RegularPolygon.makeRegularPolygon('%s',%i,App.Vector(%f,%f,0),App.Vector(%f,%f,0))",
+                        "ProfileLib.RegularPolygon.makeRegularPolygon('%s',%i,App.Vector(%f,%f,0),App.Vector(%f,%f,0),%s)",
                                             sketchgui->getObject()->getNameInDocument(),
                                             Corners,
-                                            StartPos.fX,StartPos.fY,EditCurve[0].fX,EditCurve[0].fY);
-
-                if(geometryCreationMode==Construction) {
-                    int i;
-                    for(i=0;i<Corners;i++) {
-                        Gui::Command::doCommand(Gui::Command::Doc,
-                            "App.ActiveDocument.%s.toggleConstruction(%d) ",
-                            sketchgui->getObject()->getNameInDocument(),
-                            currentgeoid+1+i);                    
-                    }
-                }
+                                            StartPos.fX,StartPos.fY,EditCurve[0].fX,EditCurve[0].fY,
+                                            geometryCreationMode==Construction?"True":"False");
                 
                 Gui::Command::commitCommand();
-                Gui::Command::updateActive();
-
+                
+                ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+                bool autoRecompute = hGrp->GetBool("AutoRecompute",false);
+        
                 // add auto constraints at the center of the polygon
                 if (sugConstr1.size() > 0) {
                     createAutoConstraints(sugConstr1, getHighestCurveIndex(), Sketcher::mid);
@@ -5006,12 +5026,23 @@ public:
                     createAutoConstraints(sugConstr2, getHighestCurveIndex() - 1, Sketcher::end);
                     sugConstr2.clear();
                 }
+                
+                if(autoRecompute)
+                    Gui::Command::updateActive();
+                else
+                    static_cast<Sketcher::SketchObject *>(sketchgui->getObject())->solve();                
             }
             catch (const Base::Exception& e) {
                 Base::Console().Error("%s\n", e.what());
                 Gui::Command::abortCommand();
-                Gui::Command::updateActive();
+                
+                ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+                bool autoRecompute = hGrp->GetBool("AutoRecompute",false);
+                
+                if(autoRecompute) // toggling does not modify the DoF of the solver, however it may affect features depending on the sketch
+                    Gui::Command::updateActive();
             }
+            
             ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
             bool continuousMode = hGrp->GetBool("ContinuousCreationMode",true);
             

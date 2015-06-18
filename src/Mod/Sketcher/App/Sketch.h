@@ -87,10 +87,11 @@ public:
     /// retrieves a point
     Base::Vector3d getPoint(int geoId, PointPos pos);
 
-    bool hasConflicts(void) const { return (Conflicting.size() > 0); }
-    const std::vector<int> &getConflicting(void) const { return Conflicting; }
-    bool hasRedundancies(void) const { return (Redundant.size() > 0); }
-    const std::vector<int> &getRedundant(void) const { return Redundant; }
+    // Inline methods
+    inline bool hasConflicts(void) const { return !Conflicting.empty(); }
+    inline const std::vector<int> &getConflicting(void) const { return Conflicting; }
+    inline bool hasRedundancies(void) const { return !Redundant.empty(); }
+    inline const std::vector<int> &getRedundant(void) const { return Redundant; }
 
     /** set the datum of a distance or angle constraint to a certain value and solve
       * This can cause the solving to fail!
@@ -315,6 +316,9 @@ public:
     //see more info in respective function in GCS.
     double calculateConstraintError(int icstr) { return GCSsys.calculateConstraintErrorByTag(icstr);}
     
+    /// Returns the size of the Geometry
+    int getGeometrySize(void) const {return Geoms.size();}
+
     enum GeoType {
         None    = 0,
         Point   = 1, // 1 Point(start), 2 Parameters(x,y)
