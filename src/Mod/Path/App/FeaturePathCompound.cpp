@@ -102,3 +102,17 @@ void FeatureCompound::removeObject(DocumentObject* obj)
         }
     }
 }
+
+// Python Path Compound feature ---------------------------------------------------------
+
+namespace App {
+/// @cond DOXERR
+PROPERTY_SOURCE_TEMPLATE(Path::FeatureCompoundPython, Path::FeatureCompound)
+template<> const char* Path::FeatureCompoundPython::getViewProviderName(void) const {
+    return "PathGui::ViewProviderPathCompoundPython";
+}
+/// @endcond
+
+// explicit template instantiation
+template class PathExport FeaturePythonT<Path::FeatureCompound>;
+}
