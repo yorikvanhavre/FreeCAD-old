@@ -71,18 +71,12 @@ class ObjectDrilling:
     def __setstate__(self,state):
         return None
         
-    def getTool(self,obj,number=0):
-        "retrieves a tool from a hosting object with a tooltable, if any"
-        for o in obj.InList:
-            if hasattr(o,"Tooltable"):
-                return o.Tooltable.getTool(number)
-        # not found? search one level up
-        for o in obj.InList:
-            return self.getTool(o,number)
-        return None
-
     def execute(self,obj):
         output = "G90 G98\n"
+        # rapid to first hole location, with spindle still retracted:
+        p0 = obj.locations[0]
+        output += "G0 X"+str(p0.x) + " Y" + str(p0.y)+ "\n"
+        # move tool to clearance plane
         output += "G0 Z" + str(obj.ClearanceHeight.Value) + "\n"
         if obj.PeckDepth.Value > 0:
             cmd = "G83"
