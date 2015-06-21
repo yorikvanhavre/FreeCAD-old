@@ -166,14 +166,14 @@ class CommandPathDrilling:
         PathDrilling.ObjectDrilling(obj)
 
         myList = obj.locations
-        for s in selection:
-            point = s.SubObjects[0]
-            if isinstance(point,Part.Vertex):
-                myList.append(FreeCAD.Vector(point.X, point.Y, point.Z))
-            if isinstance(point,Part.Edge):
-                if isinstance(point.Curve,Part.Circle):
-                    center = point.Curve.Center
-                    myList.append(FreeCAD.Vector(center.x,center.y,center.z))
+        for sub in selection:
+            for point in sub.SubObjects:
+                if isinstance(point,Part.Vertex):
+                    myList.append(FreeCAD.Vector(point.X, point.Y, point.Z))
+                if isinstance(point,Part.Edge):
+                    if isinstance(point.Curve,Part.Circle):
+                        center = point.Curve.Center
+                        myList.append(FreeCAD.Vector(center.x,center.y,center.z))
         
         obj.locations = myList
 
