@@ -52,12 +52,17 @@ class ObjectDrilling:
         obj.addProperty("App::PropertyDistance", "ClearanceHeight", "Drilling", translate("Clearance Height","The height needed to clear clamps and obstructions"))
         obj.addProperty("App::PropertyDistance", "FinalDepth", "Drilling", translate("Final Depth","Final Depth of Tool- lowest value in Z"))
         obj.addProperty("App::PropertyDistance", "RetractHeight", "Drilling", translate("Retract Height","The height where feed starts and height during retract tool when path is finished"))
-        obj.addProperty("App::PropertySpeed", "VertFeed", "Feed",translate("Vert Feed","Feed rate for vertical moves in Z"))
+        obj.addProperty("App::PropertyLength", "VertFeed", "Feed",translate("Vert Feed","Feed rate for vertical moves in Z"))
 
-        obj.addProperty("App::PropertySpeed", "HorizFeed", "Feed",translate("Horiz Feed","Feed rate for horizontal moves"))
+        #obj.addProperty("App::PropertySpeed", "HorizFeed", "Feed",translate("Horiz Feed","Feed rate for horizontal moves")) #not needed for drilling
 
         obj.addProperty("App::PropertyString","Comment","Path",translate("PathProject","An optional comment for this profile"))
         obj.addProperty("App::PropertyBool","Active","Path",translate("Active","Make False, to prevent operation from generating code"))
+
+        obj.addProperty("App::PropertyIntegerConstraint","ToolNum","Tool",translate("PathProfile","The tool number in use"))
+        obj.ToolNum = (0,0,1000,1) 
+
+        
         obj.Proxy = self
 
     def __getstate__(self):
@@ -66,18 +71,12 @@ class ObjectDrilling:
     def __setstate__(self,state):
         return None
         
-    def getTool(self,obj,number=0):
-        "retrieves a tool from a hosting object with a tooltable, if any"
-        for o in obj.InList:
-            if hasattr(o,"Tooltable"):
-                return o.Tooltable.getTool(number)
-        # not found? search one level up
-        for o in obj.InList:
-            return self.getTool(o,number)
-        return None
-
     def execute(self,obj):
         output = "G90 G98\n"
+        # rapid to first hole location, with spindle still retracted:
+        p0 = obj.locations[0]
+        output += "G0 X"+str(p0.x) + " Y" + str(p0.y)+ "\n"
+        # move tool to clearance plane
         output += "G0 Z" + str(obj.ClearanceHeight.Value) + "\n"
         if obj.PeckDepth.Value > 0:
             cmd = "G83"
@@ -149,7 +148,7 @@ class CommandPathDrilling:
 
         from PathScripts import PathUtils,PathDrilling,PathProject
         prjexists = False
-        selection = PathSelection.multiSelect()
+        selection = FreeCADGui.Selection.getSelectionEx()
 
         if not selection:
             return
@@ -160,20 +159,17 @@ class CommandPathDrilling:
         obj = FreeCAD.ActiveDocument.addObject("Path::FeaturePython","Drilling")
         PathDrilling.ObjectDrilling(obj)
 
-        if selection['pointlist']:
-            myList = obj.locations
-            for point in selection['pointlist']:
-                if isinstance(point, Part.Vertex):
-                    #vec = FreeCAD.Vector(point.X, point.Y, point.Z)
+        myList = obj.locations
+        for sub in selection:
+            for point in sub.SubObjects:
+                if isinstance(point,Part.Vertex):
                     myList.append(FreeCAD.Vector(point.X, point.Y, point.Z))
-            obj.locations = myList
-        if selection['circles']:
-            myList = obj.locations
-            for circle in selection['circles']:
-                print "circle!"
-                center = circle.Curve.Center
-                myList.append(FreeCAD.Vector(center.x,center.y,center.z))
-            obj.locations = myList
+                if isinstance(point,Part.Edge):
+                    if isinstance(point.Curve,Part.Circle):
+                        center = point.Curve.Center
+                        myList.append(FreeCAD.Vector(center.x,center.y,center.z))
+        
+        obj.locations = myList
 
         PathDrilling._ViewProviderDrill(obj.ViewObject)
 #        obj.ViewObject.Proxy = 0
@@ -182,6 +178,7 @@ class CommandPathDrilling:
         for o in FreeCAD.ActiveDocument.Objects:
             if "Proxy" in o.PropertiesList:
                 if isinstance(o.Proxy,PathProject.ObjectPathProject):
+                    project = o
                     g = o.Group
                     g.append(obj)
                     o.Group = g
@@ -196,6 +193,10 @@ class CommandPathDrilling:
             g = project.Group
             g.append(obj)
             project.Group = g
+
+        tl = PathUtils.changeTool(obj,project)
+        if tl:
+            obj.ToolNum = tl
 
         FreeCAD.ActiveDocument.commitTransaction()
         FreeCAD.ActiveDocument.recompute()
