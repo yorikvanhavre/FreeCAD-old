@@ -223,8 +223,7 @@ def profileop():
         obj.Direction = 'CCW'
     obj.UseComp = False
 
-    PathProject.CommandProject.addToProject(obj)
-    project = PathProject.CommandProject.getProject()
+    project = PathProject.CommandProject.addToProject(obj)
 
     tl = PathUtils.changeTool(obj,project)
     if tl:

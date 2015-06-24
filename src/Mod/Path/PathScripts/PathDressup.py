@@ -120,6 +120,7 @@ class CommandPathDressup:
         FreeCADGui.doCommand('PathScripts.PathDressup.ObjectDressup(obj)')
         FreeCADGui.doCommand('obj.Base = FreeCAD.ActiveDocument.' + selection[0].Name)
         FreeCADGui.doCommand('PathScripts.PathDressup.ViewProviderDressup(obj.ViewObject)')
+        FreeCADGui.doCommand('PathScripts.PathProject.CommandProject.addToProject(obj)')
         FreeCAD.ActiveDocument.commitTransaction()
         FreeCAD.ActiveDocument.recompute()
 

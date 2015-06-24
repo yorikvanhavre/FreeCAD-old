@@ -93,10 +93,9 @@ for s in sel:
 obj = FreeCAD.ActiveDocument.addObject("Path::FeatureCompoundPython","Compound")
 PathScripts.PathCompoundExtended.ObjectCompoundExtended(obj)
 
-PathProject.CommandProject.addToProject(obj)
+project = PathProject.CommandProject.addToProject(obj)
 
 if incl:
-    project = PathProject.CommandProject.getProject()
     children = []
     p = project.Group
     

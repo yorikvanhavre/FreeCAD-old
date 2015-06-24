@@ -238,8 +238,7 @@ class CommandPathProfile:
         obj.Active = True
         obj.ViewObject.ShowFirstRapid = False
 
-        PathProject.CommandProject.addToProject(obj)
-        project = PathProject.CommandProject.getProject()
+        project = PathProject.CommandProject.addToProject(obj)
 
         tl = PathUtils.changeTool(obj,project)
         if tl:

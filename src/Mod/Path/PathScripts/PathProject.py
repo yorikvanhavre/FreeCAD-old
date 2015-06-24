@@ -132,30 +132,19 @@ class CommandProject:
     def Create(pathChildren = []):
         """Code to create a project"""
         #FreeCADGui.addModule("PathScripts.PathProject")
-        prjObj = FreeCAD.ActiveDocument.addObject("Path::FeatureCompoundPython","Project")
-        ObjectPathProject(prjObj)
+        obj = FreeCAD.ActiveDocument.addObject("Path::FeatureCompoundPython","Project")
+        ObjectPathProject(obj)
         if pathChildren:
             for child in pathChildren:
-                pathChildren.append(FreeCAD.ActiveDocument.getObject(prjObj.Name))
-            prjObj.Group = pathChildren
-        ViewProviderProject(prjObj.ViewObject)
+                pathChildren.append(FreeCAD.ActiveDocument.getObject(obj.Name))
+            obj.Group = pathChildren
+        ViewProviderProject(obj.ViewObject)
 
         #create a machine obj
-        from PathScripts import PathMachine
-        machineObj = FreeCAD.ActiveDocument.addObject("Path::FeaturePython","Machine")
-        PathMachine.Machine(machineObj)
-        PathMachine._ViewProviderMachine(machineObj.ViewObject)
-        CommandProject.addToProject(machineObj)
+        import PathScripts
+        PathScripts.PathMachine.CommandPathMachine.Create()
 
-        UnitParams = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Units")
-        if UnitParams.GetInt('UserSchema') == 0:
-            machineObj.MachineUnits = 'Metric'
-            #metric mode
-        else:
-            machineObj.MachineUnits = 'Inch'
-        machineObj.ViewObject.ShowFirstRapid = False
-
-        return prjObj
+        return obj
 
     @staticmethod
     def getProject():
@@ -181,6 +170,8 @@ class CommandProject:
         g = project.Group
         g.append(obj)
         project.Group = g
+
+        return project
 
 
 if FreeCAD.GuiUp: 

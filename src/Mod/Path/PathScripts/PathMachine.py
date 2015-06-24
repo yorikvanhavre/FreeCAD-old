@@ -195,31 +195,27 @@ class CommandPathMachine:
 
     def Activated(self):
         FreeCAD.ActiveDocument.openTransaction(translate("PathMachine","Create a Machine object"))
-        FreeCADGui.addModule("PathScripts.PathMachine")
-        snippet = '''
-import Path
-import PathScripts
-from PathScripts import PathProject
-obj = FreeCAD.ActiveDocument.addObject("Path::FeaturePython","Machine")
-PathScripts.PathMachine.Machine(obj)
-PathScripts.PathMachine._ViewProviderMachine(obj.ViewObject)
-
-PathProject.CommandProject.addToProject(obj)
-
-UnitParams = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Units")
-if UnitParams.GetInt('UserSchema') == 0:
-    obj.MachineUnits = 'Metric'
-     #metric mode
-else:
-    obj.MachineUnits = 'Inch'
-
-obj.ViewObject.ShowFirstRapid = False
-
-'''
-
-        FreeCADGui.doCommand(snippet)
+        CommandPathMachine.Create()
         FreeCAD.ActiveDocument.commitTransaction()
         FreeCAD.ActiveDocument.recompute()
+
+    @staticmethod
+    def Create():
+        obj = FreeCAD.ActiveDocument.addObject("Path::FeaturePython","Machine")
+        Machine(obj)
+        _ViewProviderMachine(obj.ViewObject)
+
+        PathProject.CommandProject.addToProject(obj)
+
+        UnitParams = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Units")
+        if UnitParams.GetInt('UserSchema') == 0:
+            obj.MachineUnits = 'Metric'
+            #metric mode
+        else:
+            obj.MachineUnits = 'Inch'
+
+        obj.ViewObject.ShowFirstRapid = False
+        return obj
 
 if FreeCAD.GuiUp: 
     # register the FreeCAD command
