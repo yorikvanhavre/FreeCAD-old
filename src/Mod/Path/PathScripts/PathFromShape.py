@@ -88,24 +88,7 @@ prjexists = False
 obj = FreeCAD.activeDocument().addObject('Path::FeatureShape','PathShape')
 obj.Shape= FreeCAD.activeDocument().Rectangle.Shape.copy()
 
-for o in FreeCAD.ActiveDocument.Objects:
-    if "Proxy" in o.PropertiesList:
-        if isinstance(o.Proxy,PathProject.ObjectPathProject):
-            g = o.Group
-            g.append(obj)
-            o.Group = g
-            prjexists = True
-if prjexists:
-    pass
-else: #create a new path object
-    project = FreeCAD.ActiveDocument.addObject("Path::FeatureCompoundPython","Project")
-    PathProject.ObjectPathProject(project)
-    PathProject.ViewProviderProject(project.ViewObject)
-    g = project.Group
-    g.append(obj)
-    project.Group = g
-
-
+PathProject.CommandProject.addToProject(obj)
 
 #PathScripts.PathFromShape._ViewProviderFromShape(obj.ViewObject)
 App.ActiveDocument.recompute()

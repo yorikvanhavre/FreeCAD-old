@@ -267,23 +267,7 @@ class CommandPathPocket:
         FreeCADGui.doCommand('obj.Active = True')
         snippet = '''
 from PathScripts import PathProject
-for o in FreeCAD.ActiveDocument.Objects:
-    if "Proxy" in o.PropertiesList:
-        if isinstance(o.Proxy,PathProject.ObjectPathProject):
-            g = o.Group
-            g.append(obj)
-            o.Group = g
-            prjexists = True
-
-if prjexists:
-    pass
-else: #create a new path object
-    project = FreeCAD.ActiveDocument.addObject("Path::FeatureCompoundPython","Project")
-    PathProject.ObjectPathProject(project)
-    PathProject.ViewProviderProject(project.ViewObject)
-    g = project.Group
-    g.append(obj)
-    project.Group = g
+PathProject.CommandProject.addToProject(obj)
 
 ZMax = obj.Base[0].Shape.BoundBox.ZMax
 ZMin = obj.Base[0].Shape.BoundBox.ZMin
