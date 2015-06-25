@@ -123,13 +123,13 @@ class CommandPathStop:
         snippet = '''
 import Path
 import PathScripts
-from PathScripts import PathProject
+from PathScripts import PathUtils
 prjexists = False
 obj = FreeCAD.ActiveDocument.addObject("Path::FeaturePython","Stop")
 PathScripts.PathStop.Stop(obj)
 
 PathScripts.PathStop._ViewProviderStop(obj.ViewObject)
-PathProject.CommandProject.addToProject(obj)
+PathUtils.addToProject(obj)
 '''
         FreeCADGui.doCommand(snippet)
         FreeCAD.ActiveDocument.commitTransaction()

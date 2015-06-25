@@ -146,33 +146,6 @@ class CommandProject:
 
         return obj
 
-    @staticmethod
-    def getProject():
-        """
-        returns the first active PathProject in the document
-        if it isn't found return None
-        """
-        for o in FreeCAD.ActiveDocument.Objects:
-            if "Proxy" in o.PropertiesList:
-                if isinstance(o.Proxy, ObjectPathProject):
-                    return o
-        return None
-
-    @staticmethod
-    def addToProject(obj):
-        """Adds a path obj to this document, if no PathParoject exists it's created on the fly"""
-        project = CommandProject.getProject()
-
-        if project == None:
-            #create a new path object
-            project = CommandProject.Create()
-
-        g = project.Group
-        g.append(obj)
-        project.Group = g
-
-        return project
-
 
 if FreeCAD.GuiUp: 
     # register the FreeCAD command

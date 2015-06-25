@@ -102,7 +102,7 @@ class CommandCompoundExtended:
         snippet = '''
 import Path
 import PathScripts
-from PathScripts import PathProject
+from PathScripts import PathUtils
 incl = []
 prjexists = False
 sel = FreeCADGui.Selection.getSelection()
@@ -113,7 +113,7 @@ for s in sel:
 obj = FreeCAD.ActiveDocument.addObject("Path::FeatureCompoundPython","Compound")
 PathScripts.PathCompoundExtended.ObjectCompoundExtended(obj)
 PathScripts.PathCompoundExtended.ViewProviderCompoundExtended(obj.ViewObject)
-project = PathProject.CommandProject.addToProject(obj)
+project = PathUtils.addToProject(obj)
 
 if incl:
     children = []

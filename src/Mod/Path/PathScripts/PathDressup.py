@@ -110,17 +110,21 @@ class CommandPathDressup:
             FreeCAD.Console.PrintError(translate("PathDressup","Please select one path object\n"))
             return
         if not selection[0].isDerivedFrom("Path::Feature"):
-            FreeCAD.Console.PrintError(translate("PathDresup","The selected object is not a path\n"))
+            FreeCAD.Console.PrintError(translate("PathDressup","The selected object is not a path\n"))
             return
-            
+        if selection[0].isDerivedFrom("Path::FeatureCompoundPython"):
+            FreeCAD.Console.PrintError(translate("PathDressup", "Please select a Path object"))
+            return
+
         # everything ok!
         FreeCAD.ActiveDocument.openTransaction(translate("PathDressup","Create Dress-up"))
         FreeCADGui.addModule("PathScripts.PathDressup")
+        FreeCADGui.addModule("PathScripts.PathUtils")
         FreeCADGui.doCommand('obj = FreeCAD.ActiveDocument.addObject("Path::FeaturePython","Dressup")')
         FreeCADGui.doCommand('PathScripts.PathDressup.ObjectDressup(obj)')
         FreeCADGui.doCommand('obj.Base = FreeCAD.ActiveDocument.' + selection[0].Name)
         FreeCADGui.doCommand('PathScripts.PathDressup.ViewProviderDressup(obj.ViewObject)')
-        FreeCADGui.doCommand('PathScripts.PathProject.CommandProject.addToProject(obj)')
+        FreeCADGui.doCommand('PathScripts.PathUtils.addToProject(obj)')
         FreeCAD.ActiveDocument.commitTransaction()
         FreeCAD.ActiveDocument.recompute()
 

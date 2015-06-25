@@ -131,7 +131,7 @@ obj = FreeCAD.ActiveDocument.addObject("Path::FeaturePython","HeightOffset")
 PathScripts.PathToolLenOffset.ToolLenOffset(obj)
 obj.Active = True
 PathScripts.PathToolLenOffset._ViewProviderTLO(obj.ViewObject)
-project = PathProject.CommandProject.addToProject(obj)
+project = PathUtils.addToProject(obj)
 
 tl = PathUtils.changeTool(obj,project)
 if tl:

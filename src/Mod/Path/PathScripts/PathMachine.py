@@ -24,7 +24,7 @@
 ''' A CNC machine object to define how code is posted '''
 
 import FreeCAD,FreeCADGui,Path,PathGui
-from PathScripts import PathProject
+from PathScripts import PathProject, PathUtils
 from PySide import QtCore,QtGui
 import os, sys
 
@@ -205,7 +205,7 @@ class CommandPathMachine:
         Machine(obj)
         _ViewProviderMachine(obj.ViewObject)
 
-        PathProject.CommandProject.addToProject(obj)
+        PathUtils.addToProject(obj)
 
         UnitParams = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Units")
         if UnitParams.GetInt('UserSchema') == 0:

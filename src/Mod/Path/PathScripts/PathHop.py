@@ -125,7 +125,7 @@ class CommandPathHop:
         FreeCADGui.doCommand('PathScripts.PathHop.ObjectHop(obj)')
         FreeCADGui.doCommand('PathScripts.PathHop.ViewProviderPathHop(obj.ViewObject)')
         FreeCADGui.doCommand('obj.NextObject = FreeCAD.ActiveDocument.' + selection[0].Name)
-        FreeCADGui.doCommand('PathScripts.PathProject.CommandProject.addToProject(obj)')
+        FreeCADGui.doCommand('PathScripts.PathUtils.addToProject(obj)')
         FreeCAD.ActiveDocument.commitTransaction()
         FreeCAD.ActiveDocument.recompute()
 

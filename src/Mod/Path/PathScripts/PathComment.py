@@ -118,13 +118,12 @@ class CommandPathComment:
         snippet = '''
 import Path
 import PathScripts
-from PathScripts import PathProject
-prjexists = False
+from PathScripts import PathUtils
 obj = FreeCAD.ActiveDocument.addObject("Path::FeaturePython","Comment")
 PathScripts.PathComment.Comment(obj)
 PathScripts.PathComment._ViewProviderComment(obj.ViewObject)
 
-PathProject.CommandProject.addToProject(obj)
+PathUtils.addToProject(obj)
 '''
         FreeCADGui.doCommand(snippet)
         FreeCAD.ActiveDocument.commitTransaction()

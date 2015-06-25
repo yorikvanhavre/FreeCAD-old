@@ -175,7 +175,7 @@ class CommandPathDrilling:
 #        obj.ViewObject.Proxy = 0
         obj.Active = True
        
-        project = PathProject.CommandProject.addToProject(obj)
+        project = PathUtils.addToProject(obj)
 
         tl = PathUtils.changeTool(obj,project)
         if tl:

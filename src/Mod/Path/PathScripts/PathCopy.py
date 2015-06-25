@@ -56,7 +56,7 @@ class ObjectPathCopy:
                 obj.Path = obj.Base.Path.copy()
 
 
-class ViewProviderCopy:
+class ViewProviderPathCopy:
 
     def __init__(self,vobj):
         vobj.Proxy = self

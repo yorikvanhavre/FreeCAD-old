@@ -124,13 +124,13 @@ class CommandPathPlane:
         snippet = '''
 import Path
 import PathScripts
-from PathScripts import PathProject
+from PathScripts import PathUtils
 prjexists = False
 obj = FreeCAD.ActiveDocument.addObject("Path::FeaturePython","Plane")
 PathScripts.PathPlane.Plane(obj)
 obj.Active = True
 PathScripts.PathPlane._ViewProviderPlane(obj.ViewObject)
-PathProject.CommandProject.addToProject(obj)
+PathUtils.addToProject(obj)
 
 '''
 

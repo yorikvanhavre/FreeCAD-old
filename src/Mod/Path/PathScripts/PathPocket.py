@@ -285,8 +285,8 @@ class CommandPathPocket:
         FreeCADGui.doCommand('obj.Base = (FreeCAD.ActiveDocument.' + selection[0].ObjectName + ',' + subs + ')')
         FreeCADGui.doCommand('obj.Active = True')
         snippet = '''
-from PathScripts import PathProject
-PathProject.CommandProject.addToProject(obj)
+from PathScripts import PathUtils
+PathUtils.addToProject(obj)
 
 ZMax = obj.Base[0].Shape.BoundBox.ZMax
 ZMin = obj.Base[0].Shape.BoundBox.ZMin

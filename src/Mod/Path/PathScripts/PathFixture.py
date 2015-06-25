@@ -129,14 +129,14 @@ class CommandPathFixture:
         snippet = '''
 import Path
 import PathScripts
-from PathScripts import PathProject
+from PathScripts import PathUtils
 prjexists = False
 obj = FreeCAD.ActiveDocument.addObject("Path::FeaturePython","Fixture")
 PathScripts.PathFixture.Fixture(obj)
 obj.Active = True
 PathScripts.PathFixture._ViewProviderFixture(obj.ViewObject)
 
-PathProject.CommandProject.addToProject(obj)
+PathUtils.addToProject(obj)
 
 '''
         FreeCADGui.doCommand(snippet)

@@ -112,7 +112,7 @@ if len(FreeCADGui.Selection.getSelection())>0:
         obj =FreeCAD.ActiveDocument.addObject('Part::FeaturePython',sel[0].Name+('_Stock'))
         PathScripts.PathStock.Stock(obj)
         PathScripts.PathStock._ViewProviderStock(obj.ViewObject)
-        PathScripts.PathProject.CommandProject.addToProject(obj)
+        PathScripts.PathUtils.addToProject(obj)
         baseobj = sel[0]
         obj.Base = baseobj
         FreeCADGui.ActiveDocument.getObject(sel[0].Name+("_Stock")).ShapeColor = (0.3333,0.6667,1.0000)

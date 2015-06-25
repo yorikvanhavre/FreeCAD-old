@@ -30,6 +30,7 @@ import math
 import DraftGeomUtils
 from DraftGeomUtils import geomType
 import DraftVecUtils
+from PathScripts import PathProject
 
 def cleanedges(splines,precision):
     '''cleanedges([splines],precision). Convert BSpline curves, Beziers, to arcs that can be used for cnc paths.
@@ -324,8 +325,23 @@ def changeTool(obj,proj):
 def findProj():
     for o in FreeCAD.ActiveDocument.Objects:
         if "Proxy" in o.PropertiesList:
-            if isinstance(o.Proxy,PathProject.ObjectPathProject):
+            if isinstance(o.Proxy, PathProject.ObjectPathProject):
                 return o
+
+
+def addToProject(obj):
+        """Adds a path obj to this document, if no PathParoject exists it's created on the fly"""
+        project = findProj()
+
+        if project == None:
+            project = PathProject.CommandProject.Create()
+
+        g = project.Group
+        g.append(obj)
+        project.Group = g
+
+        return project
+
 
 def getTool(obj,number=0):
     "retrieves a tool from a hosting object with a tooltable, if any"

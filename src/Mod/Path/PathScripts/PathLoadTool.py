@@ -128,14 +128,14 @@ class CommandPathLoadTool:
         snippet = '''
 import Path
 import PathScripts
-from PathScripts import PathProject
+from PathScripts import PathProject, PathUtils
 prjexists = False
 obj = FreeCAD.ActiveDocument.addObject("Path::FeaturePython","Tool")
 PathScripts.PathLoadTool.LoadTool(obj)
 
 PathScripts.PathLoadTool._ViewProviderLoadTool(obj.ViewObject)
 
-PathProject.CommandProject.addToProject(obj)
+PathUtils.addToProject(obj)
 '''
         FreeCADGui.doCommand(snippet)
         FreeCAD.ActiveDocument.commitTransaction()

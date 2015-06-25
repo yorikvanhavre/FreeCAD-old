@@ -87,12 +87,12 @@ class CommandFromShape:
 import Path
 import PathScripts
 from PathScripts import PathFromShape
-from PathScripts import PathProject
+from PathScripts import PathUtils
 
 obj = FreeCAD.activeDocument().addObject('Path::FeatureShape','PathShape')
 obj.Shape= FreeCAD.activeDocument().Rectangle.Shape.copy()
 
-PathProject.CommandProject.addToProject(obj)
+PathUtils.addToProject(obj)
 
 PathScripts.PathFromShape._ViewProviderFromShape(obj.ViewObject)
 App.ActiveDocument.recompute()
