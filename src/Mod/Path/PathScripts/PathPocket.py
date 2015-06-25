@@ -217,6 +217,25 @@ class ObjectPocket:
                 obj.ViewObject.Visibility = False
 
 
+class ViewProviderPocket:
+
+    def __init__(self,vobj):
+        vobj.Proxy = self
+
+    def attach(self,vobj):
+        self.Object = vobj.Object
+        return
+
+    def getIcon(self):
+        return ":/icons/Path-Pocket.svg"
+
+    def __getstate__(self):
+        return None
+
+    def __setstate__(self,state):
+        return None
+
+
 class CommandPathPocket:
 
 
@@ -258,12 +277,12 @@ class CommandPathPocket:
         FreeCADGui.doCommand('prjexists = False')
         FreeCADGui.doCommand('obj = FreeCAD.ActiveDocument.addObject("Path::FeaturePython","Pocket")')
         FreeCADGui.doCommand('PathScripts.PathPocket.ObjectPocket(obj)')
+        FreeCADGui.doCommand('PathScripts.PathPocket.ViewProviderPocket(obj.ViewObject)')
         subs = "["
         for s in selection[0].SubElementNames:
             subs += '"' + s + '",'
         subs += "]"
         FreeCADGui.doCommand('obj.Base = (FreeCAD.ActiveDocument.' + selection[0].ObjectName + ',' + subs + ')')
-        FreeCADGui.doCommand('obj.ViewObject.Proxy = 0')
         FreeCADGui.doCommand('obj.Active = True')
         snippet = '''
 from PathScripts import PathProject

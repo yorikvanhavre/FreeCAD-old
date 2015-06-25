@@ -98,6 +98,9 @@ class _ViewProviderComment:
         vobj.setEditorMode('Transparency',mode)
         vobj.setEditorMode('Visibility',mode)
 
+    def getIcon(self):
+        return ":/icons/Path-Comment.svg"
+
 
 class CommandPathComment:
     def GetResources(self):
@@ -119,6 +122,7 @@ from PathScripts import PathProject
 prjexists = False
 obj = FreeCAD.ActiveDocument.addObject("Path::FeaturePython","Comment")
 PathScripts.PathComment.Comment(obj)
+PathScripts.PathComment._ViewProviderComment(obj.ViewObject)
 
 PathProject.CommandProject.addToProject(obj)
 '''

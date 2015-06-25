@@ -63,6 +63,26 @@ class ObjectCompoundExtended:
             path = Path.Path(cmds)
             obj.Path = path
 
+
+class ViewProviderCompoundExtended:
+
+    def __init__(self,vobj):
+        vobj.Proxy = self
+
+    def attach(self,vobj):
+        self.Object = vobj.Object
+        return
+
+    def getIcon(self):
+        return ":/icons/Path-Compound.svg"
+
+    def __getstate__(self):
+        return None
+
+    def __setstate__(self,state):
+        return None
+
+
 class CommandCompoundExtended:
 
 
@@ -92,7 +112,7 @@ for s in sel:
 
 obj = FreeCAD.ActiveDocument.addObject("Path::FeatureCompoundPython","Compound")
 PathScripts.PathCompoundExtended.ObjectCompoundExtended(obj)
-
+PathScripts.PathCompoundExtended.ViewProviderCompoundExtended(obj.ViewObject)
 project = PathProject.CommandProject.addToProject(obj)
 
 if incl:
@@ -106,7 +126,6 @@ if incl:
     project.Group = p
     g.append(children)
     obj.Group = children
-obj.ViewObject.Proxy = 0
 '''
         FreeCADGui.doCommand(snippet)
         FreeCAD.ActiveDocument.commitTransaction()

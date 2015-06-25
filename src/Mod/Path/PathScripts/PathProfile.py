@@ -166,6 +166,25 @@ class ObjectProfile:
                 obj.ViewObject.Visibility = False
 
 
+class ViewProviderProfile:
+
+    def __init__(self,vobj):
+        vobj.Proxy = self
+
+    def attach(self,vobj):
+        self.Object = vobj.Object
+        return
+
+    def getIcon(self):
+        return ":/icons/Path-Profile.svg"
+
+    def __getstate__(self):
+        return None
+
+    def __setstate__(self,state):
+        return None
+
+
 class CommandPathProfile:
     def GetResources(self):
         return {'Pixmap'  : 'Path-Profile',
@@ -191,6 +210,7 @@ class CommandPathProfile:
 
         obj = FreeCAD.ActiveDocument.addObject("Path::FeaturePython","Profile")
         PathProfile.ObjectProfile(obj)
+        PathProfile.ViewProviderProfile(obj.ViewObject)
 
         obj.Base = (FreeCAD.ActiveDocument.getObject(selection['objname']))
 
@@ -234,7 +254,6 @@ class CommandPathProfile:
         obj.FinalDepth.Value = ZMin-1.0
         obj.ClearanceHeight.Value =  ZMax + 5.0
         obj.SegLen.Value = 0.5
-        obj.ViewObject.Proxy = 0
         obj.Active = True
         obj.ViewObject.ShowFirstRapid = False
 
