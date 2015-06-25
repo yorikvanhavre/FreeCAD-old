@@ -28,6 +28,7 @@ These are a common functions and classes for creating custom post processors.
 
 from PySide import QtCore, QtGui
 import FreeCADGui
+import FreeCAD
 
 class OldHighlighter(QtGui.QSyntaxHighlighter):
     def highlightBlock(self, text):
@@ -97,8 +98,30 @@ class GCodeEditorDialog(QtGui.QDialog):
             QtCore.Qt.Horizontal, self)
         layout.addWidget(self.buttons)
 
+        # restore placement and size
+        self.paramKey = "User parameter:BaseApp/Values/Mod/Path/GCodeEditor/"
+        params = FreeCAD.ParamGet(self.paramKey)
+        posX = params.GetInt("posX")
+        posY = params.GetInt("posY")
+        if posX > 0 and posY > 0:
+            self.move(posX, posY)
+        width = params.GetInt("width")
+        height = params.GetInt("height")
+        if width > 0 and height > 0:
+            self.resize(width, height)
+
         self.buttons.accepted.connect(self.accept)
         self.buttons.rejected.connect(self.reject)
+
+    def done(self, *args, **kwargs):
+        print "in finished"
+        params = FreeCAD.ParamGet(self.paramKey)
+        params.SetInt("posX", self.x())
+        params.SetInt("posY", self.y())
+        params.SetInt("width", self.size().width())
+        params.SetInt("height", self.size().height())
+        return QtGui.QDialog.done(self, *args, **kwargs)
+
 
 def stringsplit(commandline):
     returndict = {'command':None, 'X':None, 'Y':None, 'Z':None, 'A':None, 'B':None, 'F':None, 'T':None, 'S':None, 'I':None, 'J':None,'K':None, 'txt': None}
