@@ -310,7 +310,7 @@ def changeTool(obj,proj):
     tlnum = 0
     for p in proj.Group:
         if not hasattr(p,"Group"):
-            if hasattr(p,'ToolNumber'):
+            if hasattr(p,'ToolNumber') and p.ToolNumber > 0:
                 tlnum = p.ToolNumber
             if p == obj:
                 return tlnum
@@ -320,6 +320,28 @@ def changeTool(obj,proj):
                     tlnum = g.ToolNumber
                 if g == obj:
                     return tlnum
+
+
+def getLastTool(obj):
+    toolNum = obj.ToolNumber
+    if obj.ToolNumber == 0:
+        # find tool from previous toolchange
+        proj = findProj()
+        toolNum = changeTool(obj, proj)
+    return getTool(obj, toolNum)
+
+
+def getTool(obj,number=0):
+    "retrieves a tool from a hosting object with a tooltable, if any"
+    for o in obj.InList:
+        if o.TypeId == "Path::FeatureCompoundPython":
+            for m in o.Group:
+                if hasattr(m,"Tooltable"):
+                    return m.Tooltable.getTool(number)
+    # not found? search one level up
+    for o in obj.InList:
+        return getTool(o,number)
+    return None
 
 
 def findProj():
@@ -342,18 +364,6 @@ def addToProject(obj):
 
         return project
 
-
-def getTool(obj,number=0):
-    "retrieves a tool from a hosting object with a tooltable, if any"
-    for o in obj.InList:
-        if o.TypeId == "Path::FeatureCompoundPython":
-            for m in o.Group:
-                if hasattr(m,"Tooltable"):
-                    return m.Tooltable.getTool(number)
-    # not found? search one level up
-    for o in obj.InList:
-        return getTool(o,number)
-    return None
 
 def getLastZ(obj):
     ''' find the last z value in the project '''

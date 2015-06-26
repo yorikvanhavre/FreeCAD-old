@@ -24,6 +24,7 @@
 
 import FreeCAD,FreeCADGui,Path,PathGui
 from PySide import QtCore,QtGui
+from PathScripts import PathUtils
 
 """Path Pocket object and FreeCAD command"""
 
@@ -41,18 +42,27 @@ def frange(start, stop, step, finish):
     curdepth = start
     if step == 0:
         return x
+    # do the base cuts until finishing round
     while curdepth >= stop + step + finish:
         curdepth = curdepth - step
+        if curdepth <= stop + finish:
+            curdepth = stop + finish
         x.append(curdepth)
 
-    if curdepth >= stop + finish:
-        curdepth = finish
+    # we might have to do a last pass or else finish round might be too far away
+    if curdepth - stop > finish:
+        x.append(stop + finish)
+
+    # do the the finishing round
+    if curdepth >= stop:
+        curdepth = stop
         x.append(curdepth)
 
-    if start >= stop:
-        start = stop
-        x.append (start)
-        
+     # Why this?
+#    if start >= stop:
+#        start = stop
+#        x.append (start)
+
     return x
 
 class ObjectPocket:
@@ -60,13 +70,14 @@ class ObjectPocket:
 
     def __init__(self,obj):
         obj.addProperty("App::PropertyLinkSub","Base","Path",translate("PathProject","The base geometry of this object"))
-        obj.addProperty("App::PropertyIntegerConstraint","ToolNumber","Tool",translate("PathProfile","The tool number in use"))
-        obj.ToolNumber = (0,0,1000,1)
+        obj.addProperty("App::PropertyIntegerConstraint","ToolNumber","Tool",
+                        translate("PathProfile","The tool number in use"))
+        obj.ToolNumber = (0, 0, 1000, 0)
 
 
         obj.addProperty("App::PropertyFloat", "ClearanceHeight", "Pocket", translate("PathProject","The height needed to clear clamps and obstructions"))
         obj.addProperty("App::PropertyFloatConstraint", "StepDown", "Pocket", translate("PathProject","Incremental Step Down of Tool"))
-        obj.StepDown = (0,0,1000000,1)
+        obj.StepDown = (0.0, 0.0, 100.0, 1.0)
 
         obj.addProperty("App::PropertyFloat", "StartDepth", "Pocket", translate("PathProject","Starting Depth of Tool- first cut depth in Z"))
         obj.addProperty("App::PropertyBool","UseStartDepth","Pocket",translate("PathProject","make True, if manually specifying a Start Start Depth"))
@@ -82,10 +93,10 @@ class ObjectPocket:
         obj.StartAt = ['Center', 'Edge']
 
         obj.addProperty("App::PropertyFloatConstraint", "VertFeed", "Feed",translate("Vert Feed","Feed rate for vertical moves in Z"))
-        obj.VertFeed = (0,0,100000,1)
+        obj.VertFeed = (0.0, 0.0, 100000.0, 1.0)
 
         obj.addProperty("App::PropertyFloatConstraint", "HorizFeed", "Feed",translate("Horiz Feed","Feed rate for horizontal moves"))
-        obj.HorizFeed = (0,0,100000,1)
+        obj.HorizFeed = (0.0, 0.0, 100000.0, 1.0)
 
 
         obj.addProperty("App::PropertyBool","Active","Path",translate("PathProject","Make False, to prevent operation from generating code"))
@@ -99,15 +110,6 @@ class ObjectPocket:
     def __setstate__(self,state):
         return None
         
-    def getTool(self,obj,number=0):
-        "retrieves a tool from a hosting object with a tooltable, if any"
-        for o in obj.InList:
-            if hasattr(o,"Tooltable"):
-                return o.Tooltable.getTool(number)
-        # not found? search one level up
-        for o in obj.InList:
-            return self.getTool(o,number)
-        return None
 
     def getStock(self,obj):
         "retrieves a stock object from hosting project if any"
@@ -125,25 +127,30 @@ class ObjectPocket:
 
     def execute(self,obj):
         if obj.Base:
-            tool = self.getTool(obj,obj.ToolNumber)
+            tool = PathUtils.getLastTool(obj)
+
             if tool:
                 radius = tool.Diameter/2
+                if radius < 0:# safe guard
+                    radius -= radius
             else:
                 # temporary value, to be taken from the properties later on
                 radius = 1
-            
+
             import Part, DraftGeomUtils
             if "Face" in obj.Base[1][0]:
                 shape = getattr(obj.Base[0].Shape,obj.Base[1][0])
             else:
                 edges = [getattr(obj.Base[0].Shape,sub) for sub in obj.Base[1]]
                 shape = Part.Wire(edges)
-                
+                print len(edges)
+
             # absolute coords, millimeters, cancel offsets
             output = "G90\nG21\nG40\n"
             # save tool
-            output += "M06 T" + str(obj.ToolNumber) + "\n"
-            
+            if obj.ToolNumber > 0 and tool.ToolNumber != obj.ToolNumber:
+                output += "M06 T" + str(tool.ToolNumber) + "\n"
+
             # build offsets
             offsets = []
             nextradius = radius
@@ -155,36 +162,44 @@ class ObjectPocket:
             
             # first move will be rapid, subsequent will be at feed rate
             first = True
+            startPoint = None
+            fastZPos = max(obj.StartDepth + 2, obj.RetractHeight)
             
-            # revert the list so we start with th outer wires
-            if obj.StartAt == 'Edge':
+            # revert the list so we start with the outer wires
+            if obj.StartAt != 'Edge':
                 offsets.reverse()
 
-            print "sd: " + str(obj.StartDepth)
-            print "fd: " + str(obj.FinalDepth)
-            print "SD: " + str(obj.StepDown)
+#            print "startDepth: " + str(obj.StartDepth)
+#            print "finalDepth: " + str(obj.FinalDepth)
+#            print "stepDown: " + str(obj.StepDown)
+#            print "finishDepth" + str(obj.FinishDepth)
+#            print "offsets:", len(offsets)
+
+            def prnt(vlu): return str(round(vlu, 4))
 
             for vpos in frange(obj.StartDepth, obj.FinalDepth, obj.StepDown, obj.FinishDepth):
-                print "vpos: " + str(vpos)
+#                print "vpos: " + str(vpos)
                 # loop over successive wires
                 for currentWire in offsets:
-                #while offsets:
-                    #currentWire = offsets.pop()
+#                    print "new line (offset)"
                     last = None
                     for edge in currentWire.Edges:
+#                        print "new edge"
                         if not last:
-                            # we set the base GO to our first point
+                            # we set the base GO to our fast move to our starting pos
                             if first:
-                                output += "G0"
+                                startPoint = edge.Vertexes[0].Point
+                                output += "G0 X" + prnt(startPoint.x) + " Y" + prnt(startPoint.y) +\
+                                          " Z" + prnt(fastZPos) + "\n"
                                 first = False
-                            else:
-                                output += "G1"
+                            #then move slow down to our starting point for our profile
                             last = edge.Vertexes[0].Point
-                            output += " X" + str(last.x) + " Y" + str(last.y) + " Z" + str(vpos) + "\n"
+                            output += "G1 X" + prnt(last.x) + " Y" + prnt(last.y) + " Z" + prnt(vpos) + "\n"
                         if isinstance(edge.Curve,Part.Circle):
                             point = edge.Vertexes[-1].Point
                             if point == last: # edges can come flipped
                                 point = edge.Vertexes[0].Point
+#                                print "flipped"
                             center = edge.Curve.Center
                             relcenter = center.sub(last)
                             v1 = last.sub(center)
@@ -193,18 +208,20 @@ class ObjectPocket:
                                 output += "G2"
                             else:
                                 output += "G3"
-                            output += " X" + str(point.x) + " Y" + str(point.y) + " Z" + str(vpos)
-                            output += " I" + str(relcenter.x) + " J" + str(relcenter.y) + " K" + str(relcenter.z)
+                            output += " X" + prnt(point.x) + " Y" + prnt(point.y) + " Z" + prnt(vpos)
+                            output += " I" + prnt(relcenter.x) + " J" +prnt(relcenter.y) + " K" + prnt(relcenter.z)
                             output += "\n"
                             last = point
                         else:
                             point = edge.Vertexes[-1].Point
                             if point == last: # edges can come flipped
                                 point = edge.Vertexes[0].Point
-                            output += "G1 X" + str(point.x) + " Y" + str(point.y) + " Z" + str(vpos) + "\n"
+                            output += "G1 X" + prnt(point.x) + " Y" + prnt(point.y) + " Z" + prnt(vpos) + "\n"
                             last = point
-                    
-            #print output
+
+            #move back up
+            output += "G1 Z" + prnt(fastZPos) + "\n"
+#            print output
 #            path = Path.Path(output)
 #            obj.Path = path
             if obj.Active:

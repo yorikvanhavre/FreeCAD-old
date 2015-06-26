@@ -114,7 +114,6 @@ class GCodeEditorDialog(QtGui.QDialog):
         self.buttons.rejected.connect(self.reject)
 
     def done(self, *args, **kwargs):
-        print "in finished"
         params = FreeCAD.ParamGet(self.paramKey)
         params.SetInt("posX", self.x())
         params.SetInt("posY", self.y())
