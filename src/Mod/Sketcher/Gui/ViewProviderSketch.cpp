@@ -4094,15 +4094,11 @@ void ViewProviderSketch::updateData(const App::Property *prop)
             getSketchObject()->getSolvedSketch().getGeometrySize()) {
             UpdateSolverInformation(); // just update the solver window with the last SketchObject solving information
             draw(false);
+            
+            signalConstraintsChanged();
+            signalElementsChanged();
+        
         }
-    }
-    if (edit && &(getSketchObject()->Constraints)) {
-        // send the signal for the TaskDlg.
-        signalConstraintsChanged();
-    }
-    if (edit && &(getSketchObject()->Geometry)) {
-        // send the signal for the TaskDlg.
-        signalElementsChanged();
     }
 }
 
@@ -4223,9 +4219,10 @@ bool ViewProviderSketch::setEdit(int ModNum)
     // The false parameter indicates that the geometry of the SketchObject shall not be updateData
     // so as not to trigger an onChanged that would set the document as modified and trigger a recompute
     // if we just close the sketch without touching anything.
-    getSketchObject()->solve(false); 
-    draw(false);
+    getSketchObject()->solve(false);
     UpdateSolverInformation();
+    draw(false);
+    
     
     connectUndoDocument = Gui::Application::Instance->activeDocument()
         ->signalUndoDocument.connect(boost::bind(&ViewProviderSketch::slotUndoDocument, this, _1));
@@ -4782,10 +4779,21 @@ bool ViewProviderSketch::onDelete(const std::vector<std::string> &subList)
             }
         }
         
-        getSketchObject()->solve();
+        int ret=getSketchObject()->solve();
+        
+        if(ret!=0){
+            // if the sketched could not be solved, we first redraw to update the UI geometry as
+            // onChanged did not update it.
+            UpdateSolverInformation();
+            draw();
+            
+            signalConstraintsChanged();
+            signalElementsChanged();
+        }
+        
+        /*this->drawConstraintIcons();
+        this->updateColor();*/
 
-        this->drawConstraintIcons();
-        this->updateColor();
         // if in edit not delete the object
         return false;
     }

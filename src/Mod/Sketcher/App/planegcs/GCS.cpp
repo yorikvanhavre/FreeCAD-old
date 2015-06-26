@@ -26,15 +26,33 @@
 
 #include "GCS.h"
 #include "qp_eq.h"
+
+// NOTE: In CMakeList.txt -DEIGEN_NO_DEBUG is set (it does not work with a define here), to solve this:
+// this is needed to fix this SparseQR crash http://forum.freecadweb.org/viewtopic.php?f=10&t=11341&p=92146#p92146, 
+// until Eigen library fixes its own problem with the assertion (definitely not solved in 3.2.0 branch)
+
+#define EIGEN_VERSION (EIGEN_WORLD_VERSION * 10000 \
+                               + EIGEN_MAJOR_VERSION * 100 \
+                               + EIGEN_MINOR_VERSION)
+
+#if EIGEN_VERSION >= 30202                              
+#define EIGEN_SPARSEQR_COMPATIBLE
+#endif
+
+//#undef EIGEN_SPARSEQR_COMPATIBLE
+
 #include <Eigen/QR>
+
+#ifdef EIGEN_SPARSEQR_COMPATIBLE
+#include <Eigen/Sparse>
+#include <Eigen/OrderingMethods>
+#endif
 
 #undef _GCS_DEBUG 
 #undef _GCS_DEBUG_SOLVER_JACOBIAN_QR_DECOMPOSITION_TRIANGULAR_MATRIX 
 
-#if defined(_GCS_DEBUG) || defined(_GCS_DEBUG_SOLVER_JACOBIAN_QR_DECOMPOSITION_TRIANGULAR_MATRIX)
 #include <FCConfig.h>
 #include <Base/Console.h>
-#endif // _GCS_DEBUG
 
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/connected_components.hpp>
@@ -153,8 +171,22 @@ System::System()
   c2p(), p2c(),
   subSystems(0), subSystemsAux(0),
   reference(0),
-  hasUnknowns(false), hasDiagnosis(false), isInit(false)
+  hasUnknowns(false), hasDiagnosis(false), isInit(false),
+  maxIter(100), maxIterRedundant(100), 
+  sketchSizeMultiplier(true), sketchSizeMultiplierRedundant(true),
+  convergence(1e-10), convergenceRedundant(1e-10),
+  qrAlgorithm(EigenSparseQR), debugMode(Minimal),
+  LM_eps(1E-10), LM_eps1(1E-80), LM_tau(1E-3),
+  DL_tolg(1E-80), DL_tolx(1E-80), DL_tolf(1E-10),
+  LM_epsRedundant(1E-10), LM_eps1Redundant(1E-80), LM_tauRedundant(1E-3),
+  DL_tolgRedundant(1E-80), DL_tolxRedundant(1E-80), DL_tolfRedundant(1E-10),
+  qrpivotThreshold(1E-13)
 {
+    // currently Eigen only supports multithreading for multiplications
+    // There is no appreciable gain from using more threads
+    #ifdef EIGEN_SPARSEQR_COMPATIBLE
+    Eigen::setNbThreads(1);
+    #endif
 }
 
 /*DeepSOIC: seriously outdated, needs redesign
@@ -860,7 +892,7 @@ void System::declareUnknowns(VEC_pD &params)
     hasUnknowns = true;
 }
 
-void System::initSolution()
+void System::initSolution(Algorithm alg)
 {
     // - Stores the current parameters values in the vector "reference"
     // - identifies any decoupled subsystems and partitions the original
@@ -881,7 +913,7 @@ void System::initSolution()
     
     // diagnose conflicting or redundant constraints
     if (!hasDiagnosis) {
-        diagnose();
+        diagnose(alg);
         if (!hasDiagnosis)
             return;
     }
@@ -1007,14 +1039,14 @@ void System::resetToReference()
     }
 }
 
-int System::solve(VEC_pD &params, bool isFine, Algorithm alg)
+int System::solve(VEC_pD &params, bool isFine, Algorithm alg, bool isRedundantsolving)
 {
     declareUnknowns(params);
     initSolution();
-    return solve(isFine, alg);
+    return solve(isFine, alg, isRedundantsolving);
 }
 
-int System::solve(bool isFine, Algorithm alg)
+int System::solve(bool isFine, Algorithm alg, bool isRedundantsolving)
 {
     if (!isInit)
         return Failed;
@@ -1029,11 +1061,11 @@ int System::solve(bool isFine, Algorithm alg)
              isReset = true;
         }
         if (subSystems[cid] && subSystemsAux[cid])
-            res = std::max(res, solve(subSystems[cid], subSystemsAux[cid], isFine));
+            res = std::max(res, solve(subSystems[cid], subSystemsAux[cid], isFine, isRedundantsolving));
         else if (subSystems[cid])
-            res = std::max(res, solve(subSystems[cid], isFine, alg));
+            res = std::max(res, solve(subSystems[cid], isFine, alg, isRedundantsolving));
         else if (subSystemsAux[cid])
-            res = std::max(res, solve(subSystemsAux[cid], isFine, alg));
+            res = std::max(res, solve(subSystemsAux[cid], isFine, alg, isRedundantsolving));
     }
     if (res == Success) {
         for (std::set<Constraint *>::const_iterator constr=redundant.begin();
@@ -1042,7 +1074,7 @@ int System::solve(bool isFine, Algorithm alg)
             //convergence, which makes no sense. Potentially I fixed bug, and
             //chances are low I've broken anything.
             double err = (*constr)->error();
-            if (err*err > XconvergenceFine) {
+            if (err*err > (isRedundantsolving?convergenceRedundant:convergence)) {
                 res = Converged;
                 return res;
             }
@@ -1051,19 +1083,19 @@ int System::solve(bool isFine, Algorithm alg)
     return res;
 }
 
-int System::solve(SubSystem *subsys, bool isFine, Algorithm alg)
+int System::solve(SubSystem *subsys, bool isFine, Algorithm alg, bool isRedundantsolving)
 {
     if (alg == BFGS)
-        return solve_BFGS(subsys, isFine);
+        return solve_BFGS(subsys, isFine, isRedundantsolving);
     else if (alg == LevenbergMarquardt)
-        return solve_LM(subsys);
+        return solve_LM(subsys, isRedundantsolving);
     else if (alg == DogLeg)
-        return solve_DL(subsys);
+        return solve_DL(subsys, isRedundantsolving);
     else
         return Failed;
 }
 
-int System::solve_BFGS(SubSystem *subsys, bool isFine)
+int System::solve_BFGS(SubSystem *subsys, bool isFine, bool isRedundantsolving)
 {
     int xsize = subsys->pSize();
     if (xsize == 0)
@@ -1092,16 +1124,54 @@ int System::solve_BFGS(SubSystem *subsys, bool isFine)
     subsys->getParams(x);
     h = x - h; // = x - xold
 
-    double convergence = isFine ? XconvergenceFine : XconvergenceRough;
-    int maxIterNumber = MaxIterations * xsize;
+    //double convergence = isFine ? convergence : XconvergenceRough;
+    int maxIterNumber = (isRedundantsolving?
+        (sketchSizeMultiplierRedundant?maxIterRedundant * xsize:maxIterRedundant):
+        (sketchSizeMultiplier?maxIter * xsize:maxIter));
+
+    if(debugMode==IterationLevel) {
+        std::stringstream stream;
+        
+        stream  << "BFGS: convergence: "    << (isRedundantsolving?convergenceRedundant:convergence)
+                << ", xsize: "              << xsize        
+                << ", maxIter: "            << maxIterNumber  << "\n";
+
+        const std::string tmp = stream.str();
+        Base::Console().Log(tmp.c_str());
+    }
+
+        
     double divergingLim = 1e6*err + 1e12;
+    double h_norm;
 
     for (int iter=1; iter < maxIterNumber; iter++) {
+        h_norm = h.norm();
+        if (h_norm <= (isRedundantsolving?convergenceRedundant:convergence) || err <= smallF){
+           if(debugMode==IterationLevel) {
+                std::stringstream stream;
+                
+                stream  << "BFGS Converged!!: "
+                        << ", err: "              << err        
+                        << ", h_norm: "           << h_norm  << "\n";
 
-        if (h.norm() <= convergence || err <= smallF)
+                const std::string tmp = stream.str();
+                Base::Console().Log(tmp.c_str());
+            }            
             break;
-        if (err > divergingLim || err != err) // check for diverging and NaN
+        }
+        if (err > divergingLim || err != err) { // check for diverging and NaN
+            if(debugMode==IterationLevel) {
+                std::stringstream stream;
+                
+                stream  << "BFGS Failed: Diverging!!: "
+                        << ", err: "              << err        
+                        << ", divergingLim: "            << divergingLim  << "\n";
+
+                const std::string tmp = stream.str();
+                Base::Console().Log(tmp.c_str());
+            }
             break;
+        }
 
         y = grad;
         subsys->calcGrad(grad);
@@ -1127,18 +1197,29 @@ int System::solve_BFGS(SubSystem *subsys, bool isFine)
         h = x;
         subsys->getParams(x);
         h = x - h; // = x - xold
+        
+        if(debugMode==IterationLevel) {
+            std::stringstream stream;
+            
+            stream  << "BFGS, Iteration: "          << iter
+                    << ", err: "                    << err
+                    << ", h_norm: "                 << h_norm << "\n";
+    
+            const std::string tmp = stream.str();
+            Base::Console().Log(tmp.c_str());
+        }
     }
 
     subsys->revertParams();
 
     if (err <= smallF)
         return Success;
-    if (h.norm() <= convergence)
+    if (h.norm() <= (isRedundantsolving?convergenceRedundant:convergence))
         return Converged;
     return Failed;
 }
 
-int System::solve_LM(SubSystem* subsys)
+int System::solve_LM(SubSystem* subsys, bool isRedundantsolving)
 {
     int xsize = subsys->pSize();
     int csize = subsys->cSize();
@@ -1157,11 +1238,30 @@ int System::solve_LM(SubSystem* subsys)
     subsys->calcResidual(e);
     e*=-1;
 
-    int maxIterNumber = MaxIterations * xsize;
+    int maxIterNumber = (isRedundantsolving?
+        (sketchSizeMultiplierRedundant?maxIterRedundant * xsize:maxIterRedundant):
+        (sketchSizeMultiplier?maxIter * xsize:maxIter));
+        
     double divergingLim = 1e6*e.squaredNorm() + 1e12;
 
-    double eps=1e-10, eps1=1e-80;
-    double tau=1e-3;
+    double eps=(isRedundantsolving?LM_epsRedundant:LM_eps);
+    double eps1=(isRedundantsolving?LM_eps1Redundant:LM_eps1);
+    double tau=(isRedundantsolving?LM_tauRedundant:LM_tau);
+    
+    if(debugMode==IterationLevel) {
+        std::stringstream stream;
+        
+        stream  << "LM: eps: "          << eps
+                << ", eps1: "           << eps1
+                << ", tau: "            << tau
+                << ", convergence: "    << (isRedundantsolving?convergenceRedundant:convergence)
+                << ", xsize: "          << xsize                
+                << ", maxIter: "        << maxIterNumber  << "\n";
+
+        const std::string tmp = stream.str();
+        Base::Console().Log(tmp.c_str());
+    }
+    
     double nu=2, mu=0;
     int iter=0, stop=0;
     for (iter=0; iter < maxIterNumber && !stop; ++iter) {
@@ -1197,6 +1297,7 @@ int System::solve_LM(SubSystem* subsys)
         if (iter == 0)
             mu = tau * diag_A.lpNorm<Eigen::Infinity>();
 
+        double h_norm;
         // determine increment using adaptive damping
         int k=0;
         while (k < 50) {
@@ -1218,7 +1319,7 @@ int System::solve_LM(SubSystem* subsys)
 
                 // compute par's new estimate and ||d_par||^2
                 x_new = x + h;
-                double h_norm = h.squaredNorm();
+                h_norm = h.squaredNorm();
 
                 if (h_norm <= eps1*eps1*x.norm()) { // relative change in p is small, stop
                     stop = 3;
@@ -1262,6 +1363,19 @@ int System::solve_LM(SubSystem* subsys)
             stop = 7;
             break;
         }
+        
+        if(debugMode==IterationLevel) {
+            std::stringstream stream;
+            // Iteration: 1, residual: 1e-3, tolg: 1e-5, tolx: 1e-3
+            
+            stream  << "LM, Iteration: "            << iter
+                    << ", err(eps): "               << err
+                    << ", g_inf(eps1): "            << g_inf
+                    << ", h_norm: "                 << h_norm << "\n";
+    
+            const std::string tmp = stream.str();
+            Base::Console().Log(tmp.c_str());
+        }
     }
 
     if (iter >= maxIterNumber)
@@ -1273,15 +1387,36 @@ int System::solve_LM(SubSystem* subsys)
 }
 
 
-int System::solve_DL(SubSystem* subsys)
+int System::solve_DL(SubSystem* subsys, bool isRedundantsolving)
 {
-    double tolg=1e-80, tolx=1e-80, tolf=1e-10;
-
+    double tolg=(isRedundantsolving?DL_tolgRedundant:DL_tolg);
+    double tolx=(isRedundantsolving?DL_tolxRedundant:DL_tolx);
+    double tolf=(isRedundantsolving?DL_tolfRedundant:DL_tolf);
+    
     int xsize = subsys->pSize();
     int csize = subsys->cSize();
 
     if (xsize == 0)
         return Success;
+    
+    int maxIterNumber = (isRedundantsolving?
+        (sketchSizeMultiplierRedundant?maxIterRedundant * xsize:maxIterRedundant):
+        (sketchSizeMultiplier?maxIter * xsize:maxIter));
+        
+    if(debugMode==IterationLevel) {
+        std::stringstream stream;
+        
+        stream  << "DL: tolg: "         << tolg
+                << ", tolx: "           << tolx
+                << ", tolf: "           << tolf
+                << ", convergence: "    << (isRedundantsolving?convergenceRedundant:convergence)
+                << ", xsize: "          << xsize
+                << ", csize: "          << csize
+                << ", maxIter: "        << maxIterNumber  << "\n";
+
+        const std::string tmp = stream.str();
+        Base::Console().Log(tmp.c_str());
+    }        
 
     Eigen::VectorXd x(xsize), x_new(xsize);
     Eigen::VectorXd fx(csize), fx_new(csize);
@@ -1300,8 +1435,7 @@ int System::solve_DL(SubSystem* subsys)
     // get the infinity norm fx_inf and g_inf
     double g_inf = g.lpNorm<Eigen::Infinity>();
     double fx_inf = fx.lpNorm<Eigen::Infinity>();
-
-    int maxIterNumber = MaxIterations * xsize;
+        
     double divergingLim = 1e6*err + 1e12;
 
     double delta=0.1;
@@ -1412,19 +1546,42 @@ int System::solve_DL(SubSystem* subsys)
         }
         else
             reduce--;
-
+        
+        if(debugMode==IterationLevel) {
+            std::stringstream stream;
+            // Iteration: 1, residual: 1e-3, tolg: 1e-5, tolx: 1e-3
+            
+            stream  << "DL, Iteration: "        << iter
+                    << ", fx_inf(tolf): "       << fx_inf
+                    << ", g_inf(tolg): "        << g_inf
+                    << ", delta(f(tolx)): "     << delta
+                    << ", err(divergingLim): "  << err  << "\n";
+    
+            const std::string tmp = stream.str();
+            Base::Console().Log(tmp.c_str());
+        }
+        
         // count this iteration and start again
         iter++;
     }
 
     subsys->revertParams();
+    
+    if(debugMode==IterationLevel) {
+        std::stringstream stream;
+        
+        stream  << "DL: stopcode: "     << stop << ((stop == 1) ? ", Success" : ", Failed") << "\n";
+
+        const std::string tmp = stream.str();
+        Base::Console().Log(tmp.c_str());
+    }    
 
     return (stop == 1) ? Success : Failed;
 }
 
 // The following solver variant solves a system compound of two subsystems
 // treating the first of them as of higher priority than the second
-int System::solve(SubSystem *subsysA, SubSystem *subsysB, bool isFine)
+int System::solve(SubSystem *subsysA, SubSystem *subsysB, bool isFine, bool isRedundantsolving)
 {
     int xsizeA = subsysA->pSize();
     int xsizeB = subsysB->pSize();
@@ -1470,8 +1627,11 @@ int System::solve(SubSystem *subsysA, SubSystem *subsysB, bool isFine)
     subsysA->calcJacobi(plistAB,JA);
     subsysA->calcResidual(resA);
 
-    double convergence = isFine ? XconvergenceFine : XconvergenceRough;
-    int maxIterNumber = MaxIterations;
+    //double convergence = isFine ? XconvergenceFine : XconvergenceRough;
+    int maxIterNumber = (isRedundantsolving?
+        (sketchSizeMultiplierRedundant?maxIterRedundant * xsize:maxIterRedundant):
+        (sketchSizeMultiplier?maxIter * xsize:maxIter));
+        
     double divergingLim = 1e6*subsysA->error() + 1e12;
 
     double mu = 0;
@@ -1565,7 +1725,7 @@ int System::solve(SubSystem *subsysA, SubSystem *subsysB, bool isFine)
         }
 
         double err = subsysA->error();
-        if (h.norm() <= convergence && err <= smallF)
+        if (h.norm() <= (isRedundantsolving?convergenceRedundant:convergence) && err <= smallF)
             break;
         if (err > divergingLim || err != err) // check for diverging and NaN
             break;
@@ -1574,7 +1734,7 @@ int System::solve(SubSystem *subsysA, SubSystem *subsysB, bool isFine)
     int ret;
     if (subsysA->error() <= smallF)
         ret = Success;
-    else if (h.norm() <= convergence)
+    else if (h.norm() <= (isRedundantsolving?convergenceRedundant:convergence))
         ret = Converged;
     else
         ret = Failed;
@@ -1603,7 +1763,7 @@ void System::undoSolution()
     resetToReference();
 }
 
-int System::diagnose()
+int System::diagnose(Algorithm alg)
 {
     // Analyses the constrainess grad of the system and provides feedback
     // The vector "conflictingTags" will hold a group of conflicting constraints
@@ -1636,6 +1796,25 @@ int System::diagnose()
         }
     }
     
+#ifdef EIGEN_SPARSEQR_COMPATIBLE
+    Eigen::SparseMatrix<double> SJ;
+    
+    if(qrAlgorithm==EigenSparseQR){
+        // this creation is not optimized (done using triplets)
+        // however the time this takes is negligible compared to the
+        // time the QR decomposition itself takes
+        SJ = J.sparseView();
+        SJ.makeCompressed();
+    }
+    
+    Eigen::SparseQR<Eigen::SparseMatrix<double>, Eigen::COLAMDOrdering<int> > SqrJT;
+#else
+    if(qrAlgorithm==EigenSparseQR){        
+        Base::Console().Warning("SparseQR not supported by you current version of Eigen. It requires Eigen 3.2.2 or higher. Falling back to Dense QR\n");        
+        qrAlgorithm=EigenDenseQR;
+    }
+#endif
+    
     #ifdef _GCS_DEBUG
     // Debug code starts
     std::stringstream stream;
@@ -1646,26 +1825,91 @@ int System::diagnose()
     
     const std::string tmp = stream.str();
     
-    Base::Console().Warning(tmp.c_str());
+    Base::Console().Log(tmp.c_str());
     // Debug code ends
     #endif
     
-    if (J.rows() > 0) {
-        Eigen::FullPivHouseholderQR<Eigen::MatrixXd> qrJT(J.topRows(count).transpose());
-        Eigen::MatrixXd Q = qrJT.matrixQ ();
-        int paramsNum = qrJT.rows();
-        int constrNum = qrJT.cols();
-        qrJT.setThreshold(1e-13);
-        int rank = qrJT.rank();
+    Eigen::MatrixXd R;
+    int paramsNum;
+    int constrNum;
+    int rank;
+    Eigen::FullPivHouseholderQR<Eigen::MatrixXd> qrJT;
+    
+    if(qrAlgorithm==EigenDenseQR){
+        if (J.rows() > 0) {
+            qrJT=Eigen::FullPivHouseholderQR<Eigen::MatrixXd>(J.topRows(count).transpose());
+            Eigen::MatrixXd Q = qrJT.matrixQ ();
+            
+            paramsNum = qrJT.rows();
+            constrNum = qrJT.cols();
+            qrJT.setThreshold(qrpivotThreshold);
+            rank = qrJT.rank();
 
-        Eigen::MatrixXd R;
-        if (constrNum >= paramsNum)
-            R = qrJT.matrixQR().triangularView<Eigen::Upper>();
-        else
-            R = qrJT.matrixQR().topRows(constrNum)
-                               .triangularView<Eigen::Upper>();
-                               
-                
+            if (constrNum >= paramsNum)
+                R = qrJT.matrixQR().triangularView<Eigen::Upper>();
+            else
+                R = qrJT.matrixQR().topRows(constrNum)
+                                .triangularView<Eigen::Upper>();        
+        }
+    }
+    #ifdef EIGEN_SPARSEQR_COMPATIBLE    
+    else if(qrAlgorithm==EigenSparseQR){
+        if (SJ.rows() > 0) {
+            SqrJT=Eigen::SparseQR<Eigen::SparseMatrix<double>, Eigen::COLAMDOrdering<int> >(SJ.topRows(count).transpose());
+            // Do not ask for Q Matrix!!
+            // At Eigen 3.2 still has a bug that this only works for square matrices
+            // if enabled it will crash
+            //Eigen::SparseMatrix<double> Q = qrJT.matrixQ(); 
+            //qrJT.matrixQ().evalTo(Q);
+            
+            paramsNum = SqrJT.rows();
+            constrNum = SqrJT.cols();
+            SqrJT.setPivotThreshold(qrpivotThreshold);
+            rank = SqrJT.rank();
+            
+            if (constrNum >= paramsNum)
+                R = SqrJT.matrixR().triangularView<Eigen::Upper>();
+            else
+                R = SqrJT.matrixR().topRows(constrNum)
+                                    .triangularView<Eigen::Upper>();    
+        }
+    }
+    #endif
+    
+    if(debugMode==IterationLevel) {
+        std::stringstream stream;
+        stream  << (qrAlgorithm==EigenSparseQR?"EigenSparseQR":(qrAlgorithm==EigenDenseQR?"DenseQR":""));        
+        
+        if (J.rows() > 0) {
+            stream
+            #ifdef EIGEN_SPARSEQR_COMPATIBLE
+                    << ", Threads: " << Eigen::nbThreads()
+            #endif
+                    #ifdef EIGEN_VECTORIZE
+                    << ", Vectorization: On"
+                    #endif            
+                    << ", Pivot Threshold: " << qrpivotThreshold                    
+                    << ", Params: " << paramsNum
+                    << ", Constr: " << constrNum
+                    << ", Rank: "   << rank         << "\n";
+        }
+        else {
+            stream  
+            #ifdef EIGEN_SPARSEQR_COMPATIBLE
+                    << ", Threads: " << Eigen::nbThreads()
+            #endif
+                    #ifdef EIGEN_VECTORIZE
+                    << ", Vectorization: On"
+                    #endif                
+                    << ", Empty Sketch, nothing to solve" << "\n";            
+        }
+        
+        const std::string tmp = stream.str();
+        Base::Console().Log(tmp.c_str());        
+    }
+        
+    if (J.rows() > 0) {
+        
         #ifdef _GCS_DEBUG_SOLVER_JACOBIAN_QR_DECOMPOSITION_TRIANGULAR_MATRIX
         // Debug code starts
         std::stringstream stream;
@@ -1676,7 +1920,7 @@ int System::diagnose()
         
         const std::string tmp = stream.str();
         
-        Base::Console().Warning(tmp.c_str());
+        Base::Console().Log(tmp.c_str());
         // Debug code ends
         #endif
 
@@ -1696,11 +1940,28 @@ int System::diagnose()
             for (int j=rank; j < constrNum; j++) {
                 for (int row=0; row < rank; row++) {
                     if (fabs(R(row,j)) > 1e-10) {
-                        int origCol = qrJT.colsPermutation().indices()[row];
+                        int origCol;
+                        
+                        if(qrAlgorithm==EigenDenseQR)
+                            origCol=qrJT.colsPermutation().indices()[row];
+                        #ifdef EIGEN_SPARSEQR_COMPATIBLE
+                        else if(qrAlgorithm==EigenSparseQR)
+                            origCol=SqrJT.colsPermutation().indices()[row];
+                        #endif
+                        
                         conflictGroups[j-rank].push_back(clist[origCol]);
                     }
                 }
-                int origCol = qrJT.colsPermutation().indices()[j];
+                int origCol;
+                        
+                if(qrAlgorithm==EigenDenseQR)
+                    origCol=qrJT.colsPermutation().indices()[j];
+                
+                #ifdef EIGEN_SPARSEQR_COMPATIBLE
+                else if(qrAlgorithm==EigenSparseQR)
+                    origCol=SqrJT.colsPermutation().indices()[j]; 
+                #endif
+                
                 conflictGroups[j-rank].push_back(clist[origCol]);
             }
 
@@ -1750,16 +2011,39 @@ int System::diagnose()
                     clistTmp.push_back(*constr);
 
             SubSystem *subSysTmp = new SubSystem(clistTmp, plist);
-            int res = solve(subSysTmp);
+            int res = solve(subSysTmp,true,alg,true);
+            
+            if(debugMode==Minimal || debugMode==IterationLevel) {
+                std::string solvername;
+                switch (alg) {
+                    case 0:
+                        solvername = "BFGS";
+                        break;
+                    case 1: // solving with the LevenbergMarquardt solver
+                        solvername = "LevenbergMarquardt";
+                        break;
+                    case 2: // solving with the BFGS solver
+                        solvername = "DogLeg";
+                        break;
+                }    
+                
+            Base::Console().Log("Sketcher::RedundantSolving-%s-\n",solvername.c_str());
+                        
+            }
+            
             if (res == Success) {
                 subSysTmp->applySolution();
                 for (std::set<Constraint *>::const_iterator constr=skipped.begin();
                      constr != skipped.end(); constr++) {
                     double err = (*constr)->error();
-                    if (err * err < XconvergenceFine)
+                    if (err * err < convergenceRedundant)
                         redundant.insert(*constr);
                 }
                 resetToReference();
+                
+                if(debugMode==Minimal || debugMode==IterationLevel) {                    
+                    Base::Console().Log("Sketcher Redundant solving: %d redundants\n",redundant.size());          
+                }
 
                 std::vector< std::vector<Constraint *> > conflictGroupsOrig=conflictGroups;
                 conflictGroups.clear();
