@@ -75,6 +75,27 @@ class ObjectHop:
         obj.Path = path
 
 
+
+class ViewProviderPathHop:
+
+    def __init__(self,vobj):
+        vobj.Proxy = self
+
+    def attach(self,vobj):
+        self.Object = vobj.Object
+        return
+
+    def getIcon(self):
+        return ":/icons/Path-Hop.svg"
+
+    def __getstate__(self):
+        return None
+
+    def __setstate__(self,state):
+        return None
+
+
+
 class CommandPathHop:
 
 
@@ -102,8 +123,9 @@ class CommandPathHop:
         FreeCADGui.addModule("PathScripts.PathHop")
         FreeCADGui.doCommand('obj = FreeCAD.ActiveDocument.addObject("Path::FeaturePython","Hop")')
         FreeCADGui.doCommand('PathScripts.PathHop.ObjectHop(obj)')
+        FreeCADGui.doCommand('PathScripts.PathHop.ViewProviderPathHop(obj.ViewObject)')
         FreeCADGui.doCommand('obj.NextObject = FreeCAD.ActiveDocument.' + selection[0].Name)
-        FreeCADGui.doCommand('obj.ViewObject.Proxy = 0')
+        FreeCADGui.doCommand('PathScripts.PathUtils.addToProject(obj)')
         FreeCAD.ActiveDocument.commitTransaction()
         FreeCAD.ActiveDocument.recompute()
 

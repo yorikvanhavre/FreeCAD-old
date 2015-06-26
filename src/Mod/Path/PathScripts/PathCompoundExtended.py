@@ -63,6 +63,26 @@ class ObjectCompoundExtended:
             path = Path.Path(cmds)
             obj.Path = path
 
+
+class ViewProviderCompoundExtended:
+
+    def __init__(self,vobj):
+        vobj.Proxy = self
+
+    def attach(self,vobj):
+        self.Object = vobj.Object
+        return
+
+    def getIcon(self):
+        return ":/icons/Path-Compound.svg"
+
+    def __getstate__(self):
+        return None
+
+    def __setstate__(self,state):
+        return None
+
+
 class CommandCompoundExtended:
 
 
@@ -82,7 +102,7 @@ class CommandCompoundExtended:
         snippet = '''
 import Path
 import PathScripts
-from PathScripts import PathProject
+from PathScripts import PathUtils
 incl = []
 prjexists = False
 sel = FreeCADGui.Selection.getSelection()
@@ -92,25 +112,8 @@ for s in sel:
 
 obj = FreeCAD.ActiveDocument.addObject("Path::FeatureCompoundPython","Compound")
 PathScripts.PathCompoundExtended.ObjectCompoundExtended(obj)
-
-for o in FreeCAD.ActiveDocument.Objects:
-    if "Proxy" in o.PropertiesList:
-        if isinstance(o.Proxy,PathProject.ObjectPathProject):
-            project = o
-            g = o.Group
-            g.append(obj)
-            o.Group = g
-            prjexists = True
-
-if prjexists:
-    pass
-else: #create a new path object
-    project = FreeCAD.ActiveDocument.addObject("Path::FeatureCompoundPython","Project")
-    PathProject.ObjectPathProject(project)
-    PathProject.ViewProviderProject(project.ViewObject)
-    g = project.Group
-    g.append(obj)
-    project.Group = g
+PathScripts.PathCompoundExtended.ViewProviderCompoundExtended(obj.ViewObject)
+project = PathUtils.addToProject(obj)
 
 if incl:
     children = []
@@ -123,7 +126,6 @@ if incl:
     project.Group = p
     g.append(children)
     obj.Group = children
-obj.ViewObject.Proxy = 0
 '''
         FreeCADGui.doCommand(snippet)
         FreeCAD.ActiveDocument.commitTransaction()

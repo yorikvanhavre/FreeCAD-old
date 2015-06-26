@@ -50,19 +50,24 @@ class FromShape:
     def execute(self,obj):
         pass
 
-#class _ViewProviderFromShape:
 
-#    def __init__(self,vobj): #mandatory
-#        vobj.Proxy = self
+class _ViewProviderFromShape:
 
-#    def __getstate__(self): #mandatory
-#        return None
+    def __init__(self,vobj): #mandatory
+        vobj.Proxy = self
 
-#    def __setstate__(self,state): #mandatory
-#        return None
+    def attach(self, vobj):
+        self.Object = vobj.Object
 
-#    def getIcon(self): #optional
-#        return ":/icons/Path-Shape.svg"
+    def __getstate__(self): #mandatory
+        return None
+
+    def __setstate__(self,state): #mandatory
+        return None
+
+    def getIcon(self): #optional
+        return ":/icons/Path-Shape.svg"
+
 
 class CommandFromShape:
     def GetResources(self):
@@ -82,32 +87,14 @@ class CommandFromShape:
 import Path
 import PathScripts
 from PathScripts import PathFromShape
-from PathScripts import PathProject
-prjexists = False
+from PathScripts import PathUtils
 
 obj = FreeCAD.activeDocument().addObject('Path::FeatureShape','PathShape')
 obj.Shape= FreeCAD.activeDocument().Rectangle.Shape.copy()
 
-for o in FreeCAD.ActiveDocument.Objects:
-    if "Proxy" in o.PropertiesList:
-        if isinstance(o.Proxy,PathProject.ObjectPathProject):
-            g = o.Group
-            g.append(obj)
-            o.Group = g
-            prjexists = True
-if prjexists:
-    pass
-else: #create a new path object
-    project = FreeCAD.ActiveDocument.addObject("Path::FeatureCompoundPython","Project")
-    PathProject.ObjectPathProject(project)
-    PathProject.ViewProviderProject(project.ViewObject)
-    g = project.Group
-    g.append(obj)
-    project.Group = g
+PathUtils.addToProject(obj)
 
-
-
-#PathScripts.PathFromShape._ViewProviderFromShape(obj.ViewObject)
+PathScripts.PathFromShape._ViewProviderFromShape(obj.ViewObject)
 App.ActiveDocument.recompute()
 '''
         FreeCADGui.doCommand(consolecode)

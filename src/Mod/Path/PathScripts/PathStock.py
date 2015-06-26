@@ -26,7 +26,7 @@
 import Draft,Part
 import FreeCAD, FreeCADGui
 from FreeCAD import Vector
-from PySide import QtCore,QtGui
+from PySide import QtCore, QtGui
 
 # Qt tanslation handling
 try:
@@ -85,25 +85,8 @@ class _ViewProviderStock:
     def getIcon(self): #optional
         return ":/icons/Path-Stock.svg"
 
-#    def attach(self): #optional
-#        # this is executed on object creation and object load from file
-#        pass
-
-    def onChanged(self,obj,prop): #optional
-        # this is executed when a property of the VIEW PROVIDER changes
-        pass
-
-    def updateData(self,obj,prop): #optional
-        # this is executed when a property of the APP OBJECT changes
-        pass
-
-    def setEdit(self,vobj,mode): #optional
-        # this is executed when the object is double-clicked in the tree
-        pass
-
-    def unsetEdit(self,vobj,mode): #optional
-        # this is executed when the user cancels or terminates edit mode
-        pass
+    def attach(self, vobj): #optional
+        self.Object = vobj.Object
 
 
 
@@ -128,9 +111,10 @@ if len(FreeCADGui.Selection.getSelection())>0:
     if "Shape" in o.PropertiesList:
         obj =FreeCAD.ActiveDocument.addObject('Part::FeaturePython',sel[0].Name+('_Stock'))
         PathScripts.PathStock.Stock(obj)
+        PathScripts.PathStock._ViewProviderStock(obj.ViewObject)
+        PathScripts.PathUtils.addToProject(obj)
         baseobj = sel[0]
         obj.Base = baseobj
-        PathScripts.PathStock._ViewProviderStock(obj.ViewObject)
         FreeCADGui.ActiveDocument.getObject(sel[0].Name+("_Stock")).ShapeColor = (0.3333,0.6667,1.0000)
         FreeCADGui.ActiveDocument.getObject(sel[0].Name+("_Stock")).Transparency = 75
         FreeCAD.ActiveDocument.recompute()
@@ -146,3 +130,4 @@ if FreeCAD.GuiUp:
     FreeCADGui.addCommand('Path_Stock',CommandPathStock())
 
 FreeCAD.Console.PrintLog("Loading PathStock... done\n")
+

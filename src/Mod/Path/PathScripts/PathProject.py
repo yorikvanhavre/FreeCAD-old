@@ -124,56 +124,27 @@ class CommandProject:
             if obj.isDerivedFrom("Path::Feature"):
                 incl.append(obj)
         FreeCAD.ActiveDocument.openTransaction(translate("PathProject","Create Project"))
-        FreeCADGui.addModule("PathScripts.PathProject")
-        FreeCADGui.doCommand('obj = FreeCAD.ActiveDocument.addObject("Path::FeatureCompoundPython","Project")')
-        FreeCADGui.doCommand('PathScripts.PathProject.ObjectPathProject(obj)')
-        if incl:
-            FreeCADGui.doCommand('children = []')
-            for obj in incl:
-                FreeCADGui.doCommand('children.append(FreeCAD.ActiveDocument.'+obj.Name+')')
-            FreeCADGui.doCommand('obj.Group = children')
-        FreeCADGui.doCommand('PathScripts.PathProject.ViewProviderProject(obj.ViewObject)')
-
-        addmachine = '''
-import Path
-import PathScripts
-from PathScripts import PathProject
-prjexists = False
-obj = FreeCAD.ActiveDocument.addObject("Path::FeaturePython","Machine")
-PathScripts.PathMachine.Machine(obj)
-
-PathScripts.PathMachine._ViewProviderMachine(obj.ViewObject)
-for o in FreeCAD.ActiveDocument.Objects:
-    if "Proxy" in o.PropertiesList:
-        if isinstance(o.Proxy,PathProject.ObjectPathProject):
-            g = o.Group
-            g.append(obj)
-            o.Group = g
-            prjexists = True
-
-if prjexists:
-    pass
-else: #create a new path object
-    project = FreeCAD.ActiveDocument.addObject("Path::FeatureCompoundPython","Project")
-    PathProject.ObjectPathProject(project)
-    PathProject.ViewProviderProject(project.ViewObject)
-    g = project.Group
-    g.append(obj)
-    project.Group = g
-UnitParams = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Units")
-if UnitParams.GetInt('UserSchema') == 0:
-    obj.MachineUnits = 'Metric'
-     #metric mode
-else:
-    obj.MachineUnits = 'Inch'
-obj.ViewObject.ShowFirstRapid = False
-
-'''
-
-        FreeCADGui.doCommand(addmachine)
-
+        CommandProject.Create(incl)
         FreeCAD.ActiveDocument.commitTransaction()
         FreeCAD.ActiveDocument.recompute()
+
+    @staticmethod
+    def Create(pathChildren = []):
+        """Code to create a project"""
+        #FreeCADGui.addModule("PathScripts.PathProject")
+        obj = FreeCAD.ActiveDocument.addObject("Path::FeatureCompoundPython","Project")
+        ObjectPathProject(obj)
+        if pathChildren:
+            for child in pathChildren:
+                pathChildren.append(FreeCAD.ActiveDocument.getObject(obj.Name))
+            obj.Group = pathChildren
+        ViewProviderProject(obj.ViewObject)
+
+        #create a machine obj
+        import PathScripts
+        PathScripts.PathMachine.CommandPathMachine.Create()
+
+        return obj
 
 
 if FreeCAD.GuiUp: 

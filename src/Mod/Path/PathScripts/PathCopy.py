@@ -56,6 +56,25 @@ class ObjectPathCopy:
                 obj.Path = obj.Base.Path.copy()
 
 
+class ViewProviderPathCopy:
+
+    def __init__(self,vobj):
+        vobj.Proxy = self
+
+    def attach(self,vobj):
+        self.Object = vobj.Object
+        return
+
+    def getIcon(self):
+        return ":/icons/Path-Copy.svg"
+
+    def __getstate__(self):
+        return None
+
+    def __setstate__(self,state):
+        return None
+
+
 class CommandPathCopy:
 
 
@@ -93,8 +112,8 @@ if not selection[0].isDerivedFrom("Path::Feature"):
 if selGood:
     obj = FreeCAD.ActiveDocument.addObject("Path::FeaturePython", str(selection[0].Name)+'_Copy')
     PathScripts.PathCopy.ObjectPathCopy(obj)
+    PathScripts.PathCopy.ViewProviderPathCopy(obj.ViewObject)
     obj.Base = FreeCAD.ActiveDocument.getObject(selection[0].Name)
-    obj.ViewObject.Proxy = 0
 
 g = proj.Group
 g.append(obj)

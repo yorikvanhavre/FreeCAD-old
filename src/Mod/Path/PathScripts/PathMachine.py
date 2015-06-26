@@ -24,7 +24,7 @@
 ''' A CNC machine object to define how code is posted '''
 
 import FreeCAD,FreeCADGui,Path,PathGui
-from PathScripts import PathProject
+from PathScripts import PathProject, PathUtils
 from PySide import QtCore,QtGui
 import os, sys
 
@@ -195,47 +195,27 @@ class CommandPathMachine:
 
     def Activated(self):
         FreeCAD.ActiveDocument.openTransaction(translate("PathMachine","Create a Machine object"))
-        FreeCADGui.addModule("PathScripts.PathMachine")
-        snippet = '''
-import Path
-import PathScripts
-from PathScripts import PathProject
-prjexists = False
-obj = FreeCAD.ActiveDocument.addObject("Path::FeaturePython","Machine")
-PathScripts.PathMachine.Machine(obj)
-
-PathScripts.PathMachine._ViewProviderMachine(obj.ViewObject)
-for o in FreeCAD.ActiveDocument.Objects:
-    if "Proxy" in o.PropertiesList:
-        if isinstance(o.Proxy,PathProject.ObjectPathProject):
-            g = o.Group
-            g.append(obj)
-            o.Group = g
-            prjexists = True
-
-if prjexists:
-    pass
-else: #create a new path object
-    project = FreeCAD.ActiveDocument.addObject("Path::FeatureCompoundPython","Project")
-    PathProject.ObjectPathProject(project)
-    PathProject.ViewProviderProject(project.ViewObject)
-    g = project.Group
-    g.append(obj)
-    project.Group = g
-UnitParams = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Units")
-if UnitParams.GetInt('UserSchema') == 0:
-    obj.MachineUnits = 'Metric'
-     #metric mode
-else:
-    obj.MachineUnits = 'Inch'
-
-obj.ViewObject.ShowFirstRapid = False
-
-'''
-
-        FreeCADGui.doCommand(snippet)
+        CommandPathMachine.Create()
         FreeCAD.ActiveDocument.commitTransaction()
         FreeCAD.ActiveDocument.recompute()
+
+    @staticmethod
+    def Create():
+        obj = FreeCAD.ActiveDocument.addObject("Path::FeaturePython","Machine")
+        Machine(obj)
+        _ViewProviderMachine(obj.ViewObject)
+
+        PathUtils.addToProject(obj)
+
+        UnitParams = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Units")
+        if UnitParams.GetInt('UserSchema') == 0:
+            obj.MachineUnits = 'Metric'
+            #metric mode
+        else:
+            obj.MachineUnits = 'Inch'
+
+        obj.ViewObject.ShowFirstRapid = False
+        return obj
 
 if FreeCAD.GuiUp: 
     # register the FreeCAD command

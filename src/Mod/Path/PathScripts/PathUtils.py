@@ -30,6 +30,7 @@ import math
 import DraftGeomUtils
 from DraftGeomUtils import geomType
 import DraftVecUtils
+from PathScripts import PathProject
 
 def cleanedges(splines,precision):
     '''cleanedges([splines],precision). Convert BSpline curves, Beziers, to arcs that can be used for cnc paths.
@@ -309,7 +310,7 @@ def changeTool(obj,proj):
     tlnum = 0
     for p in proj.Group:
         if not hasattr(p,"Group"):
-            if hasattr(p,'ToolNumber'):
+            if hasattr(p,'ToolNumber') and p.ToolNumber > 0:
                 tlnum = p.ToolNumber
             if p == obj:
                 return tlnum
@@ -321,11 +322,14 @@ def changeTool(obj,proj):
                     return tlnum
 
 
-def findProj():
-    for o in FreeCAD.ActiveDocument.Objects:
-        if "Proxy" in o.PropertiesList:
-            if isinstance(o.Proxy,PathProject.ObjectPathProject):
-                return o
+def getLastTool(obj):
+    toolNum = obj.ToolNumber
+    if obj.ToolNumber == 0:
+        # find tool from previous toolchange
+        proj = findProj()
+        toolNum = changeTool(obj, proj)
+    return getTool(obj, toolNum)
+
 
 def getTool(obj,number=0):
     "retrieves a tool from a hosting object with a tooltable, if any"
@@ -338,6 +342,28 @@ def getTool(obj,number=0):
     for o in obj.InList:
         return getTool(o,number)
     return None
+
+
+def findProj():
+    for o in FreeCAD.ActiveDocument.Objects:
+        if "Proxy" in o.PropertiesList:
+            if isinstance(o.Proxy, PathProject.ObjectPathProject):
+                return o
+
+
+def addToProject(obj):
+        """Adds a path obj to this document, if no PathParoject exists it's created on the fly"""
+        project = findProj()
+
+        if project == None:
+            project = PathProject.CommandProject.Create()
+
+        g = project.Group
+        g.append(obj)
+        project.Group = g
+
+        return project
+
 
 def getLastZ(obj):
     ''' find the last z value in the project '''

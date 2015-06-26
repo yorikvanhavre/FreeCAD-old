@@ -166,6 +166,25 @@ class ObjectProfile:
                 obj.ViewObject.Visibility = False
 
 
+class ViewProviderProfile:
+
+    def __init__(self,vobj):
+        vobj.Proxy = self
+
+    def attach(self,vobj):
+        self.Object = vobj.Object
+        return
+
+    def getIcon(self):
+        return ":/icons/Path-Profile.svg"
+
+    def __getstate__(self):
+        return None
+
+    def __setstate__(self,state):
+        return None
+
+
 class CommandPathProfile:
     def GetResources(self):
         return {'Pixmap'  : 'Path-Profile',
@@ -191,6 +210,7 @@ class CommandPathProfile:
 
         obj = FreeCAD.ActiveDocument.addObject("Path::FeaturePython","Profile")
         PathProfile.ObjectProfile(obj)
+        PathProfile.ViewProviderProfile(obj.ViewObject)
 
         obj.Base = (FreeCAD.ActiveDocument.getObject(selection['objname']))
 
@@ -234,28 +254,11 @@ class CommandPathProfile:
         obj.FinalDepth.Value = ZMin-1.0
         obj.ClearanceHeight.Value =  ZMax + 5.0
         obj.SegLen.Value = 0.5
-        obj.ViewObject.Proxy = 0
         obj.Active = True
         obj.ViewObject.ShowFirstRapid = False
 
-        for o in FreeCAD.ActiveDocument.Objects:
-            if "Proxy" in o.PropertiesList:
-                if isinstance(o.Proxy,PathProject.ObjectPathProject):
-                    project = o
-                    g = o.Group
-                    g.append(obj)
-                    o.Group = g
-                    prjexists = True
+        project = PathUtils.addToProject(obj)
 
-        if prjexists:
-            pass
-        else: #create a new path object
-            project = FreeCAD.ActiveDocument.addObject("Path::FeatureCompoundPython","Project")
-            PathProject.ObjectPathProject(project)
-            PathProject.ViewProviderProject(project.ViewObject)
-            g = project.Group
-            g.append(obj)
-            project.Group = g
         tl = PathUtils.changeTool(obj,project)
         if tl:
             obj.ToolNum = tl
