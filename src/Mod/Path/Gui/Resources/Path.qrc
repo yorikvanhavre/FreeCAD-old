@@ -1,0 +1,13 @@
+<RCC>
+    <qresource> 
+        <file>icons/preferences-path.svg</file>
+        <file>icons/Path-Toolpath.svg</file>
+        <file>icons/Path-Compound.svg</file>
+        <file>icons/Path-Shape.svg</file>
+        <file>icons/Path-Profile.svg</file>
+        <file>icons/Path-Pocket.svg</file>
+        <file>icons/Path-Drilling.svg</file>
+        <file>icons/Path-Project.svg</file>
+        <file>icons/Path-Dressup.svg</file>
+    </qresource>
+</RCC> 

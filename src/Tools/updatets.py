@@ -64,7 +64,9 @@ PyCommands = [["src/Mod/Draft",
               ["src/Mod/Ship",
                'pylupdate `find ./ -name "*.py"` -ts resources/translations/Ship.ts'],
               ["src/Mod/Plot",
-               'pylupdate `find ./ -name "*.py"` -ts resources/translations/Plot.ts']]
+               'pylupdate `find ./ -name "*.py"` -ts resources/translations/Plot.ts'],
+              ["src/Mod/Path",
+               'pylupdate `find ./ -name "*.py"` -ts Resources/translations/PathPy.ts && lconvert -i Resources/translations/Path.ts Resources/translations/PathPy.ts -o Resources/translations/Path.ts && rm Resources/translations/PathPy.ts']]
 
 # add python folders to exclude list
 for c in PyCommands:
@@ -73,9 +75,10 @@ for c in PyCommands:
 QMAKE = ""
 LUPDATE = ""
 PYLUPDATE = ""
+LCONVERT = ""
 
 def find_tools():
-    global QMAKE, LUPDATE, PYLUPDATE
+    global QMAKE, LUPDATE, PYLUPDATE, LCONVERT
     if (os.system("qmake-qt4 -version") == 0):
         QMAKE = "qmake-qt4"
     elif (os.system("qmake -version") == 0):
@@ -92,9 +95,17 @@ def find_tools():
         PYLUPDATE = "pylupdate"
     elif (os.system("pylupdate4 -version") == 0):
         PYLUPDATE = "pylupdate4"
+    elif (os.system("pyside-lupdate -version") == 0):
+        PYLUPDATE = "pyside-lupdate"
     else:
         raise Exception("Cannot find pylupdate")
-    print "Qt tools:", QMAKE, LUPDATE, PYLUPDATE
+    if (os.system("lconvert-qt4 -version") == 0):
+        QMAKE = "lconvert-qt4"
+    elif (os.system("lconvert -version") == 0):
+        QMAKE = "lconvert"
+    else:
+        raise Exception("Cannot find lconvert")
+    print "Qt tools:", QMAKE, LUPDATE, PYLUPDATE. LCONVERT
 
 def filter_dirs(item):
     global DirFilter
@@ -121,6 +132,7 @@ def update_python_translation(item):
     cur = os.getcwd()
     os.chdir(item[0])
     execline = item[1].replace("pylupdate",PYLUPDATE)
+    execline = item[1].replace("lconvert",LCONVERT)
     print "Executing special command in ",item[0],": ",execline
     os.system(execline)
     os.chdir(cur)
