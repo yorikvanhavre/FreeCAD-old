@@ -573,7 +573,19 @@ class Editor(QtGui.QDialog):
 
     def addnew(self):
         "adds a new tool at the end of the table"
-        self.tooltable.addTools(Path.Tool())
+        tool = Path.Tool()
+        print self.NameField
+        if self.NameField.text():
+            tool.Name = str(self.NameField.text())
+        tool.ToolType = self.getType(self.TypeField.currentIndex())
+        tool.Material = self.getMaterial(self.MaterialField.currentIndex())
+        tool.Diameter = self.DiameterField.value()
+        tool.LengthOffset = self.LengthOffsetField.value()
+        tool.FlatRadius = self.FlatRadiusField.value()
+        tool.CornerRadius = self.CornerRadiusField.value()
+        tool.CuttingEdgeAngle = self.CuttingEdgeAngleField.value()
+        tool.CuttingEdgeHeight = self.CuttingEdgeHeightField.value()
+        self.tooltable.addTools(tool)
         self.reset()
         
     def read(self):
@@ -606,31 +618,30 @@ class Editor(QtGui.QDialog):
     def moveup(self):
         "moves a tool to a lower number, if possible"
         if self.number:
-            target = None
-            print self.tooltable.Tools
-            for k in range(self.number-1,0,-1):
-                print self.tooltable.Tools.keys()
-                if not k in self.tooltable.Tools.keys():
-                    target = k
-                    break
-            if target != None:
-                t = self.tooltable.getTool(self.number).copy()
-                self.tooltable.deleteTool(self.number)
-                self.tooltable.setTool(target,t)
-                self.reset()
-                
+            if self.number < 2:
+                return
+            target = self.number - 1
+            t1 = self.tooltable.getTool(self.number).copy()
+            self.tooltable.deleteTool(self.number)
+            if target in self.tooltable.Tools.keys():
+                t2 = self.tooltable.getTool(target).copy()
+                self.tooltable.deleteTool(target)
+                self.tooltable.setTool(self.number,t2)
+            self.tooltable.setTool(target,t1)
+            self.reset()
+                            
     def movedown(self):
         "moves a tool to a higher number, if possible"
         if self.number:
-            target = self.number
-            for k in self.tooltable.Tools.keys():
-                if k > target:
-                    target = k
-            t = self.tooltable.getTool(self.number).copy()
+            target = self.number + 1
+            t1 = self.tooltable.getTool(self.number).copy()
             self.tooltable.deleteTool(self.number)
-            self.tooltable.setTool(target+1,t)
+            if target in self.tooltable.Tools.keys():
+                t2 = self.tooltable.getTool(target).copy()
+                self.tooltable.deleteTool(target)
+                self.tooltable.setTool(self.number,t2)
+            self.tooltable.setTool(target,t1)
             self.reset()
-                
 
 def edit(objectname):
     """edit(objectname): this is the main function of this module.
