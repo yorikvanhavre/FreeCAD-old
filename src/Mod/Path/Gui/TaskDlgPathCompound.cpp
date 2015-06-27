@@ -140,11 +140,13 @@ bool TaskDlgPathCompound::accept()
         paths.push_back(pcPath);
     }
     pcCompound->Group.setValues(paths);
+    Gui::Command::doCommand(Gui::Command::Gui,"Gui.activeDocument().resetEdit()");
     return true;
 }
 
 bool TaskDlgPathCompound::reject()
 {
+    Gui::Command::doCommand(Gui::Command::Gui,"Gui.activeDocument().resetEdit()");
     return true;
 }
 

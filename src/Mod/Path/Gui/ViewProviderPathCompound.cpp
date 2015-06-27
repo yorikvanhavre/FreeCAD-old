@@ -45,15 +45,12 @@ bool ViewProviderPathCompound::setEdit(int ModNum)
     Gui::TaskView::TaskDialog* dlg = new TaskDlgPathCompound(this);
     Gui::Control().showDialog(dlg);
     return true;
-
 }
 
 void ViewProviderPathCompound::unsetEdit(int ModNum)
 {
     // when pressing ESC make sure to close the dialog
     Gui::Control().closeDialog();
-
-
 }
 
 std::vector<App::DocumentObject*> ViewProviderPathCompound::claimChildren(void)const
