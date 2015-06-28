@@ -47,8 +47,9 @@ class CommandPathToolTableEdit:
     def Activated(self):
         FreeCAD.ActiveDocument.openTransaction(translate("PathToolTableEdit","Edits a Tool Table in a selected Project"))
         FreeCADGui.doCommand("from PathScripts import TooltableEditor")
-        FreeCADGui.doCommand('obj = FreeCADGui.Selection.getSelection()[0]')
-        FreeCADGui.doCommand('TooltableEditor.edit(obj.Name)')
+        FreeCADGui.doCommand("from PathScripts import PathUtils")
+        FreeCADGui.doCommand('machine = PathUtils.findMachine()')
+        FreeCADGui.doCommand('TooltableEditor.edit(machine.Name)')
         FreeCAD.ActiveDocument.commitTransaction()
         FreeCAD.ActiveDocument.recompute()
 

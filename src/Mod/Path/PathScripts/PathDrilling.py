@@ -59,9 +59,9 @@ class ObjectDrilling:
         obj.addProperty("App::PropertyString","Comment","Path",translate("PathProject","An optional comment for this profile"))
         obj.addProperty("App::PropertyBool","Active","Path",translate("Active","Make False, to prevent operation from generating code"))
 
-        obj.addProperty("App::PropertyIntegerConstraint","ToolNum","Tool",translate("PathProfile","The tool number in use"))
-        obj.ToolNum = (0,0,1000,1) 
-
+        obj.addProperty("App::PropertyIntegerConstraint","ToolNumber","Tool",translate("PathProfile","The tool number in use"))
+        obj.ToolNumber = (0,0,1000,1) 
+#       obj.setEditorMode('ToolNumber',1) #make this read only
         
         obj.Proxy = self
 
@@ -179,7 +179,7 @@ class CommandPathDrilling:
 
         tl = PathUtils.changeTool(obj,project)
         if tl:
-            obj.ToolNum = tl
+            obj.ToolNumber = tl
 
         FreeCAD.ActiveDocument.commitTransaction()
         FreeCAD.ActiveDocument.recompute()

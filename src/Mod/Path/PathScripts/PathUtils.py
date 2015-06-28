@@ -30,6 +30,7 @@ import math
 import DraftGeomUtils
 from DraftGeomUtils import geomType
 import DraftVecUtils
+import PathScripts
 from PathScripts import PathProject
 
 def cleanedges(splines,precision):
@@ -350,6 +351,12 @@ def findProj():
             if isinstance(o.Proxy, PathProject.ObjectPathProject):
                 return o
 
+def findMachine():
+    '''find machine object for the tooltable editor '''
+    for o in FreeCAD.ActiveDocument.Objects:
+        if "Proxy" in o.PropertiesList:
+            if isinstance(o.Proxy, PathScripts.PathMachine.Machine):
+                return o
 
 def addToProject(obj):
         """Adds a path obj to this document, if no PathParoject exists it's created on the fly"""

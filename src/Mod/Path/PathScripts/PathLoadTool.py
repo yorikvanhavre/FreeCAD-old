@@ -24,6 +24,7 @@
 ''' Used for CNC machine to load cutting Tool ie M6T3'''
 
 import FreeCAD,FreeCADGui,Path,PathGui
+import PathScripts, PathUtils
 from PathScripts import PathProject
 from PySide import QtCore,QtGui
 
@@ -52,17 +53,28 @@ class LoadTool:
     def execute(self,obj):
         commands = ""
         commands = 'M6T'+str(obj.ToolNumber)+'\n'
-#        c1 = Path.Command('M6T'+str(obj.ToolNumber))
+
         if obj.SpindleDir =='Forward':
             commands +='M3S'+str(obj.SpindleSpeed)+'\n'
-#            c2 = Path.Command('M3S'+str(obj.SpindleSpeed))
+
         else:
             commands +='M4S'+str(obj.SpindleSpeed)+'\n'
-#            c2 = Path.Command('M4S'+str(obj.SpindleSpeed))
+
         obj.Path = Path.Path(commands)
-#        obj.Path = Path.Path(c1+c2)
-#        obj.Path.addCommands(c2)
         obj.Label = "Tool"+str(obj.ToolNumber)
+
+#     def onChanged(self,obj,prop):
+#         mode = 2
+#         obj.setEditorMode('Placement',mode)
+#         
+#         if prop == "ToolNumber":
+#             FreeCAD.Console.PrintMessage("Tool changed\n")
+#             proj = PathUtils.findProj()            
+#             for g in proj.Group:
+#                 if not(isinstance(g.Proxy, PathScripts.PathLoadTool.LoadTool)):
+#                     g.touch()
+        
+        
 
 class _ViewProviderLoadTool:
     def __init__(self,vobj): #mandatory

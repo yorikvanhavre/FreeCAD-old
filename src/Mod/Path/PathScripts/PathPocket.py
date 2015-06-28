@@ -73,7 +73,7 @@ class ObjectPocket:
         obj.addProperty("App::PropertyIntegerConstraint","ToolNumber","Tool",
                         translate("PathProfile","The tool number in use"))
         obj.ToolNumber = (0, 0, 1000, 0)
-
+#        obj.setEditorMode('ToolNumber',1) #make this read only
 
         obj.addProperty("App::PropertyFloat", "ClearanceHeight", "Pocket", translate("PathProject","The height needed to clear clamps and obstructions"))
         obj.addProperty("App::PropertyFloatConstraint", "StepDown", "Pocket", translate("PathProject","Incremental Step Down of Tool"))
@@ -148,8 +148,8 @@ class ObjectPocket:
             # absolute coords, millimeters, cancel offsets
             output = "G90\nG21\nG40\n"
             # save tool
-            if obj.ToolNumber > 0 and tool.ToolNumber != obj.ToolNumber:
-                output += "M06 T" + str(tool.ToolNumber) + "\n"
+#             if obj.ToolNumber > 0 and tool.ToolNumber != obj.ToolNumber:
+#                 output += "M06 T" + str(tool.ToolNumber) + "\n"
 
             # build offsets
             offsets = []
@@ -311,6 +311,10 @@ obj.StepDown = 1.0
 obj.StartDepth = ZMax
 obj.FinalDepth = ZMin
 obj.ClearanceHeight =  ZMax + 5.0
+project = PathUtils.addToProject(obj)
+tl = PathUtils.changeTool(obj,project)
+if tl:
+    obj.ToolNumber = tl
     
 '''
         FreeCADGui.doCommand(snippet)

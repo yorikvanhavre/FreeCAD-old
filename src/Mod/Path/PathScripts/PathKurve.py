@@ -46,8 +46,9 @@ class PathProfile:
         obj.addProperty("App::PropertyBool","Active","Path",translate("Active","Make False, to prevent operation from generating code"))
         obj.addProperty("App::PropertyString","Comment","Path",translate("Comment","An optional comment for this profile"))
 
-        obj.addProperty("App::PropertyIntegerConstraint","ToolNum","Tool",translate("PathProfile","The tool number in use"))
-        obj.ToolNum = (0,0,1000,1) 
+        obj.addProperty("App::PropertyIntegerConstraint","ToolNumber","Tool",translate("PathProfile","The tool number in use"))
+        obj.ToolNumber = (0,0,1000,1)
+#        obj.setEditorMode('ToolNumber',1) #make this read only
         #Depth Properties
         obj.addProperty("App::PropertyDistance", "ClearanceHeight", "Depth", translate("Clearance Height","The height needed to clear clamps and obstructions"))
         obj.addProperty("App::PropertyLength", "StepDown", "Depth", translate("StepDown","Incremental Step Down of Tool"))
@@ -98,7 +99,7 @@ class PathProfile:
     def execute(self,obj):
 
         if obj.Base:
-            tool = PathUtils.getTool(obj,obj.ToolNum)
+            tool = PathUtils.getTool(obj,obj.ToolNumber)
             if tool:
                 self.radius = tool.Diameter/2
             else:
@@ -227,7 +228,7 @@ def profileop():
 
     tl = PathUtils.changeTool(obj,project)
     if tl:
-        obj.ToolNum = tl
+        obj.ToolNumber = tl
 
 from PathScripts import PathProject,PathUtils,PathKurve, PathKurveUtils,PathSelection
 try:

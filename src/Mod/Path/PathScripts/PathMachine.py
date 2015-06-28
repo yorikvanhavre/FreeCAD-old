@@ -24,6 +24,7 @@
 ''' A CNC machine object to define how code is posted '''
 
 import FreeCAD,FreeCADGui,Path,PathGui
+import PathScripts
 from PathScripts import PathProject, PathUtils
 from PySide import QtCore,QtGui
 import os, sys
@@ -95,6 +96,13 @@ class Machine:
                 obj.X_Min = current_post.CORNER_MIN['x']
                 obj.Y_Min = current_post.CORNER_MIN['y']
                 obj.Z_Min = current_post.CORNER_MIN['z']
+
+        if prop == "Tooltable":
+            proj = PathUtils.findProj()            
+            for g in proj.Group:
+                if not(isinstance(g.Proxy, PathScripts.PathMachine.Machine)):
+                    g.touch()
+ 
 
 
 class _ViewProviderMachine:

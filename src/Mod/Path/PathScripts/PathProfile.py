@@ -51,8 +51,9 @@ class ObjectProfile:
         obj.addProperty("App::PropertyBool","Active","Path",translate("Active","Make False, to prevent operation from generating code"))
         obj.addProperty("App::PropertyBool","UsePlacements","Path",translate("Use Placements","make True, if using the profile operation placement properties to transform toolpath in post processor"))
 
-        obj.addProperty("App::PropertyIntegerConstraint","ToolNum","Tool",translate("PathProfile","The tool number in use"))
-        obj.ToolNum = (0,0,1000,1) 
+        obj.addProperty("App::PropertyIntegerConstraint","ToolNumber","Tool",translate("PathProfile","The tool number in use"))
+        obj.ToolNumber = (0,0,1000,1) 
+#         obj.setEditorMode('ToolNumber',1) #make this read only
 
         #Depth Properties
         obj.addProperty("App::PropertyDistance", "ClearanceHeight", "Depth", translate("Clearance Height","The height needed to clear clamps and obstructions"))
@@ -101,7 +102,7 @@ class ObjectProfile:
 
     def execute(self,obj):
         if obj.Base:
-            tool = PathUtils.getTool(obj,obj.ToolNum)
+            tool = PathUtils.getTool(obj,obj.ToolNumber)
             if tool:
                 radius = tool.Diameter/2
             else:
@@ -261,7 +262,7 @@ class CommandPathProfile:
 
         tl = PathUtils.changeTool(obj,project)
         if tl:
-            obj.ToolNum = tl
+            obj.ToolNumber = tl
 
         FreeCAD.ActiveDocument.commitTransaction()
         FreeCAD.ActiveDocument.recompute()
