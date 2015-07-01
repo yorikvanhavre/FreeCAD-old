@@ -63,19 +63,17 @@ class LoadTool:
         obj.Path = Path.Path(commands)
         obj.Label = "Tool"+str(obj.ToolNumber)
 
-#     def onChanged(self,obj,prop):
-#         mode = 2
-#         obj.setEditorMode('Placement',mode)
-#         
-#         if prop == "ToolNumber":
-#             FreeCAD.Console.PrintMessage("Tool changed\n")
-#             proj = PathUtils.findProj()            
-#             for g in proj.Group:
-#                 if not(isinstance(g.Proxy, PathScripts.PathLoadTool.LoadTool)):
-#                     g.touch()
-        
-        
 
+    def onChanged(self,obj,prop):
+        mode = 2
+        obj.setEditorMode('Placement',mode)
+        if prop == "ToolNumber":
+            proj = PathUtils.findProj()            
+            for g in proj.Group:
+                if not(isinstance(g.Proxy, PathScripts.PathLoadTool.LoadTool)):
+                    g.touch()      
+      
+                
 class _ViewProviderLoadTool:
     def __init__(self,vobj): #mandatory
         vobj.Proxy = self

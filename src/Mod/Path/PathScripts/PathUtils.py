@@ -311,13 +311,13 @@ def changeTool(obj,proj):
     tlnum = 0
     for p in proj.Group:
         if not hasattr(p,"Group"):
-            if hasattr(p,'ToolNumber') and p.ToolNumber > 0:
+            if isinstance(p.Proxy,PathScripts.PathLoadTool.LoadTool) and p.ToolNumber > 0:
                 tlnum = p.ToolNumber
             if p == obj:
                 return tlnum
         elif hasattr(p,"Group"):
             for g in p.Group:
-                if hasattr(g,'ToolNumber'):
+                if isinstance(g.Proxy,PathScripts.PathLoadTool.LoadTool):
                     tlnum = g.ToolNumber
                 if g == obj:
                     return tlnum

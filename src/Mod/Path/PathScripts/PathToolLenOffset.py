@@ -24,7 +24,7 @@
 ''' Used for CNC machine Tool Length Offsets ie G43H2'''
 
 import FreeCAD,FreeCADGui,Path,PathGui
-from PathScripts import PathProject
+from PathScripts import PathProject,PathUtils
 from PySide import QtCore,QtGui
 
 # Qt tanslation handling
@@ -57,6 +57,17 @@ class ToolLenOffset:
         else:
             obj.Path = Path.Path("(inactive operation)")
             obj.ViewObject.Visibility = False
+
+        # tie the HeightNumber to the PathLoadTool object ToolNumber
+        if len(obj.InList)>0: #check to see if obj is in the Project group yet
+            project = obj.InList[0]
+            tl = int(PathUtils.changeTool(obj,project))
+            obj.HeightNumber= tl   
+
+    def onChanged(self,obj,prop):
+        if prop == "HeightNumber":
+            obj.Label = "Height"+str(obj.HeightNumber)
+
 
 class _ViewProviderTLO:
     def __init__(self,vobj): #mandatory
@@ -126,7 +137,6 @@ class CommandPathToolLenOffset:
 import Path
 import PathScripts
 from PathScripts import PathProject,PathUtils
-prjexists = False
 obj = FreeCAD.ActiveDocument.addObject("Path::FeaturePython","HeightOffset")
 PathScripts.PathToolLenOffset.ToolLenOffset(obj)
 obj.Active = True

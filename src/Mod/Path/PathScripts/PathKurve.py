@@ -48,7 +48,7 @@ class PathProfile:
 
         obj.addProperty("App::PropertyIntegerConstraint","ToolNumber","Tool",translate("PathProfile","The tool number in use"))
         obj.ToolNumber = (0,0,1000,1)
-#        obj.setEditorMode('ToolNumber',1) #make this read only
+        obj.setEditorMode('ToolNumber',1) #make this read only
         #Depth Properties
         obj.addProperty("App::PropertyDistance", "ClearanceHeight", "Depth", translate("Clearance Height","The height needed to clear clamps and obstructions"))
         obj.addProperty("App::PropertyLength", "StepDown", "Depth", translate("StepDown","Incremental Step Down of Tool"))
@@ -99,6 +99,13 @@ class PathProfile:
     def execute(self,obj):
 
         if obj.Base:
+            
+            # tie the toolnumber to the PathLoadTool object ToolNumber
+            if len(obj.InList)>0: #check to see if obj is in the Project group yet
+                project = obj.InList[0]
+                tl = int(PathUtils.changeTool(obj,project))
+                obj.ToolNumber= tl   
+            
             tool = PathUtils.getTool(obj,obj.ToolNumber)
             if tool:
                 self.radius = tool.Diameter/2
@@ -146,6 +153,8 @@ class PathProfile:
                 path = Path.Path("(inactive operation)")
                 obj.Path = path
                 obj.ViewObject.Visibility = False
+
+
 
 class _ViewProviderKurve:
 

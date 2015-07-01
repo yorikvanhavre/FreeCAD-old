@@ -99,7 +99,7 @@ from PathScripts import PathCopy
 selGood = True
 # check that the selection contains exactly what we want
 selection = FreeCADGui.Selection.getSelection()
-proj = sel[0].InList[0] #get the group that the selectied object is inside
+proj = selection[0].InList[0] #get the group that the selectied object is inside
 
 if len(selection) != 1:
     FreeCAD.Console.PrintError(translate("PathCopy","Please select one path object\\n"))

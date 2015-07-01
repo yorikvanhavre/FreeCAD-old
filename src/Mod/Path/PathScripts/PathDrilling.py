@@ -61,7 +61,7 @@ class ObjectDrilling:
 
         obj.addProperty("App::PropertyIntegerConstraint","ToolNumber","Tool",translate("PathProfile","The tool number in use"))
         obj.ToolNumber = (0,0,1000,1) 
-#       obj.setEditorMode('ToolNumber',1) #make this read only
+        obj.setEditorMode('ToolNumber',1) #make this read only
         
         obj.Proxy = self
 
@@ -93,6 +93,13 @@ class ObjectDrilling:
         print output
         path = Path.Path(output)
         obj.Path = path
+
+        # tie the toolnumber to the PathLoadTool object ToolNumber
+        if len(obj.InList)>0: #check to see if obj is in the Project group yet
+            project = obj.InList[0]
+            tl = int(PathUtils.changeTool(obj,project))
+            obj.ToolNumber= tl   
+
 
 class _ViewProviderDrill:
     def __init__(self,obj): #mandatory
