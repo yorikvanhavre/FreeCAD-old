@@ -236,8 +236,10 @@ def profileop():
     project = PathUtils.addToProject(obj)
 
     tl = PathUtils.changeTool(obj,project)
+
     if tl:
         obj.ToolNumber = tl
+
 
 from PathScripts import PathProject,PathUtils,PathKurve, PathKurveUtils,PathSelection
 try:

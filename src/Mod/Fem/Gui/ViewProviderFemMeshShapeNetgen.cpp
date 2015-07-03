@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (c) 2013 Jürgen Riegel (FreeCAD@juergen-riegel.net)         *
+ *   Copyright (c) 2013 Jï¿½rgen Riegel (FreeCAD@juergen-riegel.net)         *
  *                                                                         *
  *   This file is part of the FreeCAD CAx development system.              *
  *                                                                         *
@@ -28,6 +28,7 @@
 # include <QAction>
 # include <QCoreApplication>
 # include <QMenu>
+# include <QMessageBox>
 #endif
 
 #include "ViewProviderFemMeshShapeNetgen.h"
