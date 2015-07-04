@@ -82,7 +82,7 @@ void PathGuiExport initPathGui()
     loadPathResource();
     
     // register preferences pages
-    new Gui::PrefPageProducer<PathGui::DlgSettingsPathColor> ("Display");
+    new Gui::PrefPageProducer<PathGui::DlgSettingsPathColor> ("Path");
 }
 
 } // extern "C" {
