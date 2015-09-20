@@ -549,11 +549,11 @@ int PyStreambuf::underflow()
     for (int i=0; i<bufSize; i++) {
         char c;
         Py::Tuple arg(1);
-        arg.setItem(0, Py::Int(1));
+        arg.setItem(0, Py::Long(1));
         Py::Callable meth(Py::Object(inp).getAttr("read"));
         try {
-            Py::Char res(meth.apply(arg));
-            c = static_cast<std::string>(res)[0];
+            Py::String res(meth.apply(arg));
+            c = res.as_std_string("utf8").c_str()[0];
             num++;
             buffer[pbSize+i] = c;
             if (c == '\n')
