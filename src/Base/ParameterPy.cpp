@@ -86,9 +86,9 @@ public:
     //---------------------------------------------------------------------
 
     PyObject *_repr(void);
-    PyObject *_getattr(char *attr);				// __getattr__ function
+    PyObject *_getattro(PyObject *attro);		// __getattr__ function
     // getter setter
-    int _setattr(char *attr, PyObject *value);	// __setattr__ function
+    int _setattro(PyObject *attro, PyObject *value);	// __setattr__ function
     // methods
     PYFUNCDEF_D (ParameterGrpPy,PyGetGrp);
     PYFUNCDEF_D (ParameterGrpPy,PyRemGrp);
@@ -132,16 +132,15 @@ protected:
 //--------------------------------------------------------------------------
 
 PyTypeObject ParameterGrpPy::Type = {
-    PyObject_HEAD_INIT(&PyType_Type)
-    0,                                                      /*ob_size*/
+    PyVarObject_HEAD_INIT(&PyType_Type,0)
     "ParameterGrp",                                         /*tp_name*/
     sizeof(ParameterGrpPy),                                 /*tp_basicsize*/
     0,                                                      /*tp_itemsize*/
     /* methods */
     PyDestructor,                                           /*tp_dealloc*/
     0,                                                      /*tp_print*/
-    __getattr,                                              /*tp_getattr*/
-    __setattr,                                              /*tp_setattr*/
+    0,                                                      /*tp_getattr*/
+    0,                                                      /*tp_setattr*/
     0,                                                      /*tp_compare*/
     __repr,                                                 /*tp_repr*/
     0,                                                      /*tp_as_number*/
@@ -150,8 +149,8 @@ PyTypeObject ParameterGrpPy::Type = {
     0,                                                      /*tp_hash*/
     0,                                                      /*tp_call */
     0,                                                      /*tp_str  */
-    0,                                                      /*tp_getattro*/
-    0,                                                      /*tp_setattro*/
+    __getattro,                                             /*tp_getattro*/
+    __setattro,                                             /*tp_setattro*/
     /* --- Functions to access object as input/output buffer ---------*/
     0,                                                      /* tp_as_buffer */
     /* --- Flags to define presence of optional/expanded features */
@@ -257,14 +256,14 @@ PyObject *ParameterGrpPy::_repr(void)
     return Py_BuildValue("s", a.str().c_str());
 }
 
-PyObject *ParameterGrpPy::_getattr(char *attr)              // __getattr__ function: note only need to handle new state
+PyObject *ParameterGrpPy::_getattro(PyObject *attro)        // __getattro__ function: note only need to handle new state
 {
-    _getattr_up(PyObjectBase);                              // send to parent
+    _getattro_up(PyObjectBase);                             // send to parent
 } 
 
-int ParameterGrpPy::_setattr(char *attr, PyObject *value)   // __setattr__ function: note only need to handle new state
+int ParameterGrpPy::_setattro(PyObject *attro, PyObject *value)   // __setattr__ function: note only need to handle new state
 {
-    return PyObjectBase::_setattr(attr, value);	// send up to parent
+    return PyObjectBase::_setattro(attro, value);	// send up to parent
 } 
 
 
