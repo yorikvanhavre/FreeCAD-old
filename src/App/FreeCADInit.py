@@ -84,8 +84,8 @@ def InitApplications():
 	PathExtension = BinDir + os.pathsep
 	# prepend all module paths to Python search path
 	Log('Init:   Searching for modules...\n')
-	FreeCAD.__path__ = ModDict.values()
-	for Dir in ModDict.values():
+	FreeCAD.__path__ = list(ModDict.values())
+	for Dir in list(ModDict.values()):
 		if ((Dir != '') & (Dir != 'CVS') & (Dir != '__init__.py')):
 			sys.path.insert(0,Dir)
 			PathExtension += Dir + os.pathsep
@@ -93,8 +93,8 @@ def InitApplications():
 			if (os.path.exists(InstallFile)):
 				try:
 					#execfile(InstallFile)
-					exec open(InstallFile).read()
-				except Exception, inst:
+					exec(open(InstallFile).read())
+				except Exception as inst:
 					Log('Init:      Initializing ' + Dir + '... failed\n')
 					Log('-'*100+'\n')
 					output=cStringIO.StringIO()
