@@ -164,6 +164,11 @@ PyDoc_STRVAR(FreeCAD_doc,
 PyDoc_STRVAR(Console_doc,
      "FreeCAD Console\n"
     );
+    
+PyDoc_STRVAR(Base_doc,
+    "The Base module contains the classes for the geometric basics\n"
+    "like vector, matrix, bounding box, placement, rotation, axis, ...\n"
+    );
 
 Application::Application(ParameterManager * /*pcSysParamMngr*/,
                          ParameterManager * /*pcUserParamMngr*/,
@@ -180,10 +185,20 @@ Application::Application(ParameterManager * /*pcSysParamMngr*/,
 
     // setting up Python binding
     Base::PyGILStateLocker lock;
+#if PY_MAJOR_VERSION >= 3
+    static struct PyModuleDef FreeCADModuleDef = {PyModuleDef_HEAD_INIT,"FreeCAD", FreeCAD_doc, -1, Application::Methods};
+    PyObject* pAppModule = PyModule_Create(&FreeCADModuleDef);
+#else
     PyObject* pAppModule = Py_InitModule3("FreeCAD", Application::Methods, FreeCAD_doc);
+#endif
     Py::Module(pAppModule).setAttr(std::string("ActiveDocument"),Py::None());
 
+#if PY_MAJOR_VERSION >= 3
+    static struct PyModuleDef ConsoleModuleDef = {PyModuleDef_HEAD_INIT, "__FreeCADConsole__", Console_doc, -1, ConsoleSingleton::Methods};
+    PyObject* pConsoleModule = PyModule_Create(&ConsoleModuleDef);
+#else
     PyObject* pConsoleModule = Py_InitModule3("__FreeCADConsole__", ConsoleSingleton::Methods, Console_doc);
+#endif
 
     // introducing additional classes
 
@@ -217,11 +232,13 @@ Application::Application(ParameterManager * /*pcSysParamMngr*/,
     // Note: Create an own module 'Base' which should provide the python
     // binding classes from the base module. At a later stage we should
     // remove these types from the FreeCAD module.
-    PyObject* pBaseModule = Py_InitModule3("__FreeCADBase__", NULL,
-        "The Base module contains the classes for the geometric basics\n"
-        "like vector, matrix, bounding box, placement, rotation, axis, ...");
 
-    // Python exceptions
+#if PY_MAJOR_VERSION >= 3
+    static struct PyModuleDef BaseModuleDef = {PyModuleDef_HEAD_INIT, "__FreeCADBase__", Base_doc, -1, NULL};
+    PyObject* pBaseModule = PyModule_Create(&BaseModuleDef);
+#else
+    PyObject* pBaseModule = Py_InitModule3("__FreeCADBase__", NULL, Base_doc);
+#endif
     Base::BaseExceptionFreeCADError = PyErr_NewException("Base.FreeCADError", PyExc_RuntimeError, NULL);
     Py_INCREF(Base::BaseExceptionFreeCADError);
     PyModule_AddObject(pBaseModule, "FreeCADError", Base::BaseExceptionFreeCADError);
@@ -241,11 +258,17 @@ Application::Application(ParameterManager * /*pcSysParamMngr*/,
     PyModule_AddObject(pAppModule, "Console", pConsoleModule);
 
     //insert Units module
-    PyObject* pUnitsModule = Py_InitModule3("Units", Base::UnitsApi::Methods,
-          "The Unit API");
+#if PY_MAJOR_VERSION >= 3
+    static struct PyModuleDef UnitsModuleDef = {PyModuleDef_HEAD_INIT, "Units", "The Unit API", -1, Base::UnitsApi::Methods};
+    PyObject* pUnitsModule = PyModule_Create(&UnitsModuleDef);
+#else
+    PyObject* pUnitsModule = Py_InitModule3("Units", Base::UnitsApi::Methods,"The Unit API");
+#endif
     Base::Interpreter().addType(&Base::QuantityPy  ::Type,pUnitsModule,"Quantity");
     // make sure to set the 'nb_true_divide' slot
+#if PY_MAJOR_VERSION < 3
     Base::QuantityPy::Type.tp_as_number->nb_true_divide = Base::QuantityPy::Type.tp_as_number->nb_divide;
+#endif
     Base::Interpreter().addType(&Base::UnitPy      ::Type,pUnitsModule,"Unit");
 
     Py_INCREF(pUnitsModule);
