@@ -419,9 +419,9 @@ public:
     //---------------------------------------------------------------------
     // python exports goes here +++++++++++++++++++++++++++++++++++++++++++
     //---------------------------------------------------------------------
-    PyObject *_getattr(char *attr);             // __getattr__ function
+    PyObject *_getattro(PyObject *attro);             // __getattr__ function
     // getter setter
-    int _setattr(char *attr, PyObject *value);  // __setattr__ function
+    int _setattro(PyObject *attro, PyObject *value);  // __setattr__ function
 
     // methods
     PYFUNCDEF_D(PyResource, value);
