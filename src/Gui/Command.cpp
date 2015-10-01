@@ -900,12 +900,19 @@ const char* PythonCommand::getResource(const char* sName) const
     pcTemp = PyDict_GetItemString(_pcPyResourceDict,sName);
     if (!pcTemp)
         return "";
+#if PY_MAJOR_VERSION >= 3
+    if (!PyUnicode_Check(pcTemp)) {
+#else
     if (!PyString_Check(pcTemp)) {
+#endif
         throw Base::Exception("PythonCommand::getResource(): Method GetResources() of the Python "
                               "command object returns a dictionary which holds not only strings");
     }
-
+#if PY_MAJOR_VERSION >= 3
+    return PyUnicode_AsUTF8(pcTemp);
+#else
     return PyString_AsString(pcTemp);
+#endif
 }
 
 void PythonCommand::activated(int iMsg)
@@ -968,9 +975,17 @@ const char* PythonCommand::getHelpUrl(void) const
     pcTemp = Interpreter().runMethodObject(_pcPyCommand, "CmdHelpURL");
     if (! pcTemp )
         return "";
+#if PY_MAJOR_VERSION >= 3
+    if (! PyUnicode_Check(pcTemp) )
+#else
     if (! PyString_Check(pcTemp) )
+#endif
         throw Base::Exception("PythonCommand::CmdHelpURL(): Method CmdHelpURL() of the Python command object returns no string");
+#if PY_MAJOR_VERSION >= 3
+    return PyUnicode_AsUTF8(pcTemp);
+#else
     return PyString_AsString(pcTemp);
+#endif
 }
 
 Action * PythonCommand::createAction(void)
@@ -1118,7 +1133,7 @@ void PythonGroupCommand::activated(int iMsg)
         if (cmd.hasAttr("Activated")) {
             Py::Callable call(cmd.getAttr("Activated"));
             Py::Tuple args(1);
-            args.setItem(0, Py::Int(iMsg));
+            args.setItem(0, Py::Long(iMsg));
             Py::Object ret = call.apply(args);
         }
         // If the command group doesn't implement the 'Activated' method then invoke the command directly
@@ -1193,7 +1208,7 @@ Action * PythonGroupCommand::createAction(void)
 
         if (cmd.hasAttr("GetDefaultCommand")) {
             Py::Callable call2(cmd.getAttr("GetDefaultCommand"));
-            Py::Int def(call2.apply(args));
+            Py::Long def(call2.apply(args));
             defaultId = static_cast<int>(def);
         }
 
@@ -1278,12 +1293,19 @@ const char* PythonGroupCommand::getResource(const char* sName) const
     pcTemp = PyDict_GetItemString(_pcPyResource, sName);
     if (!pcTemp)
         return "";
+#if PY_MAJOR_VERSION >= 3
+    if (!PyUnicode_Check(pcTemp)) {
+#else
     if (!PyString_Check(pcTemp)) {
+#endif
         throw Base::ValueError("PythonGroupCommand::getResource(): Method GetResources() of the Python "
                                "group command object returns a dictionary which holds not only strings");
     }
-
+#if PY_MAJOR_VERSION >= 3
+    return PyUnicode_AsUTF8(pcTemp);
+#else
     return PyString_AsString(pcTemp);
+#endif
 }
 
 const char* PythonGroupCommand::getWhatsThis() const
