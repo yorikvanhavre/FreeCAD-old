@@ -24,4 +24,46 @@ def createSVG(Part):
 	buffer += '</svg>'
 
 	return buffer
-
+    
+def centerView(view):
+    "Centers a View on its page"
+    if not view.isDerivedFrom("Drawing::FeatureViewPart"):
+        FreeCAD.Console.PrintError("The given object is not a Drawing Part View\n")
+        return
+    page = None
+    for o in view.InList:
+        if o.isDerivedFrom("Drawing::FeaturePage"):
+            page = o
+            break
+    if not page:
+        FreeCAD.Console.PrintError("The given Drawing View is not inserted in any page\n")
+        return
+    # find page size
+    tf = open(page.Template,"rb")
+    temp = tf.read().replace("\n"," ")
+    tf.close()
+    import re
+    width = re.findall("\<svg.*?width=\"(.*?)\"",temp)
+    height = re.findall("\<svg.*?height=\"(.*?)\"",temp)
+    if (len(height) != 1) or (len(width) != 1):
+        FreeCAD.Console.PrintError("Couldn't determine page size\n")
+        return
+    width = float(width[0].strip("mm").strip("px"))
+    height = float(height[0].strip("mm").strip("px"))
+    # find center point
+    if not view.Source:
+        FreeCAD.Console.PrintError("The given Drawing View has no Source\n")
+        return
+    center = view.Source.Shape.BoundBox.Center
+    import WorkingPlane
+    p = WorkingPlane.plane()
+    p.alignToPointAndAxis(FreeCAD.Vector(0,0,0),view.Direction)
+    center = p.getLocalCoords(center)
+    center.multiply(view.Scale)
+    # calculate delta
+    print "center of page: (",width/2,",",height/2,")"
+    print "center of view: (",center.x,",",center.y,")"
+    view.X = int(width/2 - center.x)
+    view.Y = int(height/2 + center.y)
+    FreeCAD.ActiveDocument.recompute()
+    

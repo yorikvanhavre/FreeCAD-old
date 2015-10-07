@@ -728,6 +728,43 @@ bool CmdDrawingDraftView::isActive(void)
 
 
 
+//===========================================================================
+// Drawing_CenterView
+//===========================================================================
+
+DEF_STD_CMD_A(CmdDrawingCenterView);
+
+CmdDrawingCenterView::CmdDrawingCenterView()
+  : Command("Drawing_CenterView")
+{
+    // seting the
+    sGroup        = QT_TR_NOOP("Drawing");
+    sMenuText     = QT_TR_NOOP("Ce&nter View");
+    sToolTipText  = QT_TR_NOOP("Moves the selected view to the center of the page");
+    sWhatsThis    = "Drawing_CenterView";
+    sStatusTip    = QT_TR_NOOP("Moves the selected view to the center of the page");
+    sPixmap       = "actions/drawing-centerview";
+}
+
+void CmdDrawingCenterView::activated(int iMsg)
+{
+    std::vector<Gui::SelectionSingleton::SelObj> Sel = getSelection().getSelection();
+    if (Sel.size() != 1) {
+        Base::Console().Error("Please select exactly one View object\n");
+        return;
+    }
+    openCommand("Center View");
+    doCommand(Doc,"import DrawingAlgos");
+    doCommand(Doc,"DrawingAlgos.centerView(FreeCAD.ActiveDocument.%s)",Sel[0].FeatName);
+    commitCommand();
+}
+
+bool CmdDrawingCenterView::isActive(void)
+{
+    return (getActiveGuiDocument() ? true : false);
+}
+
+
 void CreateDrawingCommands(void)
 {
     Gui::CommandManager &rcCmdMgr = Gui::Application::Instance->commandManager();
@@ -744,4 +781,5 @@ void CreateDrawingCommands(void)
     rcCmdMgr.addCommand(new CmdDrawingExportPage());
     rcCmdMgr.addCommand(new CmdDrawingProjectShape());
     rcCmdMgr.addCommand(new CmdDrawingDraftView());
+    rcCmdMgr.addCommand(new CmdDrawingCenterView());
 }
