@@ -1,4 +1,4 @@
-import FreeCAD, Part, Drawing
+import FreeCAD, Part, Drawing, math
 
 startSVG = """<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
@@ -28,7 +28,7 @@ def createSVG(Part):
 def centerView(view):
     "Centers a View on its page"
     if not view.isDerivedFrom("Drawing::FeatureViewPart"):
-        FreeCAD.Console.PrintError("The given object is not a Drawing Part View\n")
+        FreeCAD.Console.PrintError("The given object is not a Drawing View\n")
         return
     page = None
     for o in view.InList:
@@ -51,19 +51,25 @@ def centerView(view):
     width = float(width[0].strip("mm").strip("px"))
     height = float(height[0].strip("mm").strip("px"))
     # find center point
-    if not view.Source:
-        FreeCAD.Console.PrintError("The given Drawing View has no Source\n")
+    fragment = view.ViewResult
+    if not fragment:
+        FreeCAD.Console.PrintError("The given Drawing View doesn't have any content\n")
         return
-    center = view.Source.Shape.BoundBox.Center
-    import WorkingPlane
-    p = WorkingPlane.plane()
-    p.alignToPointAndAxis(FreeCAD.Vector(0,0,0),view.Direction)
-    center = p.getLocalCoords(center)
-    center.multiply(view.Scale)
+    import importSVG # this uses the Draft SVG parser
+    points = importSVG.getpointslist(fragment)
+    if not points:
+        FreeCAD.Console.PrintError("Failed to parse the contents of this view\n")
+        return
+    center = Part.Compound([Part.Vertex(p) for p in points]).BoundBox.Center
     # calculate delta
     print "center of page: (",width/2,",",height/2,")"
     print "center of view: (",center.x,",",center.y,")"
-    view.X = int(width/2 - center.x)
-    view.Y = int(height/2 + center.y)
+    delta = FreeCAD.Vector(center.x,center.y,0).sub(FreeCAD.Vector(width/2,height/2,0))
+    delta.multiply(view.Scale)
+    rot = FreeCAD.Rotation(FreeCAD.Vector(0,0,1),math.radians(view.Rotation))
+    delta = rot.multVec(delta)
+    print "delta:",delta
+    view.X = view.X - delta.x
+    view.Y = view.Y - delta.y
     FreeCAD.ActiveDocument.recompute()
     

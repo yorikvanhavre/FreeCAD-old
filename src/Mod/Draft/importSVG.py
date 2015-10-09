@@ -382,7 +382,7 @@ def getrgb(color):
 class svgHandler(xml.sax.ContentHandler):
         "this handler parses the svg files and creates freecad objects"
 
-        def __init__(self):
+        def __init__(self,create=True):
                 "retrieving Draft parameters"
                 params = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/Draft")
                 self.style = params.GetInt("svgstyle")
@@ -394,6 +394,8 @@ class svgHandler(xml.sax.ContentHandler):
                 self.viewbox = None
                 self.symbols = {}
                 self.currentsymbol = None
+                self.create = create # if false, no objects are created but pointslist is filled
+                self.pointslist = []
 
                 global Part
                 import Part
@@ -552,10 +554,13 @@ class svgHandler(xml.sax.ContentHandler):
                                 p2 = Vector(float(p2[0]),-float(p2[1]),0)
                                 p3 = data["freecad:dimpoint"]
                                 p3 = Vector(float(p3[0]),-float(p3[1]),0)
-                                obj = Draft.makeDimension(p1,p2,p3)
-                                self.applyTrans(obj)
-                                self.format(obj)
-                                self.lastdim = obj
+                                if self.create:
+                                    obj = Draft.makeDimension(p1,p2,p3)
+                                    self.applyTrans(obj)
+                                    self.format(obj)
+                                    self.lastdim = obj
+                                else:
+                                    self.pointslist.extend([p1,p2,p3])
                                 data['d']=[]
                         pathcommandsre=re.compile('\s*?([mMlLhHvVaAcCqQsStTzZ])\s*?([^mMlLhHvVaAcCqQsStTzZ]*)\s*?',re.DOTALL)
                         pointsre=re.compile('([-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?)',re.DOTALL)
@@ -572,11 +577,14 @@ class svgHandler(xml.sax.ContentHandler):
                                                 if self.fill and sh.isClosed():
                                                     sh = Part.Face(sh)
                                                 sh = self.applyTrans(sh)
-                                                obj = self.doc.addObject("Part::Feature",pathname)
-                                                obj.Shape = sh
-                                                self.format(obj)
-                                                if self.currentsymbol:
-                                                    self.symbols[self.currentsymbol].append(obj)
+                                                if self.create:
+                                                    obj = self.doc.addObject("Part::Feature",pathname)
+                                                    obj.Shape = sh
+                                                    self.format(obj)
+                                                    if self.currentsymbol:
+                                                        self.symbols[self.currentsymbol].append(obj)
+                                                else:
+                                                    self.pointslist.extend([v.Point for v in sh.Vertexes])
                                                 path = []
                                                 #if firstvec:
                                                 #        lastvec = firstvec #Move relative to last move command not last draw command
@@ -782,9 +790,12 @@ class svgHandler(xml.sax.ContentHandler):
                                                 sh=makewire(path,donttry=False)
                                                 if self.fill: sh = Part.Face(sh)
                                                 sh = self.applyTrans(sh)
-                                                obj = self.doc.addObject("Part::Feature",pathname)
-                                                obj.Shape = sh
-                                                self.format(obj)
+                                                if self.create:
+                                                    obj = self.doc.addObject("Part::Feature",pathname)
+                                                    obj.Shape = sh
+                                                    self.format(obj)
+                                                else:
+                                                    self.pointslist.extend([v.Point for v in sh.Vertexes])
                                                 path = []
                                                 if firstvec:
                                                         lastvec = firstvec #Move relative to recent draw command
@@ -798,9 +809,12 @@ class svgHandler(xml.sax.ContentHandler):
                                 if self.fill and sh.isClosed():
                                     sh = Part.Face(sh)
                                 sh = self.applyTrans(sh)
-                                obj = self.doc.addObject("Part::Feature",pathname)
-                                obj.Shape = sh
-                                self.format(obj)
+                                if self.create:
+                                    obj = self.doc.addObject("Part::Feature",pathname)
+                                    obj.Shape = sh
+                                    self.format(obj)
+                                else:
+                                    self.pointslist.extend([v.Point for v in sh.Vertexes])
                                 if self.currentsymbol:
                                     self.symbols[self.currentsymbol].append(obj)
 
@@ -877,9 +891,12 @@ class svgHandler(xml.sax.ContentHandler):
                         sh = Part.Wire(edges)
                         if self.fill: sh = Part.Face(sh)
                         sh = self.applyTrans(sh)
-                        obj = self.doc.addObject("Part::Feature",pathname)
-                        obj.Shape = sh
-                        self.format(obj)
+                        if self.create:
+                            obj = self.doc.addObject("Part::Feature",pathname)
+                            obj.Shape = sh
+                            self.format(obj)
+                        else:
+                            self.pointslist.extend([v.Point for v in sh.Vertexes])
                         if self.currentsymbol:
                             self.symbols[self.currentsymbol].append(obj)
                         
@@ -891,9 +908,12 @@ class svgHandler(xml.sax.ContentHandler):
                         p2 = Vector(data['x2'],-data['y2'],0)
                         sh = Part.Line(p1,p2).toShape()
                         sh = self.applyTrans(sh)
-                        obj = self.doc.addObject("Part::Feature",pathname)
-                        obj.Shape = sh
-                        self.format(obj)
+                        if self.create:
+                            obj = self.doc.addObject("Part::Feature",pathname)
+                            obj.Shape = sh
+                            self.format(obj)
+                        else:
+                            self.pointslist.extend([v.Point for v in sh.Vertexes])
                         if self.currentsymbol:
                             self.symbols[self.currentsymbol].append(obj)
 
@@ -923,8 +943,11 @@ class svgHandler(xml.sax.ContentHandler):
                                         if self.fill and sh.isClosed():
                                             sh = Part.Face(sh)
                                         sh = self.applyTrans(sh)
-                                        obj = self.doc.addObject("Part::Feature",pathname)
-                                        obj.Shape = sh
+                                        if self.create:
+                                            obj = self.doc.addObject("Part::Feature",pathname)
+                                            obj.Shape = sh
+                                        else:
+                                            self.pointslist.extend([v.Point for v in sh.Vertexes])
                                         if self.currentsymbol:
                                             self.symbols[self.currentsymbol].append(obj)
 
@@ -950,9 +973,12 @@ class svgHandler(xml.sax.ContentHandler):
                                 sh = Part.Wire([sh])
                                 sh = Part.Face(sh)
                         sh = self.applyTrans(sh)
-                        obj = self.doc.addObject("Part::Feature",pathname)
-                        obj.Shape = sh
-                        self.format(obj)
+                        if self.create:
+                            obj = self.doc.addObject("Part::Feature",pathname)
+                            obj.Shape = sh
+                            self.format(obj)
+                        else:
+                            self.pointslist.extend([v.Point for v in sh.Vertexes])
                         if self.currentsymbol:
                             self.symbols[self.currentsymbol].append(obj)
 
@@ -969,9 +995,12 @@ class svgHandler(xml.sax.ContentHandler):
                                 sh = Part.Face(sh)
                         sh.translate(c)
                         sh = self.applyTrans(sh)
-                        obj = self.doc.addObject("Part::Feature",pathname)
-                        obj.Shape = sh
-                        self.format(obj)
+                        if self.create:
+                            obj = self.doc.addObject("Part::Feature",pathname)
+                            obj.Shape = sh
+                            self.format(obj)
+                        else:
+                            self.pointslist.extend([v.Point for v in sh.Vertexes])
                         if self.currentsymbol:
                             self.symbols[self.currentsymbol].append(obj)
 
@@ -1017,9 +1046,12 @@ class svgHandler(xml.sax.ContentHandler):
                                 v = FreeCAD.Vector(float(data['x']),-float(data['y']),0)
                                 sh.translate(v)
                                 sh = self.applyTrans(sh)
-                                obj = self.doc.addObject("Part::Feature",symbol)
-                                obj.Shape = sh
-                                self.format(obj)
+                                if self.create:
+                                    obj = self.doc.addObject("Part::Feature",symbol)
+                                    obj.Shape = sh
+                                    self.format(obj)
+                                else:
+                                    self.pointslist.extend([v.Point for v in sh.Vertexes])
                         else:
                             FreeCAD.Console.PrintMessage("no symbol data\n")
 
@@ -1028,23 +1060,24 @@ class svgHandler(xml.sax.ContentHandler):
         def characters(self,content):
                 if self.text:
                         FreeCAD.Console.PrintMessage("reading characters %s\n" % content)
-                        obj=self.doc.addObject("App::Annotation",'Text')
-                        obj.LabelText = content.encode('latin1')
-                        if self.currentsymbol:
-                            self.symbols[self.currentsymbol].append(obj)
-                        vec = Vector(self.x,-self.y,0)
-                        if self.transform:
-                                vec = self.translateVec(vec,self.transform)
-                                #print "own transform: ",self.transform, vec
-                        for transform in self.grouptransform[::-1]:
-                                #vec = self.translateVec(vec,transform)
-                                vec = transform.multiply(vec)
-                        #print "applying vector: ",vec
-                        obj.Position = vec
-                        if gui:
-                                obj.ViewObject.FontSize = int(self.text)
-                                if self.fill: obj.ViewObject.TextColor = self.fill
-                                else: obj.ViewObject.TextColor = (0.0,0.0,0.0,0.0)
+                        if self.create:
+                            obj=self.doc.addObject("App::Annotation",'Text')
+                            obj.LabelText = content.encode('latin1')
+                            if self.currentsymbol:
+                                self.symbols[self.currentsymbol].append(obj)
+                            vec = Vector(self.x,-self.y,0)
+                            if self.transform:
+                                    vec = self.translateVec(vec,self.transform)
+                                    #print "own transform: ",self.transform, vec
+                            for transform in self.grouptransform[::-1]:
+                                    #vec = self.translateVec(vec,transform)
+                                    vec = transform.multiply(vec)
+                            #print "applying vector: ",vec
+                            obj.Position = vec
+                            if gui:
+                                    obj.ViewObject.FontSize = int(self.text)
+                                    if self.fill: obj.ViewObject.TextColor = self.fill
+                                    else: obj.ViewObject.TextColor = (0.0,0.0,0.0,0.0)
 
         def endElement(self, name):
             if not name in ["tspan"]:
@@ -1197,6 +1230,12 @@ def insert(filename,docname):
         parser._cont_handler.doc = doc
         parser.parse(pythonopen(filename))
         doc.recompute()
+        
+def getpointslist(svgfragment):
+    "returns a list of points from a svg fragment"
+    h = svgHandler(create=False)
+    xml.sax.parseString(svgfragment,h)
+    return h.pointslist
 
 def export(exportList,filename):
         "called when freecad exports a file"
