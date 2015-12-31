@@ -32,6 +32,7 @@
 #include <Base/FileInfo.h>
 #include <App/Property.h>
 #include <App/PropertyStandard.h>
+#include <App/PropertyUnits.h>
 #include "FeatureViewSpreadsheet.h"
 #include <Mod/Spreadsheet/App/Cell.h>
 #include <Mod/Spreadsheet/App/Sheet.h>
@@ -153,28 +154,69 @@ App::DocumentObjectExecReturn *FeatureViewSpreadsheet::execute(void)
     std::string celltext;
     Spreadsheet::Sheet* sheet = static_cast<Spreadsheet::Sheet*>(link);    
     for (std::vector<std::string>::const_iterator col = columns.begin(); col != columns.end(); ++col) {
+        // create a group for each column
         result << "  <g id=\"" << ViewName << "_col" << (*col) << "\">" << endl;
         for (std::vector<int>::const_iterator row = rows.begin(); row != rows.end(); ++row) {
-            try {
-                std::stringstream srow;
-                srow << (*row);
-                Spreadsheet::CellAddress address((*col) + srow.str());
-                cellwidth = sheet->getColumnWidth(address.col());
-                cellheight = sheet->getRowHeight(address.row());
-                celltext = "";
-                Spreadsheet::Cell* cell = sheet->getCell(address);
-                if (cell)
-                    cell->getStringContent(celltext);
+            // get cell size
+            std::stringstream srow;
+            srow << (*row);
+            Spreadsheet::CellAddress address((*col) + srow.str());
+            cellwidth = sheet->getColumnWidth(address.col());
+            cellheight = sheet->getRowHeight(address.row());
+            celltext = "";
+            // get the text
+            App::Property* prop = sheet->getPropertyByName(address.toString().c_str());
+            std::stringstream field;
+            if (prop != 0) {
+                if (prop->isDerivedFrom((App::PropertyQuantity::getClassTypeId())))
+                    field << static_cast<App::PropertyQuantity*>(prop)->getValue();
+                else if (prop->isDerivedFrom((App::PropertyFloat::getClassTypeId())))
+                    field << static_cast<App::PropertyFloat*>(prop)->getValue();
+                else if (prop->isDerivedFrom((App::PropertyString::getClassTypeId())))
+                    field << static_cast<App::PropertyString*>(prop)->getValue();
+                else
+                    assert(0);
+                celltext = field.str();
             }
-            catch (const Base::Exception & e) {
-                return new App::DocumentObjectExecReturn(e.what());
+            // get colors and style
+            std::string bcolor = "none";
+            std::string fcolor = "#" + hr.str() + hg.str() + hb.str();
+            std::string textstyle = "";
+            Spreadsheet::Cell* cell = sheet->getCell(address);
+            if (cell) {
+                App::Color f,b;
+                std::set<std::string> st;
+                if (cell->getBackground(b)) {
+                    std::stringstream br,bg,bb;
+                    br << hex << setfill('0') << setw(2) << (int)(255.0*b.r);
+                    bg << hex << setfill('0') << setw(2) << (int)(255.0*b.g);
+                    bb << hex << setfill('0') << setw(2) << (int)(255.0*b.b);
+                    bcolor = "#" + br.str() + bg.str() + bb.str();
+                }
+                if (cell->getForeground(f)) {
+                    std::stringstream fr,fg,fb;
+                    fr << hex << setfill('0') << setw(2) << (int)(255.0*f.r);
+                    fg << hex << setfill('0') << setw(2) << (int)(255.0*f.g);
+                    fb << hex << setfill('0') << setw(2) << (int)(255.0*f.b);
+                    fcolor = "#" + fr.str() + fg.str() + fb.str();
+                }
+                if (cell->getStyle(st)) {
+                    for (std::set<std::string>::const_iterator i = st.begin(); i != st.end(); ++i) {
+                         if ((*i) == "bold")
+                            textstyle = textstyle + "font-weight: bold; ";
+                        else if ((*i) == "italic")
+                            textstyle = textstyle + "font-style: italic; ";
+                        else if ((*i) == "underline")
+                            textstyle = textstyle + "text-decoration: underline; ";
+                    }
+                }
             }
             result << "    <rect x=\"" << coloffset << "\" y=\"" << rowoffset << "\" width=\"" << cellwidth 
-                   << "\" height=\"" << cellheight << "\" style=\"fill:none;stroke-width:" 
+                   << "\" height=\"" << cellheight << "\" style=\"fill:" << bcolor << ";stroke-width:" 
                    << LineWidth.getValue()/Scale.getValue() << ";stroke:#" << hr.str() << hg.str() << hb.str() << ";\" />" << endl
-                   << "    <text x=\"" << coloffset + FontSize.getValue()/2 << "\" y=\"" << rowoffset + 0.75 * cellheight << "\" font-family=\"" 
+                   << "    <text style=\"" << textstyle << "\" x=\"" << coloffset + FontSize.getValue()/2 << "\" y=\"" << rowoffset + 0.75 * cellheight << "\" font-family=\"" 
                    << Font.getValue() << "\"" << " font-size=\"" << FontSize.getValue() << "\""
-                   << " fill=\"#" << hr.str() << hg.str() << hb.str() << "\">" << celltext << "</text>" << endl;
+                   << " fill=\"" << fcolor << "\">" << celltext << "</text>" << endl;
             rowoffset = rowoffset + cellheight;
         }
         result << "  </g>" << endl;
