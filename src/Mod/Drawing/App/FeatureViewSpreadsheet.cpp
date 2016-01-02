@@ -152,7 +152,8 @@ App::DocumentObjectExecReturn *FeatureViewSpreadsheet::execute(void)
     float cellheight = 100;
     float cellwidth = 100;
     std::string celltext;
-    Spreadsheet::Sheet* sheet = static_cast<Spreadsheet::Sheet*>(link);    
+    Spreadsheet::Sheet* sheet = static_cast<Spreadsheet::Sheet*>(link); 
+    std::vector<std::string> skiplist;   
     for (std::vector<std::string>::const_iterator col = columns.begin(); col != columns.end(); ++col) {
         // create a group for each column
         result << "  <g id=\"" << ViewName << "_col" << (*col) << "\">" << endl;
@@ -178,7 +179,7 @@ App::DocumentObjectExecReturn *FeatureViewSpreadsheet::execute(void)
                     assert(0);
                 celltext = field.str();
             }
-            // get colors and style
+            // get colors, style and span
             std::string bcolor = "none";
             std::string fcolor = "#" + hr.str() + hg.str() + hb.str();
             std::string textstyle = "";
@@ -186,6 +187,7 @@ App::DocumentObjectExecReturn *FeatureViewSpreadsheet::execute(void)
             if (cell) {
                 App::Color f,b;
                 std::set<std::string> st;
+                int colspan, rowspan;
                 if (cell->getBackground(b)) {
                     std::stringstream br,bg,bb;
                     br << hex << setfill('0') << setw(2) << (int)(255.0*b.r);
@@ -210,13 +212,29 @@ App::DocumentObjectExecReturn *FeatureViewSpreadsheet::execute(void)
                             textstyle = textstyle + "text-decoration: underline; ";
                     }
                 }
+                if (cell->getSpans(rowspan,colspan)) {
+                    for (int i=0; i<colspan; ++i) {
+                        for (int j=0; j<rowspan; ++j) {
+                            Spreadsheet::CellAddress nextcell(address.row()+j,address.col()+i);
+                            if (i > 0)
+                                cellwidth = cellwidth + sheet->getColumnWidth(nextcell.col());
+                            if (j > 0)
+                                cellheight = cellheight + sheet->getRowHeight(nextcell.row());
+                            if ( (i > 0) || (j > 0) )
+                                skiplist.push_back(nextcell.toString());
+                        }
+                    }
+                }
             }
-            result << "    <rect x=\"" << coloffset << "\" y=\"" << rowoffset << "\" width=\"" << cellwidth 
-                   << "\" height=\"" << cellheight << "\" style=\"fill:" << bcolor << ";stroke-width:" 
-                   << LineWidth.getValue()/Scale.getValue() << ";stroke:#" << hr.str() << hg.str() << hb.str() << ";\" />" << endl
-                   << "    <text style=\"" << textstyle << "\" x=\"" << coloffset + FontSize.getValue()/2 << "\" y=\"" << rowoffset + 0.75 * cellheight << "\" font-family=\"" 
-                   << Font.getValue() << "\"" << " font-size=\"" << FontSize.getValue() << "\""
-                   << " fill=\"" << fcolor << "\">" << celltext << "</text>" << endl;
+            // skip cell if found in skiplist
+            if (std::find(skiplist.begin(), skiplist.end(), address.toString()) == skiplist.end()) {
+                result << "    <rect x=\"" << coloffset << "\" y=\"" << rowoffset << "\" width=\"" << cellwidth 
+                       << "\" height=\"" << cellheight << "\" style=\"fill:" << bcolor << ";stroke-width:" 
+                       << LineWidth.getValue()/Scale.getValue() << ";stroke:#" << hr.str() << hg.str() << hb.str() << ";\" />" << endl
+                       << "    <text style=\"" << textstyle << "\" x=\"" << coloffset + FontSize.getValue()/2 << "\" y=\"" << rowoffset + 0.75 * cellheight << "\" font-family=\"" 
+                       << Font.getValue() << "\"" << " font-size=\"" << FontSize.getValue() << "\""
+                       << " fill=\"" << fcolor << "\">" << celltext << "</text>" << endl;
+            }
             rowoffset = rowoffset + cellheight;
         }
         result << "  </g>" << endl;
