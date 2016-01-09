@@ -197,7 +197,6 @@ Application::Application(ParameterManager * /*pcSysParamMngr*/,
 #if PY_MAJOR_VERSION >= 3
     static struct PyModuleDef ConsoleModuleDef = {PyModuleDef_HEAD_INIT, "__FreeCADConsole__", Console_doc, -1, ConsoleSingleton::Methods};
     PyObject* pConsoleModule = PyModule_Create(&ConsoleModuleDef);
-    _PyImport_FixupBuiltin(pConsoleModule, "__FreeCADConsole__");
 #else
     PyObject* pConsoleModule = Py_InitModule3("__FreeCADConsole__", ConsoleSingleton::Methods, Console_doc);
 #endif
