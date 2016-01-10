@@ -148,7 +148,7 @@ std::string Base::Tools::escapedUnicodeFromUtf8(const char *s)
     PyObject* escaped = PyUnicode_AsUnicodeEscapeString(unicode);
     Py_DECREF(unicode);
 #if PY_MAJOR_VERSION >= 3
-    std::string escapedstr = std::string(PyUnicode_AsUTF8(escaped));
+    std::string escapedstr = std::string(PyBytes_AsString(escaped));
 #else
     std::string escapedstr = std::string(PyString_AsString(escaped));
 #endif
