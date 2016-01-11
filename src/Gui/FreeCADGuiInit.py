@@ -98,7 +98,13 @@ class NoneWorkbench ( Workbench ):
 		return "Gui::NoneWorkbench"
 
 def InitApplications():
-	import sys,os,traceback,cStringIO
+	import sys,os,traceback
+	try:
+		# Python3
+		import io as cStringIO
+	except ImportError:
+		# Python2
+		import cStringIO
 	# Searching modules dirs +++++++++++++++++++++++++++++++++++++++++++++++++++
 	# (additional module paths are already cached)
 	ModDirs = FreeCAD.__path__
@@ -110,8 +116,8 @@ def InitApplications():
 			if (os.path.exists(InstallFile)):
 				try:
 					#execfile(InstallFile)
-					exec open(InstallFile).read()
-				except Exception, inst:
+					exec(open(InstallFile).read())
+				except Exception as inst:
 					Log('Init:      Initializing ' + Dir + '... failed\n')
 					Log('-'*100+'\n')
 					output=cStringIO.StringIO()
