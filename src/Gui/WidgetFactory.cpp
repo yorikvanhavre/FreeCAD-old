@@ -1202,13 +1202,21 @@ PyObject *PyResource::value(PyObject *args)
         pItem = PyFloat_FromDouble(v.toDouble());
         break;
     case QVariant::Bool:
+#if PY_MAJOR_VERSION < 3
         pItem = PyInt_FromLong(v.toBool() ? 1 : 0);
+#else
+        pItem = PyLong_FromLong(v.toBool() ? 1 : 0);
+#endif
         break;
     case QVariant::UInt:
         pItem = PyLong_FromLong(v.toUInt());
         break;
     case QVariant::Int:
+#if PY_MAJOR_VERSION < 3
         pItem = PyInt_FromLong(v.toInt());
+#else
+        pItem = PyLong_FromLong(v.toInt());
+#endif
         break;
     default:
 #if PY_MAJOR_VERSION >= 3
@@ -1248,10 +1256,12 @@ PyObject *PyResource::setValue(PyObject *args)
         v = QString::fromLatin1(PyString_AsString(psValue));
 #endif
     }
+#if PY_MAJOR_VERSION < 3
     else if (PyInt_Check(psValue)) {
         int val = PyInt_AsLong(psValue);
         v = val;
     }
+#endif
     else if (PyLong_Check(psValue)) {
         unsigned int val = PyLong_AsLong(psValue);
         v = val;

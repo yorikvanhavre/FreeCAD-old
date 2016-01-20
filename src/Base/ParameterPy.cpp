@@ -251,8 +251,11 @@ Py::Object ParameterGrpPy::getInt(const Py::Tuple& args)
     long  Int=0;
     if (!PyArg_ParseTuple(args.ptr(), "s|i", &pstr,&Int))
         throw Py::Exception();
-
+#if PY_MAJOR_VERSION < 3
+    return Py::Int(_cParamGrp->GetInt(pstr,Int));
+#else
     return Py::Long(_cParamGrp->GetInt(pstr,Int));
+#endif
 } 
 
 Py::Object ParameterGrpPy::setUnsigned(const Py::Tuple& args)
@@ -272,8 +275,12 @@ Py::Object ParameterGrpPy::getUnsigned(const Py::Tuple& args)
     unsigned long  UInt=0;
     if (!PyArg_ParseTuple(args.ptr(), "s|I", &pstr,&UInt))
         throw Py::Exception();
-
+#if PY_MAJOR_VERSION < 3
+    int cropped = _cParamGrp->GetUnsigned(pstr,UInt) & INT_MAX;
+    return Py::Int(cropped);
+#else
     return Py::Long(_cParamGrp->GetUnsigned(pstr,UInt));
+#endif
 } 
 
 Py::Object ParameterGrpPy::setFloat(const Py::Tuple& args)
