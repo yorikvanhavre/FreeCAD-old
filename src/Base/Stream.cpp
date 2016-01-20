@@ -549,7 +549,11 @@ int PyStreambuf::underflow()
     for (int i=0; i<bufSize; i++) {
         char c;
         Py::Tuple arg(1);
+#if PY_MAJOR_VERSION < 3
+        arg.setItem(0, Py::Int(1));
+#else
         arg.setItem(0, Py::Long(1));
+#endif
         Py::Callable meth(Py::Object(inp).getAttr("read"));
         try {
             Py::String res(meth.apply(arg));
