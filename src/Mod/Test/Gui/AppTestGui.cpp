@@ -98,5 +98,9 @@ PyMODINIT_FUNC initQtUnitGui()
 
     // add resources and reloads the translators
     loadTestResource();
+#if PY_MAJOR_VERSION >= 3
+    return 0;
+#else
     return;
+#endif
 }
