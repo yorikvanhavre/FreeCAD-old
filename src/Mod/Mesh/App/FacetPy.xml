@@ -43,7 +43,7 @@ Get a list of intersection points with another triangle.
 		  <Documentation>
 			  <UserDocu>The index of this facet in the MeshObject</UserDocu>
 		  </Documentation>
-		  <Parameter Name="Index" Type="Int"/>
+		  <Parameter Name="Index" Type="Long"/>
 	  </Attribute>
 	  <Attribute Name="Bound" ReadOnly="true">
 		  <Documentation>
