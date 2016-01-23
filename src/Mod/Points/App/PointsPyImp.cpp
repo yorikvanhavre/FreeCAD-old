@@ -66,9 +66,15 @@ int PointsPy::PyInit(PyObject* args, PyObject* /*kwd*/)
         if (!addPoints(args))
             return -1;
     }
+#if PY_MAJOR_VERSION >= 3
+    else if (PyUnicode_Check(pcObj)) {
+        getPointKernelPtr()->load(PyUnicode_AsUTF8(pcObj));
+    }
+#else
     else if (PyString_Check(pcObj)) {
         getPointKernelPtr()->load(PyString_AsString(pcObj));
     }
+#endif
     else {
         PyErr_SetString(PyExc_TypeError, "optional argument must be list, tuple or string");
         return -1;
@@ -168,9 +174,9 @@ PyObject* PointsPy::addPoints(PyObject * args)
     Py_Return;
 }
 
-Py::Int PointsPy::getCountPoints(void) const
+Py::Long PointsPy::getCountPoints(void) const
 {
-    return Py::Int((long)getPointKernelPtr()->size());
+    return Py::Long((long)getPointKernelPtr()->size());
 }
 
 Py::List PointsPy::getPoints(void) const
