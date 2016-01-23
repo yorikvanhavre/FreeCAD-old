@@ -61,11 +61,11 @@ class SpreadsheetWorkbench ( Workbench ):
         MenuText = "Spreadsheet"
         ToolTip = "Spreadsheet workbench"
 
-	def Initialize(self):
-		# load the module
+        def Initialize(self):
+                # load the module
                 import SpreadsheetGui
 
-	def GetClassName(self):
+        def GetClassName(self):
                 return "SpreadsheetGui::Workbench"
 
 Gui.addWorkbench(SpreadsheetWorkbench())
