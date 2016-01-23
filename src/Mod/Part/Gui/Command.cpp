@@ -560,7 +560,7 @@ void CmdPartCompJoinFeatures::languageChange()
 
     if (!_pcAction)
         return;
-
+#if 0
     Gui::CommandManager &rcCmdMgr = Gui::Application::Instance->commandManager();
 
     Gui::ActionGroup* pcAction = qobject_cast<Gui::ActionGroup*>(_pcAction);
@@ -589,6 +589,7 @@ void CmdPartCompJoinFeatures::languageChange()
         cmd2->setToolTip(QApplication::translate("Part_JoinCutout", joinCutout->getToolTipText()));
         cmd2->setStatusTip(QApplication::translate("Part_JoinCutout", joinCutout->getStatusTip()));
     }
+#endif
 }
 
 bool CmdPartCompJoinFeatures::isActive(void)
