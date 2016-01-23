@@ -520,6 +520,12 @@ Mesh.show(m)
     }
 #endif
 };
+
+PyObject* initModule()
+{
+    return (new Module)->module().ptr();
+}
+
 } // namespace Reen
 
 
@@ -533,9 +539,10 @@ PyMODINIT_FUNC initReverseEngineering()
     }
     catch(const Base::Exception& e) {
         PyErr_SetString(PyExc_ImportError, e.what());
-        return;
+        PyMOD_Return(0);
     }
 
-    new Reen::Module();
+    PyObject* mod = Reen::initModule();
     Base::Console().Log("Loading ReverseEngineering module... done\n");
+    PyMOD_Return(mod);
 }
