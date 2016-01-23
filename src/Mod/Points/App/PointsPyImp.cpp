@@ -173,10 +173,15 @@ PyObject* PointsPy::addPoints(PyObject * args)
 
     Py_Return;
 }
-
+#if PY_MAJOR_VERSION >= 3
 Py::Long PointsPy::getCountPoints(void) const
 {
     return Py::Long((long)getPointKernelPtr()->size());
+#else
+Py::Int PointsPy::getCountPoints(void) const
+{
+    return Py::Int((long)getPointKernelPtr()->size());
+#endif
 }
 
 Py::List PointsPy::getPoints(void) const
