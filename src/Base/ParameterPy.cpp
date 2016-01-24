@@ -237,7 +237,7 @@ Py::Object ParameterGrpPy::getBool(const Py::Tuple& args)
 Py::Object ParameterGrpPy::setInt(const Py::Tuple& args)
 {
     char *pstr;
-    long  Int;
+    int  Int;
     if (!PyArg_ParseTuple(args.ptr(), "si", &pstr,&Int))
         throw Py::Exception();
 
@@ -248,7 +248,7 @@ Py::Object ParameterGrpPy::setInt(const Py::Tuple& args)
 Py::Object ParameterGrpPy::getInt(const Py::Tuple& args)
 {
     char *pstr;
-    long  Int=0;
+    int  Int=0;
     if (!PyArg_ParseTuple(args.ptr(), "s|i", &pstr,&Int))
         throw Py::Exception();
 #if PY_MAJOR_VERSION < 3
@@ -261,7 +261,7 @@ Py::Object ParameterGrpPy::getInt(const Py::Tuple& args)
 Py::Object ParameterGrpPy::setUnsigned(const Py::Tuple& args)
 {
     char *pstr;
-    unsigned long  UInt;
+    unsigned int  UInt;
     if (!PyArg_ParseTuple(args.ptr(), "sI", &pstr,&UInt))
         throw Py::Exception();
 
@@ -272,7 +272,7 @@ Py::Object ParameterGrpPy::setUnsigned(const Py::Tuple& args)
 Py::Object ParameterGrpPy::getUnsigned(const Py::Tuple& args)
 {
     char *pstr;
-    unsigned long  UInt=0;
+    unsigned int  UInt=0;
     if (!PyArg_ParseTuple(args.ptr(), "s|I", &pstr,&UInt))
         throw Py::Exception();
 #if PY_MAJOR_VERSION < 3
