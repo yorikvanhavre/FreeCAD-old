@@ -60,7 +60,7 @@ extern PyObject* initModule();
 }
 
 /* Python entry */
-PyMODINIT_FUNC initFem()
+PyMOD_INIT_FUNC(Fem)
 {
     // load dependend module
     try {
@@ -69,7 +69,7 @@ PyMODINIT_FUNC initFem()
     }
     catch(const Base::Exception& e) {
         PyErr_SetString(PyExc_ImportError, e.what());
-        return;
+        PyMOD_Return(0);
     }
     PyObject* femModule = Fem::initModule();
     Base::Console().Log("Loading Fem module... done\n");
@@ -115,7 +115,7 @@ PyMODINIT_FUNC initFem()
     // NOTE: To finish the initialization of our own type objects we must
     // call PyType_Ready, otherwise we run into a segmentation fault, later on.
     // This function is responsible for adding inherited slots from a type's base class.
-
+ 
     Fem::FemAnalysis                ::init();
     Fem::FemAnalysisPython          ::init();
     Fem::DocumentObject             ::init();
@@ -145,4 +145,6 @@ PyMODINIT_FUNC initFem()
     Fem::FemResultObjectPython      ::init();
     Fem::FemSolverObject            ::init();
     Fem::FemSolverObjectPython      ::init();
+
+    PyMOD_Return(femModule);
 }
