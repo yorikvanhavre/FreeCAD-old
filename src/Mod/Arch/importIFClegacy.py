@@ -274,14 +274,14 @@ def read(filename,skip=None):
                     
                 elif shape:
                     # treat as dumb parts
-                    if DEBUG: print "Fixme: Shape-containing object not handled: ",objid, " ", objtype 
+                    if DEBUG: print ("Fixme: Shape-containing object not handled: ",objid, " ", objtype)
                     nobj = FreeCAD.ActiveDocument.addObject("Part::Feature",n)
                     nobj.Label = n
                     nobj.Shape = shape
                     
                 else:
                     # treat as meshes
-                    if DEBUG: print "Warning: Object without shape: ",objid, " ", objtype
+                    if DEBUG: print ("Warning: Object without shape: ",objid, " ", objtype)
                     if hasattr(obj,"mesh"):
                         if not hasattr(obj.mesh, 'verts'):
                             obj = IfcImport.Get() # Get triangulated rep of same product
@@ -291,7 +291,7 @@ def read(filename,skip=None):
                         nobj.Mesh = me
                         nobj.Placement = pl
                     else:
-                        if DEBUG: print "Error: Skipping object without mesh: ",objid, " ", objtype
+                        if DEBUG: print ("Error: Skipping object without mesh: ",objid, " ", objtype)
                     
                 # registering object number and parent
                 if objparentid:
@@ -364,7 +364,7 @@ def read(filename,skip=None):
                     elif parenttype == "IfcProject":
                         parent = None
                     else:
-                        if DEBUG: print "Fixme: skipping unhandled parent: ", parentid, " ", parenttype
+                        if DEBUG: print ("Fixme: skipping unhandled parent: ", parentid, " ", parenttype)
                         parent = None
                     # registering object number and parent
                     if not IFCOPENSHELL5:
@@ -378,10 +378,10 @@ def read(filename,skip=None):
                 if parent and (id in ifcObjects):
                     if ifcObjects[id] and (ifcObjects[id].Name != parent.Name):
                         if additive:
-                            if DEBUG: print "adding ",ifcObjects[id].Name, " to ",parent.Name
+                            if DEBUG: print ("adding ",ifcObjects[id].Name, " to ",parent.Name)
                             ArchCommands.addComponents(ifcObjects[id],parent)
                         else:
-                            if DEBUG: print "removing ",ifcObjects[id].Name, " from ",parent.Name
+                            if DEBUG: print ("removing ",ifcObjects[id].Name, " from ",parent.Name)
                             ArchCommands.removeComponents(ifcObjects[id],parent)
         if not IFCOPENSHELL5:
             IfcImport.CleanUp()
@@ -392,13 +392,13 @@ def read(filename,skip=None):
         FreeCAD.Console.PrintWarning(translate("Arch","IfcOpenShell not found or disabled, falling back on internal parser.\n"))
         schema=getSchema()
         if schema:
-            if DEBUG: print "opening",filename,"..."
+            if DEBUG: print ("opening",filename,"...")
             ifc = IfcDocument(filename,schema=schema)
         else:
             FreeCAD.Console.PrintWarning(translate("Arch","IFC Schema not found, IFC import disabled.\n"))
             return None
         t2 = time.time()
-        if DEBUG: print "Successfully loaded",ifc,"in %s s" % ((t2-t1))
+        if DEBUG: print ("Successfully loaded",ifc,"in %s s" % ((t2-t1)))
        
         # getting walls
         for w in ifc.getEnt("IfcWallStandardCase"):
@@ -425,10 +425,10 @@ def read(filename,skip=None):
         for s in ifc.getEnt("IfcSite"):
             group(s,ifc,"Site")
 
-    if DEBUG: print "done parsing. Recomputing..."        
+    if DEBUG: print ("done parsing. Recomputing...")
     FreeCAD.ActiveDocument.recompute()
     t3 = time.time()
-    if DEBUG: print "done processing IFC file in %s s" % ((t3-t1))
+    if DEBUG: print ("done processing IFC file in %s s" % ((t3-t1)))
     
     return None
 
@@ -459,24 +459,24 @@ def makeWall(entity,shape=None,name="Wall"):
                 body.Mesh = shape
             wall = Arch.makeWall(body,name=name)
             wall.Label = name
-            if DEBUG: print "    made wall object ",entity,":",wall
+            if DEBUG: print ("    made wall object ",entity,":",wall)
             return wall
             
         # use internal parser
-        if DEBUG: print "=====> making wall",entity.id
+        if DEBUG: print ("=====> making wall",entity.id)
         placement = wall = wire = body = width = height = None
         placement = getPlacement(entity.ObjectPlacement)
-        if DEBUG: print "    got wall placement",entity.id,":",placement
+        if DEBUG: print ("    got wall placement",entity.id,":",placement)
         width = entity.getProperty("Width")
         height = entity.getProperty("Height")
         if width and height:
-                if DEBUG: print "    got width, height ",entity.id,":",width,"/",height
+                if DEBUG: print ("    got width, height ",entity.id,":",width,"/",height)
                 for r in entity.Representation.Representations:
                     if r.RepresentationIdentifier == "Axis":
                         wire = getWire(r.Items,placement)
                         wall = Arch.makeWall(wire,width,height,align="Center",name="Wall"+str(entity.id))
         else:
-                if DEBUG: print "    no height or width properties found..."
+                if DEBUG: print ("    no height or width properties found...")
                 for r in entity.Representation.Representations:
                     if r.RepresentationIdentifier == "Body":
                         for b in r.Items:
@@ -487,12 +487,12 @@ def makeWall(entity,shape=None,name="Wall"):
                                 wall = Arch.makeWall(wire,width=0,height=b.Depth,name="Wall"+str(entity.id))
                                 wall.Normal = norm
         if wall:
-            if DEBUG: print "    made wall object  ",entity.id,":",wall
+            if DEBUG: print ("    made wall object  ",entity.id,":",wall)
             return wall
-        if DEBUG: print "    error: skipping wall",entity.id
+        if DEBUG: print ("    error: skipping wall",entity.id)
         return None
     except:
-        if DEBUG: print "    error: skipping wall",entity
+        if DEBUG: print ("    error: skipping wall",entity)
         return None
 
 
@@ -505,14 +505,14 @@ def makeWindow(entity,shape=None,name="Window"):
                 window = Arch.makeWindow(name=name)
                 window.Shape = shape
                 window.Label = name
-                if DEBUG: print "    made window object  ",entity,":",window
+                if DEBUG: print ("    made window object  ",entity,":",window)
                 return window
             
         # use internal parser
-        if DEBUG: print "=====> making window",entity.id
+        if DEBUG: print ("=====> making window",entity.id)
         placement = window = wire = body = width = height = None
         placement = getPlacement(entity.ObjectPlacement)
-        if DEBUG: print "got window placement",entity.id,":",placement
+        if DEBUG: print ("got window placement",entity.id,":",placement)
         width = entity.getProperty("Width")
         height = entity.getProperty("Height")
         for r in entity.Representation.Representations:
@@ -522,12 +522,12 @@ def makeWindow(entity,shape=None,name="Window"):
                         wire = getWire(b.SweptArea,placement)
                         window = Arch.makeWindow(wire,width=b.Depth,name=objtype+str(entity.id))
         if window:
-            if DEBUG: print "    made window object  ",entity.id,":",window
+            if DEBUG: print ("    made window object  ",entity.id,":",window)
             return window
-        if DEBUG: print "    error: skipping window",entity.id
+        if DEBUG: print ("    error: skipping window",entity.id)
         return None
     except:
-        if DEBUG: print "    error: skipping window",entity
+        if DEBUG: print ("    error: skipping window",entity)
         return None
 
 
@@ -552,14 +552,14 @@ def makeStructure(entity,shape=None,ifctype=None,name="Structure"):
                 structure.Role = "Slab"
             elif ifctype == "IfcFooting":
                 structure.Role = "Foundation"
-            if DEBUG: print "    made structure object  ",entity,":",structure," (type: ",ifctype,")"
+            if DEBUG: print ("    made structure object  ",entity,":",structure," (type: ",ifctype,")")
             return structure
             
         # use internal parser
-        if DEBUG: print "=====> making struct",entity.id
+        if DEBUG: print ("=====> making struct",entity.id)
         placement = structure = wire = body = width = height = None
         placement = getPlacement(entity.ObjectPlacement)
-        if DEBUG: print "got window placement",entity.id,":",placement
+        if DEBUG: print ("got window placement",entity.id,":",placement)
         width = entity.getProperty("Width")
         height = entity.getProperty("Height")
         for r in entity.Representation.Representations:
@@ -569,12 +569,12 @@ def makeStructure(entity,shape=None,ifctype=None,name="Structure"):
                         wire = getWire(b.SweptArea,placement)
                         structure = Arch.makeStructure(wire,height=b.Depth,name=objtype+str(entity.id))
         if structure:
-            if DEBUG: print "    made structure object  ",entity.id,":",structure
+            if DEBUG: print ("    made structure object  ",entity.id,":",structure)
             return structure
-        if DEBUG: print "    error: skipping structure",entity.id
+        if DEBUG: print ("    error: skipping structure",entity.id)
         return None
     except:
-        if DEBUG: print "    error: skipping structure",entity
+        if DEBUG: print ("    error: skipping structure",entity)
         return None
 
 
@@ -594,7 +594,7 @@ def makeSite(entity,shape=None,name="Site"):
         site.Label = name
         if body:
             site.Terrain = body
-        if DEBUG: print "    made site object  ",entity,":",site
+        if DEBUG: print ("    made site object  ",entity,":",site)
         return site
     except:
         return None
@@ -611,7 +611,7 @@ def makeSpace(entity,shape=None,name="Space"):
                 body.Shape = shape
                 space.Base = body
                 body.ViewObject.hide()
-                if DEBUG: print "    made space object  ",entity,":",space
+                if DEBUG: print ("    made space object  ",entity,":",space)
                 return space
     except:
         return None
@@ -626,7 +626,7 @@ def makeRoof(entity,shape=None,name="Roof"):
                 roof = Arch.makeRoof(name=name)
                 roof.Label = name
                 roof.Shape = shape
-                if DEBUG: print "    made roof object  ",entity,":",roof
+                if DEBUG: print ("    made roof object  ",entity,":",roof)
                 return roof
     except:
         return None
@@ -637,7 +637,7 @@ def getMesh(obj):
     "gets mesh and placement from an IfcOpenShell object"
     if IFCOPENSHELL5:
         return None,None
-        print "fixme: mesh data not yet supported" # TODO implement this with OCC tessellate
+        print ("fixme: mesh data not yet supported") # TODO implement this with OCC tessellate
     import Mesh
     meshdata = []
     print obj.mesh.faces
@@ -650,7 +650,7 @@ def getMesh(obj):
             vi = f[i+j]*3
             face.append([v[vi],v[vi+1],v[vi+2]])
         meshdata.append(face)
-        print meshdata
+        print (meshdata)
     me = Mesh.Mesh(meshdata)
     # get transformation matrix
     m = obj.matrix
@@ -684,7 +684,7 @@ def getShape(obj,objid):
                 else:
                     brep_data = IfcImport.create_shape(obj, ss)
         except:
-            print "Unable to retrieve shape data"
+            print ("Unable to retrieve shape data")
     else:
         brep_data = obj.mesh.brep_data
     if brep_data:
@@ -700,7 +700,7 @@ def getShape(obj,objid):
             else:
                 sh.importBrepFromString(brep_data)
         except:
-            print "    error: malformed shape"
+            print ("    error: malformed shape")
             return None
         else:
             if IFCOPENSHELL5 and SEPARATE_PLACEMENTS:
@@ -711,16 +711,16 @@ def getShape(obj,objid):
         # try to extract a solid shape
         if sh.Faces:
             try:
-                if DEBUG: print "    malformed solid. Attempting to fix..."
+                if DEBUG: (print "    malformed solid. Attempting to fix...")
                 shell = Part.makeShell(sh.Faces)
                 if shell:
                     solid = Part.makeSolid(shell)
                     if solid:
                         sh = solid
             except:
-                if DEBUG: print "    failed to retrieve solid from object ",objid
+                if DEBUG: print ("    failed to retrieve solid from object ",objid)
         else:
-            if DEBUG: print "    object ", objid, " doesn't contain any geometry"
+            if DEBUG: print ("    object ", objid, " doesn't contain any geometry")
     if not IFCOPENSHELL5:
         m = obj.matrix
         mat = FreeCAD.Matrix(m[0], m[3], m[6], m[9],
@@ -740,7 +740,7 @@ def getPlacement(entity):
     "returns a placement from the given entity"
     if not entity: 
         return None
-    if DEBUG: print "    getting placement ",entity
+    if DEBUG: (print "    getting placement ",entity)
     if IFCOPENSHELL5:
         if isinstance(entity,int):
             entity = ifc.by_id(entity)
@@ -771,7 +771,7 @@ def getPlacement(entity):
         loc = getVector(entity)
         pl = FreeCAD.Placement()
         pl.move(loc)
-    if DEBUG: print "    made placement for ",entityid,":",pl
+    if DEBUG: print ("    made placement for ",entityid,":",pl)
     return pl
     
 def getAttr(entity,attr):
@@ -788,7 +788,7 @@ def getVector(entity):
     "returns a vector from the given entity"
     if not entity:
         return None
-    if DEBUG: print "    getting point from ",entity
+    if DEBUG: print ("    getting point from ",entity)
     if IFCOPENSHELL5:
         if isinstance(entity,int):
             entity = ifc.by_id(entity)
@@ -828,7 +828,7 @@ def getSchema():
     custom = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/Arch").GetString("CustomIfcSchema","")
     if custom:
         if os.path.exists(custom):
-            if DEBUG: print "Using custom schema: ",custom.split(os.sep)[-1]
+            if DEBUG: print ("Using custom schema: ",custom.split(os.sep)[-1])
             return custom
     p = None
     p = os.path.join(FreeCAD.ConfigGet("UserAppData"),SCHEMA.split(os.sep)[-1])
@@ -845,10 +845,10 @@ def group(entity,ifc,mode=None):
     # only used by the internal parser
     
     try:
-        if DEBUG: print "=====> making group",entity.id
+        if DEBUG: print ("=====> making group",entity.id)
         placement = None
         placement = getPlacement(entity.ObjectPlacement)
-        if DEBUG: print "got cell placement",entity.id,":",placement
+        if DEBUG: print ("got cell placement",entity.id,":",placement)
         subelements = ifc.find("IFCRELCONTAINEDINSPATIALSTRUCTURE","RelatingStructure",entity)
         subelements.extend(ifc.find("IFCRELAGGREGATES","RelatingObject",entity))
         elts = []
@@ -884,7 +884,7 @@ def group(entity,ifc,mode=None):
 
         comps = []
         if CREATE_IFC_GROUPS:
-            if DEBUG: print "creating subgroups"
+            if DEBUG: print ("creating subgroups")
             for g in groups:
                 if g[2]:
                     if g[0] in ['Building','Floor']:
@@ -910,12 +910,12 @@ def group(entity,ifc,mode=None):
         if label and cell:
             cell.Label = label
     except:
-        if DEBUG: print "error: skipping group ",entity.id
+        if DEBUG: print ("error: skipping group ",entity.id)
         
 def getWire(entity,placement=None):
     "returns a wire (created in the freecad document) from the given entity"
     # only used by the internal parser
-    if DEBUG: print "making Wire from :",entity
+    if DEBUG: print ("making Wire from :",entity)
     if not entity: return None
     if entity.type == "IFCPOLYLINE":
         pts = []
@@ -942,16 +942,16 @@ def export(exportList,filename):
             import ifc_wrapper as ifcw
         except ImportError:
             FreeCAD.Console.PrintError(translate("Arch","Error: IfcOpenShell is not installed\n"))
-            print """importIFC: ifcOpenShell is not installed. IFC export is unavailable.
+            print ("""importIFC: ifcOpenShell is not installed. IFC export is unavailable.
                     Note: IFC export currently requires an experimental version of IfcOpenShell
-                    available from https://github.com/aothms/IfcOpenShell"""
+                    available from https://github.com/aothms/IfcOpenShell""")
             return
 
     if (not hasattr(ifcw,"IfcFile")) and (not hasattr(ifcw,"file")):
         FreeCAD.Console.PrintError(translate("Arch","Error: your IfcOpenShell version is too old\n"))
-        print """importIFC: The version of ifcOpenShell installed on this system doesn't
+        print ("""importIFC: The version of ifcOpenShell installed on this system doesn't
                  have IFC export capabilities. IFC export currently requires an experimental 
-                 version of IfcOpenShell available from https://github.com/aothms/IfcOpenShell"""
+                 version of IfcOpenShell available from https://github.com/aothms/IfcOpenShell""")
         return
     import Arch,Draft
 
@@ -993,7 +993,7 @@ def export(exportList,filename):
         else:
             others.append(obj)
     objectslist = buildings + floors + others
-    if DEBUG: print "adding ", len(objectslist), " objects"
+    if DEBUG: print ("adding ", len(objectslist), " objects")
         
     global unprocessed
     unprocessed = []
@@ -1031,7 +1031,7 @@ def export(exportList,filename):
                 if obj.IfcAttributes["FlagForceBrep"] == "True":
                     brepflag = True
 
-        if DEBUG: print "Adding " + obj.Label + " as Ifc" + ifctype
+        if DEBUG: print ("Adding " + obj.Label + " as Ifc" + ifctype)
                  
         # writing IFC data 
         if obj.isDerivedFrom("App::DocumentObjectGroup"):
@@ -1041,7 +1041,7 @@ def export(exportList,filename):
                 parent = ifc.findByName("IfcBuilding",str(parent.Label))
 
             if otype == "Site":
-                print "   Skipping (not implemented yet)" # TODO manage sites
+                print ("   Skipping (not implemented yet)") # TODO manage sites
             elif otype == "Building":
                 ifc.addBuilding( name=name )
             elif otype == "Floor":
@@ -1066,15 +1066,15 @@ def export(exportList,filename):
                 #if DEBUG: print "   brep data for ",obj.Label," : ",fdata
                 if not fdata:
                     if obj.isDerivedFrom("Part::Feature"):
-                        print "   Error retrieving the shape of object ", obj.Label
+                        print ("   Error retrieving the shape of object ", obj.Label)
                         unprocessed.append(obj)
                         continue
                     else:
-                        if DEBUG: print "   No geometry"
+                        if DEBUG: print ("   No geometry")
                 else:
-                    if DEBUG: print "   Brep"
+                    if DEBUG: print ("   Brep")
             else:
-                if DEBUG: print "   Extrusion"
+                if DEBUG: print ("   Extrusion")
             if gdata:
                 # gdata = [ type, profile data, extrusion data, placement data ]
                 placement = ifc.addPlacement(origin=gdata[3][0],xaxis=gdata[3][1],zaxis=gdata[3][2])
@@ -1087,7 +1087,7 @@ def export(exportList,filename):
                 elif gdata[0] == "composite":
                     representation = ifc.addExtrudedCompositeCurve(gdata[1], gdata[2], color=color)
                 else:
-                    print "debug: unknow extrusion type"
+                    print ("debug: unknow extrusion type")
             elif fdata:
                 representation = [ifc.addFacetedBrep(f, color=color) for f in fdata]
 
@@ -1109,7 +1109,7 @@ def export(exportList,filename):
             elif otype == "Part":
                 extra = ["ELEMENT"]
             if not ifctype in supportedIfcTypes:
-                if DEBUG: print "   Type ",ifctype," is not supported yet. Exporting as IfcBuildingElementProxy instead"
+                if DEBUG: print ("   Type ",ifctype," is not supported yet. Exporting as IfcBuildingElementProxy instead")
                 ifctype = "IfcBuildingElementProxy"
                 extra = ["ELEMENT"]
                 
@@ -1119,7 +1119,7 @@ def export(exportList,filename):
                 # removing openings
                 if SEPARATE_OPENINGS and gdata:
                     for o in obj.Subtractions:
-                        print "Subtracting ",o.Label
+                        print ("Subtracting ",o.Label)
                         fdata = getIfcBrepFacesData(o,scaling,sub=True)
                         representation = [ifc.addFacetedBrep(f, color=color) for f in fdata]
                         p2 = ifc.addProduct( "IfcOpeningElement", representation, storey=product, placement=None, name=str(o.Label), description=None)
@@ -1141,14 +1141,14 @@ def export(exportList,filename):
             else:
                 unprocessed.append(obj)
         else:
-            if DEBUG: print "Object type ", otype, " is not supported yet."
+            if DEBUG: print ("Object type ", otype, " is not supported yet.")
 
     # processing groups
     for name,entities in groups.iteritems():
         if entities:
             o = FreeCAD.ActiveDocument.getObject(name)
             if o:
-                if DEBUG: print "Adding group ", o.Label, " with ",len(entities)," elements"
+                if DEBUG: print ("Adding group ", o.Label, " with ",len(entities)," elements")
                 grp = ifc.addGroup( entities, o.Label )
             
     ifc.write()
@@ -1177,10 +1177,10 @@ def export(exportList,filename):
     FreeCAD.ActiveDocument.recompute()
     
     if unprocessed:
-        print ""
-        print "WARNING: " + str(len(unprocessed)) + " objects were not exported (stored in importIFC.unprocessed):"
+        print ("")
+        print ("WARNING: " + str(len(unprocessed)) + " objects were not exported (stored in importIFC.unprocessed):")
         for o in unprocessed:
-            print "    " + o.Label
+            print ("    " + o.Label)
 
 
 def getTuples(data,scale=1,placement=None,normal=None,close=True):
@@ -1221,7 +1221,7 @@ def getTuples(data,scale=1,placement=None,normal=None,close=True):
             if close: # faceloops must not be closed, but ifc profiles must.
                 t.append(t[0])
         else:
-            print "Arch.getTuples(): Wrong profile data"
+            print ("Arch.getTuples(): Wrong profile data")
         return t
 
 def getIfcExtrusionData(obj,scale=1,nosubs=False):
@@ -1268,7 +1268,7 @@ def getIfcExtrusionData(obj,scale=1,nosubs=False):
                     if isinstance(e.Curve,Part.Circle):
                         curves = True
                     elif not isinstance(e.Curve,Part.Line):
-                        print "Arch.getIfcExtrusionData: Warning: unsupported edge type in profile"
+                        print ("Arch.getIfcExtrusionData: Warning: unsupported edge type in profile")
                 if curves:
                     # Composite profile
                     ecurves = []
@@ -1349,7 +1349,7 @@ def getIfcBrepFacesData(obj,scale=1,sub=False,tessellation=1):
             dataset = shape.Solids
         else:
             dataset = shape.Shells
-            print "Warning! object contains no solids"
+            print ("Warning! object contains no solids")
         for sol in shape.Solids:
             s = []
             curves = False
@@ -1417,7 +1417,7 @@ class IfcSchema:
             self.data = self.file.read()
             self.types = self.readTypes()
             self.entities = self.readEntities()
-            if DEBUG: print "Parsed from schema %s: %s entities and %s types" % (self.filename, len(self.entities), len(self.types))
+            if DEBUG: print ("Parsed from schema %s: %s entities and %s types" % (self.filename, len(self.entities), len(self.types)))
 
     def readTypes(self):
         """
@@ -1511,7 +1511,7 @@ class IfcFile:
         self.file = open(self.filename)
         self.entById, self.entsByName, self.header = self.read()
         self.file.close()
-        if DEBUG: print "Parsed from file %s: %s entities" % (self.filename, len(self.entById))
+        if DEBUG: print ("Parsed from file %s: %s entities" % (self.filename, len(self.entById)))
     
     def getEntityById(self, id):
         return self.entById.get(id, None)
@@ -1684,12 +1684,12 @@ class IfcDocument:
         for k,e in self.data.iteritems():
             eid = int(e['id'])
             self.Entities[eid] = IfcEntity(e,self)
-        if DEBUG: print len(self.Entities),"entities created. Creating attributes..."
+        if DEBUG: print (len(self.Entities),"entities created. Creating attributes...")
         for k,ent in self.Entities.iteritems():
-            if DEBUG: print "attributing entity ",ent
+            if DEBUG: print ("attributing entity ",ent)
             if hasattr(ent,"attributes"):
                 for k,v in ent.attributes.iteritems():
-                    if DEBUG: print "parsing attribute: ",k," value ",v
+                    if DEBUG: print ("parsing attribute: ",k," value ",v)
                     if isinstance(v,str):
                         val = self.__clean__(v)
                     elif isinstance(v,list):
@@ -1702,7 +1702,7 @@ class IfcDocument:
                     else:
                         val = v
                     setattr(ent,k.strip(),val)
-        if DEBUG: print "Document successfully created"
+        if DEBUG: print ("Document successfully created")
 
     def __clean__(self,value):
         "turns an attribute value into something usable"
@@ -1728,18 +1728,18 @@ class IfcDocument:
                         for subval in val:
                             if '#' in subval:
                                 s = subval.strip(" #")
-                                if DEBUG: print "referencing ",s," : ",self.getEnt(int(s))
+                                if DEBUG: print ("referencing ",s," : ",self.getEnt(int(s)))
                                 l.append(self.getEnt(int(s)))
                         val = l
                     else:
                         val = val.strip()
                         val = val.replace("#","")
-                        if DEBUG: print "referencing ",val," : ",self.getEnt(int(val))
+                        if DEBUG: print ("referencing ",val," : ",self.getEnt(int(val)))
                         val =  self.getEnt(int(val))
                         if not val:
                             val = value
         except:
-            if DEBUG: print "error parsing attribute",value
+            if DEBUG: print ("error parsing attribute",value)
             val = value
         return val
         
@@ -2175,17 +2175,17 @@ class IfcWriter(object):
         try:
             elt = create(self._fileobject,elttype,[uid(),self._owner,name,description,None,placement,prd,None]+extra)
         except:
-            print "unable to create an ",elttype, " with attributes: ",[uid(),self._owner,str(name),description,None,placement,prd,None]+extra
+            print ("unable to create an ",elttype, " with attributes: ",[uid(),self._owner,str(name),description,None,placement,prd,None]+extra)
             try:
                 if hasattr(ifcw,"Entity"):
                     o = ifcw.Entity(elttype)
                 else:
                     o = ifcw.entity_instance(elttype)
-                print "supported attributes are: "
-                print getPropertyNames(o)
+                print ("supported attributes are: ")
+                print (getPropertyNames(o))
             except:
-                print "unable to create an element of type '"+elttype+"'"
-            print "WARNING: skipping object '"+name+"' of type "+elttype
+                print ("unable to create an element of type '"+elttype+"'")
+            print ("WARNING: skipping object '"+name+"' of type "+elttype)
             return None
         self.BuildingProducts.append(elt)
         if not storey:

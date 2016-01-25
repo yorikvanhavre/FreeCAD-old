@@ -525,7 +525,7 @@ def removeShape(objs,mark=True):
             if dims:
                 name = obj.Name
                 tp = Draft.getType(obj)
-                print tp
+                print (tp)
                 if tp == "Structure":
                     FreeCAD.ActiveDocument.removeObject(name)
                     import ArchStructure
@@ -845,7 +845,7 @@ def cleanArchSplitter(objets=None):
         if obj.isDerivedFrom("Part::Feature"):
             if hasattr(obj,"Base"):
                 if obj.Base:
-                    print "Attempting to clean splitters from ",obj.Label
+                    print ("Attempting to clean splitters from ",obj.Label)
                     if obj.Base.isDerivedFrom("Part::Feature"):
                         if not obj.Base.Shape.isNull():
                             obj.Base.Shape = obj.Base.Shape.removeSplitter()
@@ -866,7 +866,7 @@ def rebuildArchShape(objects=None):
             if hasattr(obj,"Base"):
                 if obj.Base:
                     try:
-                        print "Attempting to rebuild ",obj.Label
+                        print ("Attempting to rebuild ",obj.Label)
                         if obj.Base.isDerivedFrom("Part::Feature"):
                             if not obj.Base.Shape.isNull():
                                 faces = []
@@ -885,13 +885,13 @@ def rebuildArchShape(objects=None):
                                                 solid = Part.Solid(solid)
                                             #print "rebuilt solid: isValid is ",solid.isValid()
                                             if solid.isValid():
-                                                print "Success"
+                                                print ("Success")
                                                 obj.Base.Shape = solid
                                                 success = True
                     except:
                         pass
         if not success:
-            print "Failed"
+            print ("Failed")
     FreeCAD.ActiveDocument.recompute()
 
 

@@ -248,7 +248,7 @@ class _Stairs(ArchComponent.Component):
         fLength = float(l-obj.Width.Value)/(numberofsteps-2)
         fHeight = float(h)/numberofsteps
         a = math.atan(fHeight/fLength)
-        print "landing data:",fLength,":",fHeight
+        print ("landing data:",fLength,":",fHeight)
 
         # step
         p1 = self.align(vBase,obj.Align,vWidth)
@@ -474,10 +474,10 @@ class _Stairs(ArchComponent.Component):
 
 
     def makeCurvedStairs(self,obj,edge):
-        print "Not yet implemented!"
+        print ("Not yet implemented!")
 
     def makeCurvedStairsWithLanding(self,obj,edge):
-        print "Not yet implemented!"
+        print ("Not yet implemented!")
 
 
 

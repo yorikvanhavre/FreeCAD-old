@@ -328,7 +328,7 @@ class _Space(ArchComponent.Component):
                 obj.Shape = shape
                 return
 
-        print "Arch: error computing space boundary"
+        print ("Arch: error computing space boundary")
 
     def getArea(self,obj):
         "returns the horizontal area at the center of the space"
