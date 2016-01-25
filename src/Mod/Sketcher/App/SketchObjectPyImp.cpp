@@ -1004,6 +1004,7 @@ PyObject* SketchObjectPy::DeleteUnusedInternalGeometry(PyObject *args)
     Py_Return;
 }
 
+#if PY_MAJOR_VERSION >= 3
 Py::Long SketchObjectPy::getConstraintCount(void) const
 {
     return Py::Long(this->getSketchObjectPtr()->Constraints.getSize());
@@ -1018,6 +1019,22 @@ Py::Long SketchObjectPy::getAxisCount(void) const
 {
     return Py::Long(this->getSketchObjectPtr()->getAxisCount());
 }
+#else
+Py::Int SketchObjectPy::getConstraintCount(void) const
+{
+    return Py::Int(this->getSketchObjectPtr()->Constraints.getSize());
+}
+
+Py::Int SketchObjectPy::getGeometryCount(void) const
+{
+    return Py::Int(this->getSketchObjectPtr()->Geometry.getSize());
+}
+
+Py::Int SketchObjectPy::getAxisCount(void) const
+{
+    return Py::Int(this->getSketchObjectPtr()->getAxisCount());
+}
+#endif
 
 PyObject *SketchObjectPy::getCustomAttributes(const char* /*attr*/) const
 {
