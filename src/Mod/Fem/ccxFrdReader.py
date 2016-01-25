@@ -390,8 +390,8 @@ def importFrd(filename, analysis=None):
                 scale = 1.0
 
             if len(disp) > 0:
-                results.DisplacementVectors = map((lambda x: x * scale), disp.values())
-                results.NodeNumbers = disp.keys()
+                results.DisplacementVectors = list(map((lambda x: x * scale), disp.values()))
+                results.NodeNumbers = list(disp.keys())
                 if(mesh_object):
                     results.Mesh = mesh_object
 
@@ -401,7 +401,7 @@ def importFrd(filename, analysis=None):
                 for i in stress.values():
                     mstress.append(calculate_von_mises(i))
                 if eigenmode_number > 0:
-                    results.StressValues = map((lambda x: x * scale), mstress)
+                    results.StressValues = list(map((lambda x: x * scale), mstress))
                     results.Eigenmode = eigenmode_number
                 else:
                     results.StressValues = mstress
@@ -409,7 +409,7 @@ def importFrd(filename, analysis=None):
             if (results.NodeNumbers != 0 and results.NodeNumbers != stress.keys()):
                 print ("Inconsistent FEM results: element number for Stress doesn't equal element number for Displacement {} != {}"
                        .format(results.NodeNumbers, len(results.StressValues)))
-                results.NodeNumbers = stress.keys()
+                results.NodeNumbers = list(stress.keys())
 
             x_min, y_min, z_min = map(min, zip(*displacement))
             sum_list = map(sum, zip(*displacement))
