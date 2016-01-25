@@ -281,7 +281,11 @@ PyObject* FemMeshPy::addFace(PyObject *args)
         Py::List list(obj);
         std::vector<const SMDS_MeshNode*> Nodes;
         for (Py::List::iterator it = list.begin(); it != list.end(); ++it) {
+#if PY_MAJOR_VERSION >= 3
             Py::Long NoNr(*it);
+#else
+            Py::Int NoNr(*it);
+#endif
             const SMDS_MeshNode* node = meshDS->FindNode(NoNr);
             if (!node)
                 throw std::runtime_error("Failed to get node of the given indices");
@@ -384,7 +388,11 @@ PyObject* FemMeshPy::addVolume(PyObject *args)
         Py::List list(obj);
         std::vector<const SMDS_MeshNode*> Nodes;
         for (Py::List::iterator it = list.begin(); it != list.end(); ++it) {
+#if PY_MAJOR_VERSION >= 3
             Py::Long NoNr(*it);
+#else
+            Py::Int NoNr(*it);
+#endif
             const SMDS_MeshNode* node = meshDS->FindNode(NoNr);
             if (!node)
                 throw std::runtime_error("Failed to get node of the given indices");
@@ -820,10 +828,17 @@ Py::Dict FemMeshPy::getNodes(void) const
     return dict;
 }
 
+#if PY_MAJOR_VERSION >= 3
 Py::Long FemMeshPy::getNodeCount(void) const
 {
     return Py::Long(getFemMeshPtr()->getSMesh()->NbNodes());
 }
+#else
+Py::Int FemMeshPy::getNodeCount(void) const
+{
+    return Py::Int(getFemMeshPtr()->getSMesh()->NbNodes());
+}
+#endif
 
 Py::Tuple FemMeshPy::getEdges(void) const
 {
@@ -843,10 +858,17 @@ Py::Tuple FemMeshPy::getEdges(void) const
     return tuple;
 }
 
+#if PY_MAJOR_VERSION >= 3
 Py::Long FemMeshPy::getEdgeCount(void) const
 {
     return Py::Long(getFemMeshPtr()->getSMesh()->NbEdges());
 }
+#else
+Py::Int FemMeshPy::getEdgeCount(void) const
+{
+    return Py::Int(getFemMeshPtr()->getSMesh()->NbEdges());
+}
+#endif
 
 Py::Tuple FemMeshPy::getFaces(void) const
 {
@@ -866,6 +888,7 @@ Py::Tuple FemMeshPy::getFaces(void) const
     return tuple;
 }
 
+#if PY_MAJOR_VERSION >= 3
 Py::Long FemMeshPy::getFaceCount(void) const
 {
     return Py::Long(getFemMeshPtr()->getSMesh()->NbFaces());
@@ -885,6 +908,27 @@ Py::Long FemMeshPy::getPolygonCount(void) const
 {
     return Py::Long(getFemMeshPtr()->getSMesh()->NbPolygons());
 }
+#else
+Py::Int FemMeshPy::getFaceCount(void) const
+{
+    return Py::Int(getFemMeshPtr()->getSMesh()->NbFaces());
+}
+
+Py::Int FemMeshPy::getTriangleCount(void) const
+{
+    return Py::Int(getFemMeshPtr()->getSMesh()->NbTriangles());
+}
+
+Py::Int FemMeshPy::getQuadrangleCount(void) const
+{
+    return Py::Int(getFemMeshPtr()->getSMesh()->NbQuadrangles());
+}
+
+Py::Int FemMeshPy::getPolygonCount(void) const
+{
+    return Py::Int(getFemMeshPtr()->getSMesh()->NbPolygons());
+}
+#endif
 
 Py::Tuple FemMeshPy::getVolumes(void) const
 {
@@ -904,6 +948,7 @@ Py::Tuple FemMeshPy::getVolumes(void) const
     return tuple;
 }
 
+#if PY_MAJOR_VERSION >= 3
 Py::Long FemMeshPy::getVolumeCount(void) const
 {
     return Py::Long(getFemMeshPtr()->getSMesh()->NbVolumes());
@@ -943,6 +988,47 @@ Py::Long FemMeshPy::getGroupCount(void) const
 {
     return Py::Long(getFemMeshPtr()->getSMesh()->NbGroup());
 }
+#else
+Py::Int FemMeshPy::getVolumeCount(void) const
+{
+    return Py::Int(getFemMeshPtr()->getSMesh()->NbVolumes());
+}
+
+Py::Int FemMeshPy::getTetraCount(void) const
+{
+    return Py::Int(getFemMeshPtr()->getSMesh()->NbTetras());
+}
+
+Py::Int FemMeshPy::getHexaCount(void) const
+{
+    return Py::Int(getFemMeshPtr()->getSMesh()->NbHexas());
+}
+
+Py::Int FemMeshPy::getPyramidCount(void) const
+{
+    return Py::Int(getFemMeshPtr()->getSMesh()->NbPyramids());
+}
+
+Py::Int FemMeshPy::getPrismCount(void) const
+{
+    return Py::Int(getFemMeshPtr()->getSMesh()->NbPrisms());
+}
+
+Py::Int FemMeshPy::getPolyhedronCount(void) const
+{
+    return Py::Int(getFemMeshPtr()->getSMesh()->NbPolyhedrons());
+}
+
+Py::Int FemMeshPy::getSubMeshCount(void) const
+{
+    return Py::Int(getFemMeshPtr()->getSMesh()->NbSubMesh());
+}
+
+Py::Int FemMeshPy::getGroupCount(void) const
+{
+    return Py::Int(getFemMeshPtr()->getSMesh()->NbGroup());
+}
+#endif
 
 Py::Object FemMeshPy::getVolume(void) const
 {
