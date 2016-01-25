@@ -371,8 +371,8 @@ def importFrd(filename, analysis=None, result_name_prefix=None):
                 scale = 1.0
 
             if len(disp) > 0:
-                results.DisplacementVectors = map((lambda x: x * scale), disp.values())
-                results.NodeNumbers = disp.keys()
+                results.DisplacementVectors = list(map((lambda x: x * scale), disp.values()))
+                results.NodeNumbers = list(disp.keys())
                 if(mesh_object):
                     results.Mesh = mesh_object
 
@@ -382,7 +382,7 @@ def importFrd(filename, analysis=None, result_name_prefix=None):
                 for i in stress.values():
                     mstress.append(calculate_von_mises(i))
                 if eigenmode_number > 0:
-                    results.StressValues = map((lambda x: x * scale), mstress)
+                    results.StressValues = list(map((lambda x: x * scale), mstress))
                     results.Eigenmode = eigenmode_number
                 else:
                     results.StressValues = mstress
