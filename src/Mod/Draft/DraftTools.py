@@ -2586,7 +2586,7 @@ class Offset(Modifier):
                         rad = r1 - rad
                     d = str(rad)
                 else:
-                    print "Draft.Offset error: Unhandled case"
+                    print ("Draft.Offset error: Unhandled case")
             else:
                 self.dvec.normalize()
                 self.dvec.multiply(rad)

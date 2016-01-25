@@ -286,7 +286,7 @@ def importFrd(filename, analysis=None):
 
         if 'Nodes' in m:
             positions = []
-            for k, v in m['Nodes'].iteritems():
+            for k, v in m['Nodes'].items():
                 positions.append(v)
             p_x_max, p_y_max, p_z_max = map(max, zip(*positions))
             p_x_min, p_y_min, p_z_min = map(min, zip(*positions))
@@ -376,7 +376,7 @@ def importFrd(filename, analysis=None):
             disp = result_set['disp']
             l = len(disp)
             displacement = []
-            for k, v in disp.iteritems():
+            for k, v in disp.items():
                 displacement.append(v)
 
             x_max, y_max, z_max = map(max, zip(*displacement))
