@@ -47,7 +47,7 @@ def readPresets():
     for profilefile in profilefiles:
         if os.path.exists(profilefile):
             try:
-                with open(profilefile, 'rb') as csvfile:
+                with open(profilefile, 'r') as csvfile:
                     beamreader = csv.reader(csvfile)
                     bid=1 #Unique index
                     for row in beamreader:
@@ -61,9 +61,9 @@ def readPresets():
                                 Presets.append(r)
                             bid=bid+1
                         except ValueError:
-                            print "Skipping bad line: "+str(row)
+                            print ("Skipping bad line: "+str(row))
             except IOError:
-                print "Could not open ",profilefile
+                print ("Could not open ",profilefile)
     return Presets
 
 def makeProfile(profile=[0,'REC','REC100x100','R',100,100]):
@@ -81,7 +81,7 @@ def makeProfile(profile=[0,'REC','REC100x100','R',100,100]):
     elif profile[3]=="U":
         _ProfileU(obj, profile)
     else :
-        print "Profile not supported"
+        print ("Profile not supported")
     if FreeCAD.GuiUp:
         Draft._ViewProviderDraft(obj.ViewObject)
     return obj

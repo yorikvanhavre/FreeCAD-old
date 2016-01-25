@@ -125,7 +125,7 @@ class _CommandRebar:
                         FreeCAD.ActiveDocument.recompute()
                         return
                     else:
-                        print "Arch: error: couldn't extract a base object"
+                        print ("Arch: error: couldn't extract a base object")
                         return
 
         FreeCAD.Console.PrintMessage(translate("Arch","Please select a base face on a structural object\n"))
@@ -216,7 +216,7 @@ class _Rebar(ArchComponent.Component):
         try:
             bar = wire.makePipeShell([circle],True,False,2)
         except Part.OCCError:
-            print "Arch: error sweeping rebar profile along the base sketch"
+            print ("Arch: error sweeping rebar profile along the base sketch")
             return
         # building final shape
         shapes = []
