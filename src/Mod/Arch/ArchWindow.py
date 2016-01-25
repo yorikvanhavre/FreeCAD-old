@@ -21,7 +21,8 @@
 #*                                                                         *
 #***************************************************************************
 
-import FreeCAD,Draft,ArchComponent,DraftVecUtils,ArchCommands,Units
+import FreeCAD,Draft,ArchComponent,DraftVecUtils,ArchCommands
+from FreeCAD import Units
 from FreeCAD import Vector
 if FreeCAD.GuiUp:
     import FreeCADGui
@@ -365,7 +366,7 @@ def makeWindowPreset(windowtype,width,height,h1,h2,h3,w1,w2,o1,o2,placement=None
             FreeCAD.ActiveDocument.recompute()
             return obj
 
-    print "Arch: Unknown window type"
+    print ("Arch: Unknown window type")
 
 
 class _CommandWindow:
@@ -710,7 +711,7 @@ class _Window(ArchComponent.Component):
                             if not DraftGeomUtils.isNull(pl):
                                 base.Placement = base.Placement.multiply(pl)
                     else:
-                        print "Arch: Bad formatting of window parts definitions"
+                        print ("Arch: Bad formatting of window parts definitions")
 
         base = self.processSubShapes(obj,base)
         if base:

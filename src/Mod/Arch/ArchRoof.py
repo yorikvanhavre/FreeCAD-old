@@ -300,7 +300,7 @@ class _Roof(ArchComponent.Component):
         profilNext1 = self.findProfil(i+1)
         profilNext2 = self.findProfil(i+2)
         point = DraftGeomUtils.findIntersection(profilCurrent["eave"],profilNext1["eave"],infinite1=True,infinite2=True,)
-        print "a ",FreeCAD.Vector(point[0])
+        print ("a ",FreeCAD.Vector(point[0]))
         self.ptsPaneProject.append(FreeCAD.Vector(point[0]))
         pt1 = DraftGeomUtils.findIntersection(profilCurrent["edge"],profilNext1["eave"],infinite1=True,infinite2=True,)
         pt2 = DraftGeomUtils.findIntersection(profilNext2["edge"],profilNext1["eave"],infinite1=True,infinite2=True,)
@@ -317,7 +317,7 @@ class _Roof(ArchComponent.Component):
             point = DraftGeomUtils.findIntersection(ridgeCurrent,profilNext1["eave"],infinite1=True,infinite2=True,)
         else:
             point = DraftGeomUtils.findIntersection(profilCurrent["ridge"],profilNext1["eaveD"],infinite1=True,infinite2=True,)
-        print "b ",FreeCAD.Vector(point[0])
+        print ("b ",FreeCAD.Vector(point[0]))
         self.ptsPaneProject.append(FreeCAD.Vector(point[0]))
 
     def backPignon(self, i):
@@ -341,11 +341,11 @@ class _Roof(ArchComponent.Component):
             point = DraftGeomUtils.findIntersection(ridgeCurrent,profilBack1["eave"],infinite1=True,infinite2=True,)
         else:
             point = DraftGeomUtils.findIntersection(profilCurrent["ridge"],profilBack1["eave"],infinite1=True,infinite2=True,)
-        print "a ", FreeCAD.Vector(point[0])
+        print ("a ", FreeCAD.Vector(point[0]))
         #print "b ", FreeCAD.Vector(profilCurrent["eave"].Vertexes[0].Point[0])
         self.ptsPaneProject.append(FreeCAD.Vector(point[0]))
         point = DraftGeomUtils.findIntersection(profilCurrent["eave"],profilBack1["eave"],infinite1=True,infinite2=True,)
-        print "b ",FreeCAD.Vector(point[0])
+        print ("b ",FreeCAD.Vector(point[0]))
         self.ptsPaneProject.append(FreeCAD.Vector(point[0]))
         #self.ptsPaneProject.append(FreeCAD.Vector(profilCurrent["eave"].Vertexes[0].Point[0]))
 
@@ -358,15 +358,15 @@ class _Roof(ArchComponent.Component):
         edgeHip = DraftGeomUtils.edg(FreeCAD.Vector(ptInterRidges[0]),profilCurrent["edge"].Vertexes[-1].Point)
         ptInterHipEave = DraftGeomUtils.findIntersection(edgeHip,profilCurrent["eave"],infinite1=True,infinite2=False,)
         if ptInterHipEave:
-            print "a ",FreeCAD.Vector(ptInterHipEave[0])
+            print ("a ",FreeCAD.Vector(ptInterHipEave[0]))
             self.ptsPaneProject.append(FreeCAD.Vector(ptInterHipEave[0]))
         else:
             ptInterHipEave = DraftGeomUtils.findIntersection(edgeHip,profilNext1["eaveD"],infinite1=True,infinite2=True,)
-            print "b ",FreeCAD.Vector(profilCurrent["eave"].Vertexes[-1].Point)
-            print "c ",FreeCAD.Vector(ptInterHipEave[0])
+            print ("b ",FreeCAD.Vector(profilCurrent["eave"].Vertexes[-1].Point))
+            print ("c ",FreeCAD.Vector(ptInterHipEave[0]))
             self.ptsPaneProject.append(FreeCAD.Vector(profilCurrent["eave"].Vertexes[-1].Point))
             self.ptsPaneProject.append(FreeCAD.Vector(ptInterHipEave[0]))
-        print "d ",FreeCAD.Vector(ptInterRidges[0])
+        print ("d ",FreeCAD.Vector(ptInterRidges[0]))
         self.ptsPaneProject.append(FreeCAD.Vector(ptInterRidges[0]))
 
     def backSameHeight(self, i):
@@ -375,17 +375,17 @@ class _Roof(ArchComponent.Component):
         profilCurrent = self.findProfil(i)
         profilBack1 = self.findProfil(i-1)
         ptInterRidges = DraftGeomUtils.findIntersection(profilCurrent["ridge"],profilBack1["ridge"],infinite1=True,infinite2=True,)
-        print "a ",FreeCAD.Vector(ptInterRidges[0])
+        print ("a ",FreeCAD.Vector(ptInterRidges[0]))
         self.ptsPaneProject.append(FreeCAD.Vector(ptInterRidges[0]))
         edgeHip = DraftGeomUtils.edg(FreeCAD.Vector(ptInterRidges[0]),profilCurrent["edge"].Vertexes[0].Point)
         ptInterHipEave = DraftGeomUtils.findIntersection(edgeHip,profilCurrent["eave"],infinite1=True,infinite2=False,)
         if ptInterHipEave:
-            print "b ",FreeCAD.Vector(ptInterHipEave[0])
+            print ("b ",FreeCAD.Vector(ptInterHipEave[0]))
             self.ptsPaneProject.append(FreeCAD.Vector(ptInterHipEave[0]))
         else:
             ptInterHipEave = DraftGeomUtils.findIntersection(edgeHip,profilBack1["eaveD"],infinite1=True,infinite2=True,)
-            print "c ",FreeCAD.Vector(ptInterHipEave[0])
-            print "d ",FreeCAD.Vector(profilCurrent["eave"].Vertexes[0].Point)
+            print ("c ",FreeCAD.Vector(ptInterHipEave[0]))
+            print ("d ",FreeCAD.Vector(profilCurrent["eave"].Vertexes[0].Point))
             self.ptsPaneProject.append(FreeCAD.Vector(ptInterHipEave[0]))
             self.ptsPaneProject.append(FreeCAD.Vector(profilCurrent["eave"].Vertexes[0].Point))
 
@@ -400,18 +400,18 @@ class _Roof(ArchComponent.Component):
         edgeHip = DraftGeomUtils.edg(FreeCAD.Vector(ptInter[0]),profilCurrent["edge"].Vertexes[-1].Point)
         ptInterHipEave = DraftGeomUtils.findIntersection(edgeHip,profilCurrent["eave"],infinite1=True,infinite2=False,)
         if ptInterHipEave:
-            print "a ",FreeCAD.Vector(ptInterHipEave[0])
+            print ("a ",FreeCAD.Vector(ptInterHipEave[0]))
             self.ptsPaneProject.append(FreeCAD.Vector(ptInterHipEave[0]))
         else:
             ptInterHipEave = DraftGeomUtils.findIntersection(edgeHip,profilNext1["eaveD"],infinite1=True,infinite2=True,)
-            print "b ",FreeCAD.Vector(profilCurrent["eave"].Vertexes[-1].Point[0])
-            print "c ",FreeCAD.Vector(ptInterHipEave[0])
+            print ("b ",FreeCAD.Vector(profilCurrent["eave"].Vertexes[-1].Point[0]))
+            print ("c ",FreeCAD.Vector(ptInterHipEave[0]))
             self.ptsPaneProject.append(FreeCAD.Vector(profilCurrent["eave"].Vertexes[-1].Point[0]))
             self.ptsPaneProject.append(FreeCAD.Vector(ptInterHipEave[0]))
-        print "d ",FreeCAD.Vector(ptInter[0])
+        print ("d ",FreeCAD.Vector(ptInter[0]))
         self.ptsPaneProject.append(FreeCAD.Vector(ptInter[0]))
         ptInterRidges = DraftGeomUtils.findIntersection(profilCurrent["ridge"],profilNext1["ridge"],infinite1=True,infinite2=True,)
-        print "e ",FreeCAD.Vector(ptInterRidges[0])
+        print ("e ",FreeCAD.Vector(ptInterRidges[0]))
         self.ptsPaneProject.append(FreeCAD.Vector(ptInterRidges[0]))
 
     def backHigher(self, i):
@@ -422,17 +422,17 @@ class _Roof(ArchComponent.Component):
         dec = profilCurrent["height"]/math.tan(math.radians(profilBack1["angle"]))
         edgeRidgeOnPane = DraftGeomUtils.offset(profilBack1["edge"],self.getPerpendicular(profilBack1["vec"],profilBack1["rot"],dec))
         ptInterRidges = DraftGeomUtils.findIntersection(edgeRidgeOnPane,profilCurrent["ridge"],infinite1=True,infinite2=True,)
-        print "a ",FreeCAD.Vector(ptInterRidges[0])
+        print ("a ",FreeCAD.Vector(ptInterRidges[0]))
         self.ptsPaneProject.append(FreeCAD.Vector(ptInterRidges[0]))
         edgeHip = DraftGeomUtils.edg(FreeCAD.Vector(ptInterRidges[0]),profilCurrent["edge"].Vertexes[0].Point)
         ptInterHipEave = DraftGeomUtils.findIntersection(edgeHip,profilCurrent["eave"],infinite1=True,infinite2=False,)
         if ptInterHipEave:
-            print "b ",FreeCAD.Vector(ptInterHipEave[0])
+            print ("b ",FreeCAD.Vector(ptInterHipEave[0]))
             self.ptsPaneProject.append(FreeCAD.Vector(ptInterHipEave[0]))
         else:
             ptInterHipEave = DraftGeomUtils.findIntersection(edgeHip,profilBack1["eaveD"],infinite1=True,infinite2=True,)
-            print "c ",FreeCAD.Vector(ptInterHipEave[0])
-            print "d ",FreeCAD.Vector(profilCurrent["eave"].Vertexes[0].Point[0])
+            print ("c ",FreeCAD.Vector(ptInterHipEave[0]))
+            print ("d ",FreeCAD.Vector(profilCurrent["eave"].Vertexes[0].Point[0]))
             self.ptsPaneProject.append(FreeCAD.Vector(ptInterHipEave[0]))
             self.ptsPaneProject.append(FreeCAD.Vector(profilCurrent["eave"].Vertexes[0].Point[0]))
 
@@ -448,20 +448,20 @@ class _Roof(ArchComponent.Component):
         edgeHip = DraftGeomUtils.edg(FreeCAD.Vector(ptInter[0]),profilCurrent["edge"].Vertexes[-1].Point)
         ptInterHipEave = DraftGeomUtils.findIntersection(edgeHip,profilCurrent["eave"],infinite1=True,infinite2=False,)
         if ptInterHipEave:
-            print "a ",FreeCAD.Vector(ptInterHipEave[0])
+            print ("a ",FreeCAD.Vector(ptInterHipEave[0]))
             self.ptsPaneProject.append(FreeCAD.Vector(ptInterHipEave[0]))
         else:
             ptInterHipEave = DraftGeomUtils.findIntersection(edgeHip,profilNext1["eaveD"],infinite1=True,infinite2=True,)
-            print "b ",FreeCAD.Vector(profilCurrent["eave"].Vertexes[-1].Point[0])
-            print "c ",FreeCAD.Vector(ptInterHipEave[0])
+            print ("b ",FreeCAD.Vector(profilCurrent["eave"].Vertexes[-1].Point[0]))
+            print ("c ",FreeCAD.Vector(ptInterHipEave[0]))
             self.ptsPaneProject.append(FreeCAD.Vector(profilCurrent["eave"].Vertexes[-1].Point[0]))
             self.ptsPaneProject.append(FreeCAD.Vector(ptInterHipEave[0]))
-        print "d ",FreeCAD.Vector(ptInter[0])
+        print ("d ",FreeCAD.Vector(ptInter[0]))
         self.ptsPaneProject.append(FreeCAD.Vector(ptInter[0]))
         ptInter = edgeHip.Vertexes[0].Point
         vecInterRidges = DraftGeomUtils.findPerpendicular(ptInter, [profilCurrent["ridge"].Edges[0],], force=0)
         ptInterRidges = ptInter.add(vecInterRidges[0])
-        print "e ",FreeCAD.Vector(ptInterRidges)
+        print ("e ",FreeCAD.Vector(ptInterRidges))
         self.ptsPaneProject.append(FreeCAD.Vector(ptInterRidges))
 
     def backSmaller(self, i):
@@ -476,18 +476,18 @@ class _Roof(ArchComponent.Component):
         ptInter2 = edgeHip.Vertexes[0].Point
         vecInterRidges = DraftGeomUtils.findPerpendicular(ptInter2, [profilCurrent["ridge"].Edges[0],], force=0)
         ptInterRidges = ptInter2.add(vecInterRidges[0])
-        print "a ",FreeCAD.Vector(ptInterRidges)
-        print "b ",FreeCAD.Vector(ptInter1[0])
+        print ("a ",FreeCAD.Vector(ptInterRidges))
+        print ("b ",FreeCAD.Vector(ptInter1[0]))
         self.ptsPaneProject.append(FreeCAD.Vector(ptInterRidges))
         self.ptsPaneProject.append(FreeCAD.Vector(ptInter1[0]))
         ptInterHipEave = DraftGeomUtils.findIntersection(edgeHip,profilCurrent["eave"],infinite1=True,infinite2=False,)
         if ptInterHipEave:
-            print "c ",FreeCAD.Vector(ptInterHipEave[0])
+            print ("c ",FreeCAD.Vector(ptInterHipEave[0]))
             self.ptsPaneProject.append(FreeCAD.Vector(ptInterHipEave[0]))
         else:
             ptInterHipEave = DraftGeomUtils.findIntersection(edgeHip,profilBack1["eaveD"],infinite1=True,infinite2=True,)
-            print "d ",FreeCAD.Vector(ptInterHipEave[0])
-            print "e ",FreeCAD.Vector(profilCurrent["eave"].Vertexes[0].Point[0])
+            print ("d ",FreeCAD.Vector(ptInterHipEave[0]))
+            print ("e ",FreeCAD.Vector(profilCurrent["eave"].Vertexes[0].Point[0]))
             self.ptsPaneProject.append(FreeCAD.Vector(ptInterHipEave[0]))
             self.ptsPaneProject.append(FreeCAD.Vector(profilCurrent["eave"].Vertexes[0].Point[0]))
 

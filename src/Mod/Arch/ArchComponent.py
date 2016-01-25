@@ -597,7 +597,7 @@ class Component:
                                             try:
                                                 base = base.fuse(s)
                                             except Part.OCCError:
-                                                print "Arch: unable to fuse object ",obj.Name, " with ", o.Name
+                                                print ("Arch: unable to fuse object ",obj.Name, " with ", o.Name)
                                     else:
                                         base = s
 
@@ -635,7 +635,7 @@ class Component:
                                     try:
                                         base = base.cut(s)
                                     except Part.OCCError:
-                                        print "Arch: unable to cut object ",o.Name, " from ", obj.Name
+                                        print ("Arch: unable to cut object ",o.Name, " from ", obj.Name)
         return base
 
     def applyShape(self,obj,shape,placement):
