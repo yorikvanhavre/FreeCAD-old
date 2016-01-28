@@ -1078,22 +1078,14 @@ Py::Object PyResource::value(const Py::Tuple& args)
             int nSize = str.count();
             Py::List slist(nSize);
             for (int i=0; i<nSize;++i) {
-#if PY_MAJOR_VERSION >= 3
-                slist.setItem(i, Py::Unicode(str[i].toAscii()));
-#else
                 slist.setItem(i, Py::String(str[i].toAscii()));
-#endif
             }
             item = slist;
         }   break;
     case QVariant::ByteArray:
         break;
     case QVariant::String:
-#if PY_MAJOR_VERSION >= 3
-        item = Py::Unicode(v.toString().toAscii());
-#else
         item = Py::String(v.toString().toAscii());
-#endif
         break;
     case QVariant::Double:
         item = Py::Float(v.toDouble());
@@ -1112,11 +1104,7 @@ Py::Object PyResource::value(const Py::Tuple& args)
 #endif
         break;
     default:
-#if PY_MAJOR_VERSION >= 3
-        item = Py::Unicode("");
-#else
         item = Py::String("");
-#endif
         break;
     }
 
