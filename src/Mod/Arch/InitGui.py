@@ -118,18 +118,12 @@ class ArchWorkbench(Workbench):
         FreeCADGui.addLanguagePath(":/translations")
         FreeCADGui.addPreferencePage(":/ui/preferences-arch.ui","Arch")
         FreeCADGui.addPreferencePage(":/ui/preferences-archdefaults.ui","Arch")
-        FreeCADGui.addPreferencePage(":/ui/preferences-ifc.ui","Import-Export")
-        FreeCADGui.addPreferencePage(":/ui/preferences-dae.ui","Import-Export")
         if hasattr(FreeCADGui,"draftToolBar"):
             if not hasattr(FreeCADGui.draftToolBar,"loadedPreferences"):
                 FreeCADGui.addPreferencePage(":/ui/preferences-draft.ui","Draft")
                 FreeCADGui.addPreferencePage(":/ui/preferences-draftsnap.ui","Draft")
                 FreeCADGui.addPreferencePage(":/ui/preferences-draftvisual.ui","Draft")
                 FreeCADGui.addPreferencePage(":/ui/preferences-drafttexts.ui","Draft")
-                FreeCADGui.addPreferencePage(":/ui/preferences-dxf.ui","Import-Export")
-                FreeCADGui.addPreferencePage(":/ui/preferences-dwg.ui","Import-Export")
-                FreeCADGui.addPreferencePage(":/ui/preferences-svg.ui","Import-Export")
-                FreeCADGui.addPreferencePage(":/ui/preferences-oca.ui","Import-Export")
                 FreeCADGui.draftToolBar.loadedPreferences = True
         Log ('Loading Arch module... done\n')
 
@@ -162,5 +156,10 @@ FreeCAD.addExportType("Wavefront OBJ - Arch module (*.obj)","importOBJ")
 FreeCAD.addExportType("WebGL file (*.html)","importWebGL")
 FreeCAD.addImportType("Collada (*.dae)","importDAE")
 FreeCAD.addExportType("Collada (*.dae)","importDAE")
+
+# add import/export preferences pages
+import Arch_rc
+FreeCADGui.addPreferencePage(":/ui/preferences-ifc.ui","Import-Export")
+FreeCADGui.addPreferencePage(":/ui/preferences-dae.ui","Import-Export")
 
 

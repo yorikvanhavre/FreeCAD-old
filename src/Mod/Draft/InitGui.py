@@ -136,10 +136,6 @@ class DraftWorkbench (Workbench):
                 FreeCADGui.addPreferencePage(":/ui/preferences-draftsnap.ui","Draft")
                 FreeCADGui.addPreferencePage(":/ui/preferences-draftvisual.ui","Draft")
                 FreeCADGui.addPreferencePage(":/ui/preferences-drafttexts.ui","Draft")
-                FreeCADGui.addPreferencePage(":/ui/preferences-dxf.ui","Import-Export")
-                FreeCADGui.addPreferencePage(":/ui/preferences-dwg.ui","Import-Export")
-                FreeCADGui.addPreferencePage(":/ui/preferences-svg.ui","Import-Export")
-                FreeCADGui.addPreferencePage(":/ui/preferences-oca.ui","Import-Export")
                 FreeCADGui.draftToolBar.loadedPreferences = True
         Log ('Loading Draft module...done\n')
 
@@ -187,3 +183,10 @@ App.addExportType("Flattened SVG (*.svg)","importSVG")
 App.addExportType("Open CAD Format (*.oca)","importOCA")
 App.addImportType("Autodesk DWG (*.dwg)","importDWG") 
 App.addExportType("Autodesk DWG (*.dwg)","importDWG")
+
+# add import/export preferences pages
+import Draft_rc
+FreeCADGui.addPreferencePage(":/ui/preferences-dxf.ui","Import-Export")
+FreeCADGui.addPreferencePage(":/ui/preferences-dwg.ui","Import-Export")
+FreeCADGui.addPreferencePage(":/ui/preferences-svg.ui","Import-Export")
+FreeCADGui.addPreferencePage(":/ui/preferences-oca.ui","Import-Export")
