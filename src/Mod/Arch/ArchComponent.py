@@ -554,7 +554,7 @@ class Component:
     def processSubShapes(self,obj,base,placement=None):
         "Adds additions and subtractions to a base shape"
         import Draft,Part
-        #print "Processing subshapes of ",obj.Label, " : ",obj.Additions
+        #print("Processing subshapes of ",obj.Label, " : ",obj.Additions)
 
         if placement:
             if placement.isNull():
@@ -604,7 +604,7 @@ class Component:
                                             try:
                                                 base = base.fuse(s)
                                             except Part.OCCError:
-                                                print "Arch: unable to fuse object ",obj.Name, " with ", o.Name
+                                                print("Arch: unable to fuse object ", obj.Name, " with ", o.Name)
                                     else:
                                         base = s
 
@@ -642,7 +642,7 @@ class Component:
                                     try:
                                         base = base.cut(s)
                                     except Part.OCCError:
-                                        print "Arch: unable to cut object ",o.Name, " from ", obj.Name
+                                        print("Arch: unable to cut object ",o.Name, " from ", obj.Name)
         return base
 
     def applyShape(self,obj,shape,placement,allowinvalid=False,allownosolid=False):
@@ -683,7 +683,7 @@ class ViewProviderComponent:
         self.Object = vobj.Object
 
     def updateData(self,obj,prop):
-        #print obj.Name," : updating ",prop
+        #print(obj.Name," : updating ",prop)
         if prop == "BaseMaterial":
             if obj.BaseMaterial:
                 if 'Color' in obj.BaseMaterial.Material:
@@ -711,7 +711,7 @@ class ViewProviderComponent:
         return ":/icons/Arch_Component.svg"
 
     def onChanged(self,vobj,prop):
-        #print vobj.Object.Name, " : changing ",prop
+        #print(vobj.Object.Name, " : changing ",prop)
         if prop == "Visibility":
             #for obj in vobj.Object.Additions+vobj.Object.Subtractions:
             #    if (Draft.getType(obj) == "Window") or (Draft.isClone(obj,"Window",True)):
