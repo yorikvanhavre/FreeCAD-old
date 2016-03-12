@@ -319,7 +319,7 @@ class ObjectPocket:
                             # Otherwise, straight plunge... Don't want to, but sometimes you might not have a choice.
                             # FIXME: At least not with the lazy ramp programming above...
                             else:
-                                print "WARNING: Straight-plunging... probably not good, but we didn't find a place to helix or ramp"
+                                print ("WARNING: Straight-plunging... probably not good, but we didn't find a place to helix or ramp")
                                 startPoint = edge.Vertexes[0].Point
                                 output += "G0 X" + fmt(startPoint.x) + " Y" + fmt(startPoint.y) +\
                                           " Z" + fmt(fastZPos) + "\n"
@@ -384,18 +384,18 @@ class ObjectPocket:
         if obj.Base:
             for b in obj.Base:
                 for sub in b[1]:
-                    print "object base: " + str(b)
+                    print ("object base: " + str(b))
                     import Part
                     import PathScripts.PathKurveUtils
                     if "Face" in sub:
-                        print "inside"
+                        print ("inside")
                         shape = getattr(b[0].Shape, sub)
                         wire = shape.OuterWire
                         edges = wire.Edges
                     else:
-                        print "in else"
+                        print ("in else")
                         edges = [getattr(b[0].Shape, sub) for sub in b[1]]
-                        print "myedges: " + str(edges)
+                        print ("myedges: " + str(edges))
                         wire = Part.Wire(edges)
                         shape = None
 
@@ -432,7 +432,7 @@ class ObjectPocket:
 
                         ########
                         # This puts out some interesting information from libarea
-                        print a.text()
+                        print (a.text())
                         ########
 
                         a.Reorder()

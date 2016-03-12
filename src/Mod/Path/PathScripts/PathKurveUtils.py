@@ -137,7 +137,7 @@ def profile(curve,side_of_line,radius=1.0,vertfeed=0.0,horizfeed=0.0,offset_extr
 
     offset_curve = area.Curve(curve)
     if offset_curve.getNumVertices() <= 1:
-        raise Exception,"Sketch has no elements!"
+        raise Exception("Sketch has no elements!")
     if side_of_line == "On":
         use_CRC =False 
 
@@ -151,9 +151,9 @@ def profile(curve,side_of_line,radius=1.0,vertfeed=0.0,horizfeed=0.0,offset_extr
             offset_curve.Offset(-offset)
 
         if offset_curve == False:
-            raise Exception, "couldn't offset kurve " + str(offset_curve)
+            raise Exception("couldn't offset kurve " + str(offset_curve))
     else:
-        raise Exception,"Side must be 'Left','Right', or 'On'"
+        raise Exception("Side must be 'left','right', or 'on'")
 
 #===============================================================================
 #     #roll_on roll_off section
@@ -244,7 +244,7 @@ def profile(curve,side_of_line,radius=1.0,vertfeed=0.0,horizfeed=0.0,offset_extr
                 lastx = span.v.p.x
                 lasty = span.v.p.y
             else:
-                raise Exception, "valid geometry identifier needed"
+                raise Exception("valid geometry identifier needed")
         if use_CRC:
             #end_CRC()
             output +="G40"+"\n"
