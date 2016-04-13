@@ -331,6 +331,16 @@ PyObject*  DocumentPy::openTransaction(PyObject *args)
     if (!PyArg_ParseTuple(args, "|O",&value))
         return NULL;    // NULL triggers exception
     char *pstr=0;
+#if PY_MAJOR_VERSION >= 3
+    if (PyUnicode_Check(value)) {
+        PyObject* unicode = PyUnicode_AsLatin1String(value);
+        pstr = PyUnicode_AsUTF8(unicode);
+        Py_DECREF(unicode);
+    }
+    else if (PyUnicode_Check(value)) {
+        pstr = PyUnicode_AsUTF8(value);
+    }
+#else
     if (PyUnicode_Check(value)) {
         PyObject* unicode = PyUnicode_AsLatin1String(value);
         pstr = PyString_AsString(unicode);
@@ -339,6 +349,7 @@ PyObject*  DocumentPy::openTransaction(PyObject *args)
     else if (PyString_Check(value)) {
         pstr = PyString_AsString(value);
     }
+#endif
     getDocumentPtr()->openTransaction(pstr); 
     Py_Return; 
 }
