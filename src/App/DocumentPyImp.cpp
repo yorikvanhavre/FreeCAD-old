@@ -332,14 +332,7 @@ PyObject*  DocumentPy::openTransaction(PyObject *args)
         return NULL;    // NULL triggers exception
     char *pstr=0;
 #if PY_MAJOR_VERSION >= 3
-    if (PyUnicode_Check(value)) {
-        PyObject* unicode = PyUnicode_AsLatin1String(value);
-        pstr = PyUnicode_AsUTF8(unicode);
-        Py_DECREF(unicode);
-    }
-    else if (PyUnicode_Check(value)) {
-        pstr = PyUnicode_AsUTF8(value);
-    }
+    pstr = PyUnicode_AsUTF8(value);
 #else
     if (PyUnicode_Check(value)) {
         PyObject* unicode = PyUnicode_AsLatin1String(value);
