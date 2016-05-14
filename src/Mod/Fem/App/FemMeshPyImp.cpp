@@ -1030,6 +1030,12 @@ Py::Int FemMeshPy::getGroupCount(void) const
 }
 #endif
 
+Py::Object FemMeshPy::getVolume(void) const
+{
+    return Py::Object(new Base::QuantityPy(new Base::Quantity(getFemMeshPtr()->getVolume())));
+
+}
+
 // ===== custom attributes ============================================================
 
 PyObject *FemMeshPy::getCustomAttributes(const char* /*attr*/) const
