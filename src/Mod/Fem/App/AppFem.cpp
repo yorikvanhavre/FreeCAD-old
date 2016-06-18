@@ -150,7 +150,6 @@ PyMOD_INIT_FUNC(Fem)
 
     Fem::FemResultObject            ::init();
     Fem::FemSolverObject            ::init();
-<<<<<<< d9203c874a9687451bf610d884c5a85d2783e03e
     Fem::FemSolverObjectPython      ::init();
     
 #ifdef FC_USE_VTK
@@ -167,9 +166,6 @@ PyMOD_INIT_FUNC(Fem)
     Fem::FemPostSphereFunction      ::init();
     Fem::PropertyPostDataObject     ::init();
 #endif
-=======
-    Fem::FemSolverObjectPython      ::init();
 
     PyMOD_Return(femModule);
->>>>>>> py3: ported Fem to python3
 }
