@@ -84,6 +84,7 @@ generate_from_xml(PartPy)
 
 generate_from_xml(ComplexGeoDataPy)
 generate_from_xml(PropertyContainerPy)
+generate_from_xml(PropertySetPy)
 generate_from_xml(MaterialPy)
 
 generate_from_py(FreeCADInit InitScript.h)
@@ -102,6 +103,7 @@ SET(FreeCADApp_XML_SRCS
     PartPy.xml
     DocumentPy.xml
     PropertyContainerPy.xml
+    PropertySetPy.xml
     ComplexGeoDataPy.xml
     MaterialPy.xml
 )
@@ -201,6 +203,8 @@ SET(Properties_CPP_SRCS
     Property.cpp
     PropertyContainer.cpp
     PropertyContainerPyImp.cpp
+    PropertySet.cpp
+    PropertySetPyImp.cpp
     PropertyFile.cpp
     PropertyGeo.cpp
     PropertyLinks.cpp
@@ -214,6 +218,7 @@ SET(Properties_HPP_SRCS
     ObjectIdentifier.h
     Property.h
     PropertyContainer.h
+    PropertySet.h
     PropertyFile.h
     PropertyGeo.h
     PropertyLinks.h

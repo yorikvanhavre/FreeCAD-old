@@ -1,0 +1,49 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<GenerateModel xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="generateMetaModel_Module.xsd">
+    <PythonExport 
+        Father="PersistencePy" 
+        Name="PropertySetPy" 
+        TwinPointer="PropertySet" 
+        Twin="PropertySet" 
+        Include="App/PropertySet.h" 
+        Namespace="App" 
+        FatherInclude="Base/PersistencePy.h" 
+        FatherNamespace="Base">
+        <Documentation>
+            <Author Licence="LGPL" Name="York van Havre" EMail="yorik@uncreated.net" />
+            <UserDocu>This is a python class to handle PropertySets</UserDocu>
+        </Documentation>
+        <Methode Name="getProperty">
+            <Documentation>
+                <UserDocu>getProperty(name): Returns the value of a property or None if inexistant.</UserDocu>
+            </Documentation>
+        </Methode>
+        <Methode Name="getPropertyType">
+            <Documentation>
+                <UserDocu>getPropertyType(name): Returns the C++ class name of property or None if inexistant.</UserDocu>
+            </Documentation>
+        </Methode>
+        <Methode Name="getPropertyDocumentation">
+            <Documentation>
+                <UserDocu>getPropertyDocumentation(name): Returns the documentation string or None if inexistant.</UserDocu>
+            </Documentation>
+        </Methode>
+        <Methode Name="addProperty">
+            <Documentation>
+                <UserDocu>addProperty(type,name,[documentation]): Adds a new property. Returns the name of the added property.</UserDocu>
+            </Documentation>
+        </Methode>
+        <Methode Name="removeProperty">
+            <Documentation>
+                <UserDocu>removeProperty(name): Removes the property with the given name. Returns True if successful, False otherwise.</UserDocu>
+            </Documentation>
+        </Methode>
+        <Attribute Name="PropertiesList" ReadOnly="true">
+            <Documentation>
+                <UserDocu>A list of all property names</UserDocu>
+            </Documentation>
+            <Parameter Name="PropertiesList" Type="List"/>
+        </Attribute>
+        <CustomAttributes />
+  </PythonExport>
+</GenerateModel>
