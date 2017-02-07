@@ -39,6 +39,7 @@
 #include "DocumentObject.h"
 #include "DocumentObjectPy.h"
 #include "Document.h"
+#include "Application.h"
 
 #include "PropertySet.h"
 
@@ -88,7 +89,7 @@ PropertySetData* PropertySet::getPropertyData(const char* name) const
 {
     for (std::map<std::string,PropertySetData>::const_iterator it = _mValueMap.begin(); it != _mValueMap.end(); ++it) {
         if(strcmp(it->first.c_str(),name) == 0)
-            return *it->second;
+            return new PropertySetData(it->second);
     }
     return 0;
 }
@@ -97,12 +98,12 @@ Property* PropertySet::getProperty(const char* name) const
 {
     for (std::map<std::string,PropertySetData>::const_iterator it = _mValueMap.begin(); it != _mValueMap.end(); ++it) {
         if(strcmp(it->first.c_str(),name) == 0)
-            return new it->second.Prop;
+            return it->second.Prop;
     }
     return 0;
 }
 
-short PropertySet::getPropertyType(const char *name) const
+const char* PropertySet::getPropertyType(const char *name) const
 {
     PropertySetData* propdata = getPropertyData(name);
     if(propdata)
@@ -125,7 +126,7 @@ std::string PropertySet::getUniquePropertyName(const char *Name) const
     std::string CleanName = Base::Tools::getIdentifier(Name);
 
     // name in use?
-    PropertySetData* propdata = getPropertyData(CleanName);
+    PropertySetData* propdata = getPropertyData(CleanName.c_str());
     if(!propdata) {
         // name is not in use - free to go
         return CleanName;
@@ -179,7 +180,6 @@ Property* PropertySet::addProperty(const char* type, const char* name, const cha
     else
         ObjectName = getUniquePropertyName(type);
     // create property
-    pcProperty->setContainer(this);
     PropertySetData data;
     data.Prop = pcProperty;
     data.Docu = (doc ? doc : "");
@@ -195,7 +195,7 @@ bool PropertySet::removeProperty(const char* name)
     if (it != _mValueMap.end()) {
         GetApplication().signalRemoveDynamicProperty(*it->second.Prop);
         delete it->second.Prop;
-        props.erase(it);
+        _mValueMap.erase(it);
         return true;
     }
     return false;
@@ -264,7 +264,7 @@ void PropertySet::Restore(Base::XMLReader &reader)
         reader.readElement("Property");
         const char* PropName = reader.getAttribute("name");
         const char* TypeName = reader.getAttribute("type");
-        Property* prop = getPropertyByName(PropName);
+        Property* prop = getProperty(PropName);
         try {
             if (!prop) {
                 const char *doc=0;
@@ -305,4 +305,20 @@ void PropertySet::Restore(Base::XMLReader &reader)
         reader.readEndElement("Property");
     }
     reader.readEndElement("Properties");
+}
+
+Property *PropertySet::Copy(void) const
+{
+    PropertySet *prop = new PropertySet();
+    prop->_mValueMap = _mValueMap;
+    return prop;
+}
+
+void PropertySet::Paste(const Property &from)
+{
+    if(!from.isDerivedFrom(PropertySet::getClassTypeId()))
+        throw Base::Exception("Incompatible property to paste to");
+    aboutToSetValue();
+    _mValueMap = static_cast<const PropertySet&>(from)._mValueMap;
+    hasSetValue();
 }

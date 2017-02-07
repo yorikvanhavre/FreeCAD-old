@@ -90,6 +90,7 @@
 #include "PropertyLinks.h"
 #include "PropertyPythonObject.h"
 #include "PropertyExpressionEngine.h"
+#include "PropertySet.h"
 #include "Document.h"
 #include "DocumentObjectGroup.h"
 #include "DocumentObjectFileIncluded.h"

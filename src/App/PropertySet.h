@@ -42,6 +42,14 @@ class DocumentObject;
 /** Set Property
  *  Main Purpose of this property is to contain other, dynamic properties
  */
+ 
+/// a structure to contain a property and its meta-data
+struct AppExport PropertySetData
+{
+    const char* Docu;
+    const char* Type;
+    Property* Prop;
+};
 
 class AppExport PropertySet : public Property
 {
@@ -61,7 +69,7 @@ public:
     /// find a property by its name
     Property *getProperty(const char* name) const;
     /// get the Type of a named Property
-    short getPropertyType(const char *name) const;
+    const char* getPropertyType(const char *name) const;
     /// get the doc of a named Property
     const char* getPropertyDocumentation(const char *name) const;
     /// add a dynamic property.
@@ -74,15 +82,10 @@ public:
     /// Save/Restore
     void Save (Base::Writer &writer) const;
     void Restore(Base::XMLReader &reader);
+    Property *Copy(void) const;
+    void Paste(const Property &from);
 
 private:
-    /// a structure to contain a property and its meta-data
-    struct AppExport PropertySetData
-    {
-        const char* Docu;
-        short Type;
-        Property* Prop;
-    };
     /// Encodes an attribute upon saving.
     std::string encodeAttribute(const std::string&) const;
     std::string getUniquePropertyName(const char *Name) const;

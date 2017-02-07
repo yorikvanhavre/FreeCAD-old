@@ -82,7 +82,7 @@ PyObject*  PropertySetPy::getPropertyDocumentation(PyObject *args)
         PyErr_Format(PyExc_AttributeError, "Property set has no property '%s'", pstr);
         return 0;
     }
-    const char* docu = getPropertySetPtr()->getPropertyDocumentation(prop);
+    const char* docu = getPropertySetPtr()->getPropertyDocumentation(pstr);
     if (docu)
         return Py::new_reference_to(Py::String(docu));
     else
@@ -97,6 +97,7 @@ PyObject*  PropertySetPy::addProperty(PyObject *args)
     if (!PyArg_ParseTuple(args, "ss|s", &tstr, &nstr, &dstr))     // convert args: Python->C
         return NULL;                             // NULL triggers exception
     getPropertySetPtr()->addProperty(tstr,nstr,dstr);
+    return 0;
 }
 
 PyObject*  PropertySetPy::removeProperty(PyObject *args)
@@ -110,7 +111,7 @@ PyObject*  PropertySetPy::removeProperty(PyObject *args)
         return 0;
     }
     bool ret = getPropertySetPtr()->removeProperty(pstr);
-    return Py::new_reference_to(Py::Bool(ret));
+    return Py_BuildValue("O", (ret ? Py_True : Py_False));
 }
 
 Py::List PropertySetPy::getPropertiesList(void) const
@@ -118,7 +119,7 @@ Py::List PropertySetPy::getPropertiesList(void) const
     Py::List ret;
     std::vector<std::string> names = getPropertySetPtr()->getPropertiesNames();
     for (std::vector<std::string>::const_iterator it=names.begin(); it!=names.end(); ++it)
-        ret.append(Py::String(it));
+        ret.append(Py::String(*it));
     return ret;
 }
 
