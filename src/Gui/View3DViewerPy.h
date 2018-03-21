@@ -65,6 +65,7 @@ public:
     Py::Object getPickRadius(const Py::Tuple& args);
     Py::Object setPickRadius(const Py::Tuple& args);
 
+    Py::Object setBackgroundColor(const Py::Tuple& args);
 
 
 private:

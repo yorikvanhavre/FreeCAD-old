@@ -75,6 +75,8 @@ void View3DInventorViewerPy::init_type()
         "getPickRadius(): returns radius of confusion in pixels for picking objects on screen (selection).");
     add_varargs_method("setPickRadius", &View3DInventorViewerPy::setPickRadius,
         "setPickRadius(new_radius): sets radius of confusion in pixels for picking objects on screen (selection).");
+    add_varargs_method("setBackgroundColor", &View3DInventorViewerPy::setBackgroundColor,
+        "setBackgroundColor(r,g,b): sets the background color of the current viewer.");
 }
 
 View3DInventorViewerPy::View3DInventorViewerPy(View3DInventorViewer *vi)
@@ -349,5 +351,24 @@ Py::Object View3DInventorViewerPy::setPickRadius(const Py::Tuple& args)
     }
     catch(...) {
         throw Py::Exception("Unknown C++ exception");
+    }
+}
+
+Py::Object View3DInventorViewerPy::setBackgroundColor(const Py::Tuple& args)
+{
+    float r,g,b = 0.0;
+    if (!PyArg_ParseTuple(args.ptr(), "fff", &r, &g, &b)) {
+        throw Py::Exception();
+    }
+    try {
+        SbColor col(r,g,b);
+        _viewer->setGradientBackgroundColor(col,col);
+        return Py::None();
+    }
+    catch (const Base::Exception& e) {
+        throw Py::Exception(e.what());
+    }
+    catch (const Py::Exception&) {
+        throw;
     }
 }
