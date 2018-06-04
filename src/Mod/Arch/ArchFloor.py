@@ -260,6 +260,5 @@ class _ViewProviderFloor:
             from DraftGui import todo
             todo.delay(ArchBuildingPart.convertFloors,self.Object)
 
-
 if FreeCAD.GuiUp:
     FreeCADGui.addCommand('Arch_Floor',_CommandFloor())
